@@ -1,0 +1,373 @@
+# ERD: Keel Data Model
+
+- **Status:** Draft for review
+- **Date:** 2026-07-02
+- **Upstream:** [PRD](./2026-07-02-agent-harness-prd.md) — entity requirements trace to PRD clause IDs noted per entity.
+- **Implementation language:** TypeScript (see ADR-0001 for the language/storage decision record).
+
+## 1. Storage Substrate
+
+Three tiers, one rule each:
+
+| Tier | Holds | Rule |
+|---|---|---|
+| **Git-tracked files** (in the target repo and in pack repos) | Specs/PRDs/ERDs/ADRs, spec clauses, packs (manifests, rules, routing policy structure, agent registry), lockfile, changelog, eval ledger | Anything a human reviews, a PR carries, or that must survive Keel's removal is a file |
+| **Local SQLite** (per operator, `~/.keel/keel.db`, WAL mode) | Sessions, tasks, step events, interventions, routing decisions, bundle manifests, verification reports, eval runs/results/verdicts, replay records, drift events, routing weights, the artifact index | Anything measured, high-volume, or queried statistically lives in SQLite |
+| **OTel projection** (optional, off by default; PRD TEL-6) | Traces/spans/metrics derived from SQLite-bound events at emit time | A projection, never a source of truth; content-stripped per TEL-3 |
+
+The **artifact index** (hashes, trace links, staleness) is derived from files and rebuildable at any time (`keel index rebuild`) — SQLite is disposable without losing anything a human authored.
+
+## 2. Conventions
+
+- **IDs:** ULIDs for event-like rows (sortable, no coordination). Artifacts use a stable logical ID (`repo-relative path + anchor`) plus a current `content_hash` (SHA-256); identity is the logical ID, versions are hashes.
+- **Schema versioning (PRD OSS-6):** one `schema_migrations` table, forward-only migrations shipped with the CLI; every event row carries `schema_version`.
+- **Types:** Zod schemas in `packages/schemas` are the single source of truth. TS types are inferred (`z.infer`), SQLite rows validated at the boundary, and JSON Schema is generated from Zod for the external signal contract (PRD §8.7) and the OTel attribute conventions.
+- **Append-only tables** (`changelog` is a file, but `step_event`, `intervention_event`, `drift_event`, `eval_task_result` are append-only in SQLite): no UPDATE path in the data layer; corrections are new rows.
+- **Time:** UTC ISO-8601 strings (SQLite TEXT); durations in ms.
+- **Money:** integer micro-USD (no floats in cost math).
+
+## 3. Domain: Artifacts & Traceability
+
+Implements PRD §6.4, §7 (ART-*, SPEC-*).
+
+```mermaid
+erDiagram
+    ARTIFACT ||--o{ SPEC_CLAUSE : contains
+    SPEC_CLAUSE ||--o{ OBLIGATION : "compiles to"
+    ARTIFACT ||--o{ TRACE_LINK : "upstream of"
+    ARTIFACT ||--o{ TRACE_LINK : "downstream of"
+    ARTIFACT ||--o{ DRIFT_EVENT : flags
+
+    ARTIFACT {
+        string logical_id PK "repo-relative path + anchor"
+        string repo
+        string type "signal|idea|prd|erd|adr|spec|code_region|test"
+        string content_hash "SHA-256, current"
+        string authority "authored|inferred|confirmed"
+        string tier "T0|T1|T2"
+        string created_at
+        string updated_at
+    }
+    SPEC_CLAUSE {
+        string clause_id PK "spec logical_id + clause key (e.g. TEL-3)"
+        string spec_id FK
+        string ears_type "ubiquitous|event|state|unwanted|optional"
+        string kind "requirement|invariant|precondition|postcondition|domain_def"
+        string compile_status "compiled|failed|unverifiable_signed"
+        string tier
+        string authority
+    }
+    OBLIGATION {
+        string id PK
+        string clause_id FK
+        string kind "pbt|metamorphic|model_check|proof"
+        string target_ref "test file / model / proof artifact path"
+        string status "passing|failing|stale"
+        string last_run_at
+    }
+    TRACE_LINK {
+        string id PK
+        string upstream_id FK
+        string downstream_id FK
+        string upstream_hash_at_link "staleness = this != current upstream hash"
+        string created_at
+    }
+    DRIFT_EVENT {
+        string id PK "ULID, append-only"
+        string artifact_id FK
+        string direction "code_under_spec|spec_over_code|upstream_stale"
+        string detected_at
+        string resolution "open|repaired|overridden|promoted"
+        string resolved_at
+    }
+```
+
+Notes: clauses are addressable sub-artifacts because traceability is clause-level (ART-1/2). `TRACE_LINK` freezes the upstream hash at link time; drift detection (ART-2/3) is the comparison `upstream_hash_at_link ≠ current content_hash`, run per session and on activation. Files hold the authored content; these tables are the rebuildable index (§1).
+
+## 4. Domain: Packs & Change Control
+
+Implements PRD §5.3, §9 (LOOP-*), §14.2 (SEC-4..6).
+
+```mermaid
+erDiagram
+    PACK ||--o{ LOCKFILE_ENTRY : "pinned by"
+    LOCKFILE ||--|{ LOCKFILE_ENTRY : contains
+    PACK ||--o{ PROPOSAL : targets
+    PROPOSAL ||--o{ EVAL_RUN : "gated by"
+    PROPOSAL ||--o{ CHANGELOG_ENTRY : produces
+
+    PACK {
+        string name PK
+        string version PK "semver"
+        string kind "stage|efficiency|spec_tooling|routing|eval_suite|agent_registry"
+        json capabilities "declared surfaces (SEC-4)"
+        string content_hash
+        string signature "release signature (SEC-5)"
+    }
+    LOCKFILE {
+        string hash PK "content hash of entries"
+        string parent_hash "previous lockfile"
+        string created_at
+    }
+    LOCKFILE_ENTRY {
+        string lockfile_hash PK,FK
+        string pack_name PK,FK
+        string pack_version FK
+        boolean enabled
+    }
+    PROPOSAL {
+        string id PK
+        string target_pack FK "never kernel/eval-suite/loop-spec (LOOP-4)"
+        string diff_ref "file ref to the diff"
+        json evidence_links "telemetry refs (LOOP-1)"
+        string state "proposed|gated|approved|rejected|applied|monitoring|stable|reverted|quarantined"
+        string created_by "loop|human"
+        string monitoring_until
+        string quarantine_reason
+    }
+    CHANGELOG_ENTRY {
+        int seq PK "append-only (invariant I5)"
+        string proposal_id FK
+        string action "apply|revert|human_change"
+        string lockfile_before FK
+        string lockfile_after FK
+        string at
+    }
+```
+
+Notes: `PACK`, `LOCKFILE`, and `CHANGELOG_ENTRY` are files (git-tracked; changelog is an append-only JSONL); rows here are index. `PROPOSAL.state` is exactly the §9.2 state machine — the TLA+ model and this enum must not drift (LOOP-5 conformance tests bind them). LOOP-4's protected-surface check is a constraint on `target_pack` enforced in the write path, not a prompt rule.
+
+## 5. Domain: Telemetry
+
+Implements PRD §6.1 (TEL-*, KERN-1), §12 (CTX-*), LOOP-7.
+
+```mermaid
+erDiagram
+    SESSION ||--o{ STEP_EVENT : contains
+    TASK ||--o{ STEP_EVENT : "routed as"
+    TASK ||--o{ INTERVENTION_EVENT : receives
+    TASK ||--o{ VERIFICATION_REPORT : produces
+    STEP_EVENT ||--o| ROUTING_DECISION : "chosen by"
+    STEP_EVENT ||--o| BUNDLE_MANIFEST : "context from"
+
+    SESSION {
+        string id PK "ULID"
+        string repo
+        string lockfile_hash FK "pinned at start (LOOP-7)"
+        string harness_version
+        int schema_version
+        string status "complete|incomplete|degraded"
+        string trace_id "OTel correlation (TEL-6)"
+        string started_at
+        string ended_at
+    }
+    TASK {
+        string id PK
+        string repo
+        json spec_clause_refs
+        string state "open|in_progress|delivered|accepted|corrected|abandoned (TEL-7)"
+        string acceptance_signal "approval|merge_clean|null"
+        int correction_count
+        string opened_at
+        string delivered_at
+        string closed_at
+    }
+    STEP_EVENT {
+        string id PK "ULID, append-only"
+        string task_id FK
+        string session_id FK
+        string sdlc_step "feedback|ideation|planning|spec|build|verify"
+        string model
+        string effort
+        string agent_id FK
+        int tokens_in
+        int tokens_out
+        int tokens_cache_read
+        int tokens_cache_write
+        json unit_prices "price snapshot at execution (cost normalization, PRD 3)"
+        int cost_micro_usd
+        int budget_tokens
+        string overrun "none|soft|paused (CTX-4)"
+        string span_id "OTel correlation"
+        int schema_version
+    }
+    INTERVENTION_EVENT {
+        string id PK "ULID, append-only"
+        string task_id FK
+        string session_id FK
+        string class "correction|clarification|approval (TEL-4)"
+        string artifact_hash "what it concerns"
+        string at
+    }
+    ROUTING_DECISION {
+        string id PK
+        string step_event_id FK
+        json feature_vector "RTR-1"
+        string policy_pack_version
+        string chosen_target FK
+        json alternatives "next candidates + est cost (route explain)"
+        string mode "exploit|explore (RTR-3)"
+        string escalated_from "regret event when set (RTR-2)"
+    }
+    BUNDLE_MANIFEST {
+        string id PK
+        string step_event_id FK
+        int token_count
+        json entries "kind, ref, tokens (CTX-1)"
+        json misses "on-demand loads (CTX-2)"
+    }
+    VERIFICATION_REPORT {
+        string id PK
+        string task_id FK
+        json results "per check class (PIPE-8)"
+        string failure_class "code_defect|spec_defect|obligation_defect|null (PIPE-9)"
+        string at
+    }
+```
+
+Notes: `TASK` is deliberately not owned by `SESSION` — tasks resume across sessions; `STEP_EVENT` carries both FKs, so FPAR joins tasks to configs through sessions' pinned lockfiles. Price snapshots are denormalized onto `STEP_EVENT` so historical cost math never depends on a mutable price table.
+
+## 6. Domain: Eval
+
+Implements PRD §6.2 (EVAL-*), §10 (EVT-*), §14.1 (SEC-1..3).
+
+```mermaid
+erDiagram
+    EVAL_SUITE ||--o{ BENCHMARK_TASK : contains
+    EVAL_RUN ||--o{ EVAL_TASK_RESULT : produces
+    EVAL_RUN ||--|| VERDICT : yields
+    BENCHMARK_TASK ||--o{ EVAL_TASK_RESULT : "measured by"
+    REPLAY_RECORD }o--|| EVAL_RUN : "scored in"
+
+    EVAL_SUITE {
+        string id PK
+        string version PK
+        string role "gating|staging (LOOP-6)"
+    }
+    BENCHMARK_TASK {
+        string id PK
+        string suite_id FK
+        string snapshot_ref "content-addressed repo snapshot"
+        string statement
+        json checks
+        int budget_ceiling
+        boolean quarantined "EVAL-3"
+        string origin "seed|loop|human"
+    }
+    EVAL_RUN {
+        string id PK
+        string kind "ablate|compare|replay"
+        string suite_version FK
+        string config_a "lockfile hash"
+        string config_b "lockfile hash, null for replay"
+        int seed
+        json model_versions
+        json sandbox_profile "SEC-3"
+        string manifest_hash "reproduction key (EVAL-4)"
+        string started_at
+        string finished_at
+    }
+    EVAL_TASK_RESULT {
+        string id PK "append-only"
+        string run_id FK
+        string bench_task_id FK
+        string side "A|B"
+        boolean fpar_pass
+        int cost_micro_usd
+        json check_results
+        string raw_ref "transcript artifact"
+    }
+    VERDICT {
+        string id PK
+        string run_id FK
+        string decision "helps|hurts|no_effect|underpowered (EVT-1)"
+        json deltas "fpar/tpac effect sizes + CIs"
+        int n
+        real alpha
+    }
+    REPLAY_RECORD {
+        string id PK
+        string source_session_id FK
+        string snapshot_ref
+        string config "candidate lockfile hash (EVAL-5)"
+        string run_id FK
+        string outcome
+    }
+```
+
+The public **eval ledger** (EVT-3) is a git-tracked file per pack version: `{pack, version, manifest_hash, verdict summary, date}` — reproducible via `EVAL_RUN.manifest_hash`.
+
+## 7. Domain: Routing & Signals
+
+Implements PRD §6.3 (RTR-*), §11, §8.1 (PIPE-1).
+
+```mermaid
+erDiagram
+    AGENT_REGISTRY_ENTRY ||--o{ ROUTING_DECISION : "target of"
+    ROUTING_POLICY ||--o{ ROUTING_WEIGHT : "tuned by"
+    SIGNAL }o--o{ IDEA : informs
+
+    AGENT_REGISTRY_ENTRY {
+        string id PK
+        string kind "base_model|subagent|custom_agent"
+        json capabilities "domain, language, task_type (RTR-4)"
+        string cost_class
+        json constraints
+    }
+    ROUTING_POLICY {
+        string pack_version PK "structure lives in the pack file"
+        json entries "feature_match -> target, budget, escalation ladder"
+    }
+    ROUTING_WEIGHT {
+        string policy_version PK,FK
+        string arm PK
+        real weight "ONLY field the online bandit may write (RTR-5)"
+        string updated_at
+    }
+    SIGNAL {
+        string id PK
+        string source
+        int contract_schema_version "PIPE-10"
+        string severity
+        json evidence_links
+        json affected_artifact_ids
+        string triage "backlog|dismissed|linked"
+        string received_at
+    }
+    IDEA {
+        string id PK
+        string title
+        string priority_rationale "agent-drafted, human-editable (PIPE-1)"
+        json signal_ids
+        string state "backlog|active|done|dropped"
+    }
+```
+
+The RTR-5 write-surface rule is structural here: the bandit's entire write access is the `ROUTING_WEIGHT.weight` column; policy *structure* is a pack file changed only via proposals.
+
+## 8. OTel Projection (TEL-6)
+
+| Keel entity | OTel mapping |
+|---|---|
+| `SESSION` | Trace (`trace_id` stored on the row) |
+| `STEP_EVENT` | Span — attributes: `keel.sdlc_step`, `keel.model`, `keel.effort`, `keel.agent`, token counts, `keel.cost_micro_usd`, `keel.budget.overrun` |
+| `INTERVENTION_EVENT`, `DRIFT_EVENT`, routing escalations | Span events on the enclosing step span |
+| Metrics | `keel.fpar`, `keel.tpac`, `keel.overhead_ratio`, `keel.routing.regret`, counters: `keel.drift.count`, `keel.interventions.count`, `keel.eval.gate.{pass,reject}` |
+
+Exporter is OTLP, disabled unless an endpoint is configured; all attributes pass the TEL-3 content-stripping rules (numeric/categorical only — no prompts, paths, or code).
+
+## 9. TypeScript Stack & Package Layout
+
+- **Runtime:** Node ≥ 22, ESM, TypeScript strict.
+- **Monorepo (pnpm workspaces):**
+  - `packages/schemas` — Zod schemas for every entity above + generated JSON Schema (signal contract, OTel conventions). No dependencies on other packages; everything depends on it.
+  - `packages/kernel` — telemetry, eval harness, router, artifact store as internal modules behind one public API; owns SQLite (better-sqlite3) and migrations.
+  - `packages/cli` — `keel` command: eval runner, replay engine, index rebuild, agents/loop/route subcommands. Sandboxing lives here (worktree + container drivers).
+  - `packages/cc-plugin` — the Claude Code plugin (skills, hooks, subagents) — the only Claude Code-coupled package (PRD §5.4 migration criteria depend on this boundary).
+- **Testing:** vitest; fast-check for Keel's own PBT obligations (the PRD's *Obligation* lines compile into this suite); TLA+ models under `specs/tla/` checked in CI (TLC via container).
+- **No ORM:** better-sqlite3 with hand-written SQL and Zod validation at the boundary; migrations are numbered SQL files applied forward-only (OSS-6).
+
+## 10. Open Questions
+
+1. Repo snapshot mechanism for `snapshot_ref` (git bundle vs. content-addressed object store) — decided in the implementation plan alongside PRD open question 3 (replay fidelity).
+2. Whether `ROUTING_WEIGHT` needs per-repo partitioning (same policy, different repos) — defer until telemetry shows repo-level divergence.

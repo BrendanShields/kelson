@@ -2,7 +2,7 @@
 
 - **Status:** Draft for review
 - **Date:** 2026-07-02
-- **Working name:** Keel (the small stable spine everything else hangs off; final name is an open question, §15)
+- **Working name:** Keel (the small stable spine everything else hangs off; final name is an open question, §16)
 - **Deliverable scope:** This PRD covers the product from feedback ingestion through build and verification. Deployment and production monitoring are adjacent concerns (§2.2, §8.7).
 
 ---
@@ -42,6 +42,18 @@ The unifying design idea: **everything the system can change about itself is a v
 - NG3. **General project management.** Keel maintains an idea backlog derived from signals; it is not a Jira replacement.
 - NG4. **Proving arbitrary user code correct.** Full formal verification is an escalation tier applied to qualifying components (§7.4), not a promise for all code.
 
+### 2.3 End State (v-final)
+
+The v1 phases (§16) climb toward a defined asymptote. Keel is *done* — in the sense that further work is refinement, not construction — when:
+
+- **E1 — Human role converges to two jobs.** Authoring/approving specs, and governing the gates (eval suites, safety thresholds, tier escalations). Everything between a confirmed spec and a verified change is agent work.
+- **E2 — The outer loop closes.** A production signal (via the §8.7 contract, carried by a future Keel Deploy companion) becomes a proposed spec diff → verified fix → gated release candidate with no human drafting — the human reviews and approves.
+- **E3 — Configuration is fully learned.** No hand-tuned routing entries remain: every routing-policy entry and every default pack carries reproducible eval evidence, and operator config effort trends to zero while FPAR holds.
+- **E4 — Numbers.** FPAR ≥ 90% sustained on live work (not just benchmarks); harness overhead ratio (§3) ≤ 15%; the kernel's own T2 obligations fully discharged (model-checked loop, verified gate core).
+- **E5 — Evidence network.** Federated pack ledgers: packs travel with reproducible cross-org evidence, so the ecosystem is a marketplace where value is proven, not claimed.
+
+Each end-state criterion is measurable, so post-v1 roadmaps are scored against E1–E5 rather than argued from taste.
+
 ## 3. North-Star Metrics & Success Criteria
 
 Two north stars; every mechanism in this PRD must justify itself against one of them.
@@ -49,7 +61,9 @@ Two north stars; every mechanism in this PRD must justify itself against one of 
 | Metric | Definition | Direction |
 |---|---|---|
 | **FPAR** — First-Pass Acceptance Rate | % of tasks whose output is accepted with zero human corrective edits and zero re-prompts that change the requirement | ↑ |
-| **TPAC** — Tokens per Accepted Change | Total tokens (all models, all steps, including eval overhead attributable to the task) divided by accepted changes | ↓ |
+| **TPAC** — Tokens per Accepted Change | **Cost-normalized** tokens (each step's tokens weighted by the per-model unit prices recorded on the step event — raw tokens are not comparable across a routed multi-model system) across all models and steps, including eval overhead attributable to the task, divided by accepted changes | ↓ |
+
+**Task and acceptance, defined** (FPAR is meaningless without these): a **task** is the unit of routed work with lifecycle `open → in_progress → delivered → accepted | corrected | abandoned`. A delivered task is **accepted** on an explicit human approval, or on merge followed by zero corrective edits within the correction window (default 24h); any corrective edit or requirement-changing re-prompt within the window moves it to `corrected`.
 
 Secondary metrics (diagnostic, feed the improvement loop):
 
@@ -59,6 +73,7 @@ Secondary metrics (diagnostic, feed the improvement loop):
 - Eval gate pass rate for proposed improvements (too low = postmortem compiler is noisy; too high = gate may be weak)
 - Ambiguity catch rate (spec defects found by divergence testing before build vs. discovered during/after build)
 - Routing regret (estimated tokens wasted by routing to a stronger config than needed, from bandit counterfactuals)
+- Harness overhead ratio (cost-normalized tokens spent on evals, replay, and the improvement loop ÷ tokens spent on product work; capped per EVAL-7)
 
 Success criteria for v1 (measured on the maintainers' own usage plus opt-in community telemetry):
 
@@ -149,6 +164,11 @@ A **pack** is a versioned directory with a manifest, containing any subset of: s
 
 Requirements use EARS syntax. Each carries an **Obligation** — the executable check that makes the requirement testable (dogfooding §7.2: a requirement without an obligation is vague by our own definition).
 
+One requirement spans all four components:
+
+- **KERN-1.** If any kernel component fails or is unavailable, then the harness shall degrade to vanilla Claude Code behavior for the affected capability — never blocking the user's work — and shall mark affected sessions as degraded (excluded from eval computations, per TEL-5's pattern).
+  *Obligation:* fault-injection matrix — each kernel component killed in turn; the session completes, and the degraded marker is present.
+
 ### 6.1 Telemetry
 
 Turns raw session transcripts and tool logs into a structured event stream.
@@ -165,6 +185,10 @@ Turns raw session transcripts and tool logs into a structured event stream.
   *Obligation:* golden-set test — ≥ 90% classification agreement with a hand-labeled intervention corpus.
 - **TEL-5.** If telemetry capture fails during a session, then the harness shall continue the session, mark the session's records as incomplete, and exclude them from eval computations.
   *Obligation:* fault-injection test — killing the collector mid-session neither aborts the session nor lets the partial record enter a gate computation.
+- **TEL-6.** Where an OpenTelemetry exporter is configured (off by default), the telemetry component shall project sessions as traces and step events as spans over OTLP, with north-star and secondary metrics exported as OTel metrics, applying the same content-stripping rules as TEL-3 to all attributes.
+  *Obligation:* integration test — a session against an OTLP collector fixture yields one trace, one span per step with token/cost attributes, and no marker strings from planted code/path/prompt content.
+- **TEL-7.** The telemetry component shall track every task through the lifecycle defined in §3 (`open → in_progress → delivered → accepted | corrected | abandoned`), recording the acceptance signal (explicit approval, or clean merge past the correction window) that justified any `accepted` transition.
+  *Obligation:* PBT — for any generated sequence of task events, the recorded state always follows the lifecycle's legal transitions, and every `accepted` record carries a signal.
 
 ### 6.2 Eval Harness
 
@@ -188,6 +212,8 @@ The gate. Two layers — **benchmark suites** (causal, curated) and **live telem
   *Obligation:* integration test — a diff that improves benchmarks but degrades replayed real tasks is rejected.
 - **EVAL-6.** Eval suites that gate self-improvement shall be modifiable only through human-approved changes; the self-improvement loop shall have no write path to them (see LOOP-4).
   *Obligation:* permission test — a loop-originated diff targeting an eval-suite pack is rejected at the kernel boundary with an audit log entry.
+- **EVAL-7.** The harness shall cap cost-normalized spend on evals, replay, and the improvement loop at a configured fraction of productive spend (default 15%, trailing 30 days); when the cap is reached, further loop/eval work queues rather than runs, and the harness overhead ratio is reported as a first-class metric.
+  *Obligation:* simulation test — synthetic spend streams at/over the cap queue new eval work and never exceed the cap by more than one in-flight run.
 
 ### 6.3 Router
 
@@ -355,6 +381,8 @@ After each session (or batch), the **postmortem compiler** runs:
   *Obligation:* end-to-end test — apply then revert restores the exact prior lockfile hash.
 - **LOOP-3.** While a recently applied diff is within its monitoring window (default 14 days or 30 sessions, whichever is later), if live FPAR or TPAC regresses beyond the configured threshold attributable to sessions using that diff, then the harness shall auto-revert the diff and mark it quarantined.
   *Obligation:* simulation test — injected post-apply regression triggers revert within the window; quarantined diffs cannot be re-proposed without human release.
+- **LOOP-7.** Sessions shall pin their lockfile hash at session start; applied diffs shall take effect only for sessions started after the apply, so that concurrent sessions remain attributable to exactly one configuration.
+  *Obligation:* concurrency test — two overlapping sessions spanning an apply record different pinned hashes, and every telemetry event joins to exactly one lockfile.
 
 ### 9.2 State Machine (formally specified — this component is T2 by its own rules)
 
@@ -450,8 +478,32 @@ Ponytail-class rules — terse output, act-don't-narrate, no speculative abstrac
   *Obligation:* CI contribution-gate test — a PR adding a pack without reproducible eval evidence fails CI.
 - **OSS-5 Docs.** Quickstart (greenfield UC1 in < 30 minutes), brownfield adoption guide (UC4), pack-author guide (P3), and the safety/self-improvement model (§9) documented for operators (P4).
   *Obligation:* docs CI — quickstart executed end-to-end in CI against each release.
+- **OSS-6 Schema versioning.** Telemetry storage and artifact metadata schemas shall be versioned with forward migrations; every stored event carries its schema version, and eval comparisons across schema versions either migrate or refuse (never silently coerce).
+  *Obligation:* migration test — a store created at schema v1 is readable after upgrade; a cross-version eval comparison without a migration path is rejected with a diagnostic.
 
-## 14. Failure Modes & Mitigations
+## 14. Security & Isolation
+
+Two attack surfaces the rest of the PRD creates and must therefore close: **execution** (benchmarks, divergence tests, and replays run arbitrary code — including snapshots of the operator's real repos) and **packs** (packs are prompts, so a community pack is a prompt-injection vector; the eval gate measures helpfulness, not malice).
+
+### 14.1 Execution Isolation
+
+- **SEC-1.** The eval runner shall execute benchmark tasks, divergence-test implementations, and counterfactual replays only inside isolated workspaces (git worktrees at minimum; container isolation for suites not authored by the operator), with no access to the operator's live repositories, credentials, or session state.
+  *Obligation:* escape test — a fixture task that attempts to read outside its workspace, read credential paths, or write to a live repo fails with an audited violation event.
+- **SEC-2.** While executing community-authored suites or packs under evaluation, the sandbox shall deny network access except an allowlist required by the task definition.
+  *Obligation:* network test — a fixture task's non-allowlisted egress attempt is blocked and audited.
+- **SEC-3.** Every eval run shall record its sandbox profile (isolation level, network policy) in the run manifest (extends EVAL-4).
+  *Obligation:* manifest schema validation.
+
+### 14.2 Pack Supply Chain
+
+- **SEC-4.** Every pack shall declare its capabilities — which surfaces it may influence (stages, rules, routing, context assembly) — and the harness shall refuse to load a pack whose content addresses surfaces beyond its declaration.
+  *Obligation:* fixture packs exceeding their declarations are refused at load with a diagnostic naming the excess surface.
+- **SEC-5.** Community pack contributions shall pass static scanning for injection patterns (instructions targeting other packs, the gate, telemetry, or exfiltration) before entering eval, and pack releases shall be signed; the harness shall verify signatures at install.
+  *Obligation:* scanner golden set (known-injection corpus ≥ 95% caught, clean corpus false-positive rate ≤ 5%); unsigned or tampered pack install is refused.
+- **SEC-6.** No pack shall have write access to other packs, the lockfile, or kernel configuration; all pack changes flow through the proposal path (§9) or human edits.
+  *Obligation:* permission test — a pack whose content directs writes to another pack produces no such write in a full pipeline run; the attempt is audited.
+
+## 15. Failure Modes & Mitigations
 
 | Failure mode | Risk | Mitigation |
 |---|---|---|
@@ -465,17 +517,19 @@ Ponytail-class rules — terse output, act-don't-narrate, no speculative abstrac
 | **Spec-compiler false confidence** — vague clause compiles to a weak obligation | Ambiguity leaks through | SPEC-4 divergence testing as the second, independent net; ambiguity-catch-rate metric (§3) monitors the leak rate |
 | **Drift-flag fatigue** — brownfield floods of stale flags | Operators ignore drift | SPEC-7 inferred clauses alert-only; batched promotion (SPEC-8); flag volume is a tracked metric the loop may tune |
 | **Kernel bug in the gate itself** | Everything downstream unsound | Kernel is T2 on its own ladder: state machine model-checked, gate statistics unit-tested against known distributions, EVAL-4 reproducibility for post-hoc audit |
+| **Malicious or injected pack** — passes ablation while exfiltrating or weakening behavior | Compromised harness | SEC-4 capability declarations enforced at load; SEC-5 static scan + signing; SEC-6 no cross-pack writes; SEC-1/2 sandboxed evaluation with network deny |
+| **Eval sandbox escape** — benchmark/replay code reaches live repos or credentials | Data loss, credential theft | SEC-1 workspace isolation with escape tests in CI; SEC-3 auditable sandbox profiles per run |
 
-## 15. Phased Delivery & Open Questions
+## 16. Phased Delivery & Open Questions
 
 Walking skeleton first — the full loop, thin — then deepen. Each phase is release-able.
 
 - **Phase 0 — Rails.** Kernel scaffolding: telemetry capture (TEL-1/2/5), artifact store with hashing (ART-1/2), lockfile + pack format, CC plugin shell. *Exit: a session produces telemetry and traceable artifacts.*
 - **Phase 1 — Specs that bite.** Spec DSL + compiler (SPEC-1/2/3), obligation execution in verify (PIPE-8), drift detection (ART-3/4). *Exit: a vague spec is rejected; a violated invariant blocks verify.*
-- **Phase 2 — Eval tool.** Eval runner CLI, seed benchmark suite, ablation + statistical gating (EVAL-1..4, EVT-1..3). *Exit: `keel eval ablate ponytail` returns a defensible verdict.*
+- **Phase 2 — Eval tool.** Eval runner CLI with sandboxed execution (SEC-1..3), seed benchmark suite, ablation + statistical gating (EVAL-1..4, EVT-1..3). *Exit: `keel eval ablate ponytail` returns a defensible verdict from an isolated run.*
 - **Phase 3 — Routing.** Registry, default policy, escalation, budgets (RTR-1..4, CTX-4), context compiler v1 (CTX-1). *Exit: measured TPAC drop on the suite vs. Phase 2.*
 - **Phase 4 — The loop.** Postmortem compiler, TLA+ model + conformance (LOOP-1..6), counterfactual replay (EVAL-5), monitoring/revert. *Exit: S4 — one self-proposed change passes the gate and sticks.*
-- **Phase 5 — Open source.** Packaging, docs, privacy, contribution gate (OSS-1..5), divergence testing GA (SPEC-4/5), spec excavation (SPEC-7/8), bandit routing (RTR-5) — ordered within the phase by eval evidence.
+- **Phase 5 — Open source.** Packaging, docs, privacy, contribution gate (OSS-1..6), pack supply-chain security (SEC-4..6), OTel exporter (TEL-6), divergence testing GA (SPEC-4/5), spec excavation (SPEC-7/8), bandit routing (RTR-5) — ordered within the phase by eval evidence.
 
 **Open questions**
 
@@ -485,6 +539,6 @@ Walking skeleton first — the full loop, thin — then deepen. Each phase is re
 4. **Divergence-testing default scope** — T1+ only vs. all specs; ship conservative (T1+), let the eval loop earn a broader default.
 5. **Shared-telemetry aggregation** — whether an opt-in community dashboard (cross-user pack ledgers) is worth the privacy surface; revisit at Phase 5.
 
-## 16. Traceability of This Document
+## 17. Traceability of This Document
 
 This PRD's behavioral sections follow the format they mandate: EARS clauses with obligations (§6–§13). When the spec compiler exists (Phase 1), this document becomes its first excavation target: clauses TEL-* through OSS-* compile into the harness's own conformance suite, and this PRD enters the artifact store as the root of Keel's own traceability DAG.
