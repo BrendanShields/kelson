@@ -67,6 +67,7 @@ erDiagram
     }
     TRACE_LINK {
         string id PK
+        string repo "scopes both endpoints; logical_ids collide across repos"
         string upstream_id FK
         string downstream_id FK
         string upstream_hash_at_link "staleness = this != current upstream hash"
@@ -74,6 +75,7 @@ erDiagram
     }
     DRIFT_EVENT {
         string id PK "ULID, insert-then-resolve (see §2)"
+        string repo "scopes artifact_id (composite artifact key)"
         string artifact_id FK
         string direction "code_under_spec|spec_over_code|upstream_stale"
         string detected_at
@@ -83,7 +85,7 @@ erDiagram
     }
 ```
 
-Notes: clauses are addressable sub-artifacts because traceability is clause-level (ART-1/2). `TRACE_LINK` freezes the upstream hash at link time; drift detection (ART-2/3) starts from every link where `upstream_hash_at_link ≠ current content_hash` and flags that link's **entire transitive downstream set** (recursive CTE, ADR-0002), run per session and on activation. Files hold the authored content; these tables are the rebuildable index (§1).
+Notes: clauses are addressable sub-artifacts because traceability is clause-level (ART-1/2). `TRACE_LINK` freezes the upstream hash at link time; re-registering a downstream artifact **replaces** its trace links (hashes re-freeze at the new declaration) — trace_link is replace-on-register, not append-only; drift detection (ART-2/3) starts from every link where `upstream_hash_at_link ≠ current content_hash` and flags that link's **entire transitive downstream set** (recursive CTE, ADR-0002), run per session and on activation. Files hold the authored content; these tables are the rebuildable index (§1).
 
 ## 4. Domain: Packs & Change Control
 

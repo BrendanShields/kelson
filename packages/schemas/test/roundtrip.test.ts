@@ -141,6 +141,7 @@ const arbs: Record<string, [z.ZodType, fc.Arbitrary<unknown>]> = {
     TraceLink,
     fc.record({
       id: ulid,
+      repo: nonEmpty,
       upstream_id: nonEmpty,
       downstream_id: nonEmpty,
       upstream_hash_at_link: sha256,
@@ -151,6 +152,7 @@ const arbs: Record<string, [z.ZodType, fc.Arbitrary<unknown>]> = {
     DriftEvent,
     fc.record({
       id: ulid,
+      repo: nonEmpty,
       artifact_id: nonEmpty,
       direction: fc.constantFrom(
         "code_under_spec",

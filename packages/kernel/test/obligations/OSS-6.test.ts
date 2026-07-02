@@ -73,8 +73,8 @@ describe("OSS-6: versioned schemas with forward migrations, no silent coercion",
     }
     expect(() =>
       db
-        .query(`INSERT INTO drift_event (id, artifact_id, direction, detected_at)
-        VALUES ('${ulid}', 'a', 'upstream_stale', 't')`)
+        .query(`INSERT INTO drift_event (id, repo, artifact_id, direction, detected_at)
+        VALUES ('${ulid}', 'r', 'a', 'upstream_stale', 't')`)
         .run(),
     ).toThrow(/schema_version/);
     db.close();

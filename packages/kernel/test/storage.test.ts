@@ -25,8 +25,8 @@ describe("P0-3 verification: append-only event tables (ERD §2, structural)", ()
   });
   it("drift_event resolution mutates in place (the ERD §2 exception)", () => {
     db.query(
-      `INSERT INTO drift_event (id, artifact_id, direction, detected_at, schema_version)
-       VALUES ('${ulid}', 'a', 'code_under_spec', '2026-07-02T00:00:00Z', 1)`,
+      `INSERT INTO drift_event (id, repo, artifact_id, direction, detected_at, schema_version)
+       VALUES ('${ulid}', 'r', 'a', 'code_under_spec', '2026-07-02T00:00:00Z', 1)`,
     ).run();
     db.query(
       "UPDATE drift_event SET resolution = 'repaired', resolved_at = '2026-07-02T01:00:00Z'",

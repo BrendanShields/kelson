@@ -22,6 +22,9 @@
     "packages/kernel": {
       "name": "@kelson/kernel",
       "version": "0.0.1",
+      "dependencies": {
+        "@kelson/schemas": "workspace:*",
+      },
     },
     "packages/schemas": {
       "name": "@kelson/schemas",

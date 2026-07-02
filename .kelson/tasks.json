@@ -27,12 +27,13 @@
     {
       "id": "P0-4",
       "title": "Artifact store \u2014 hashing, trace links, staleness, index rebuild",
-      "state": "open",
+      "state": "completed",
       "clauses": [
         "ART-1",
         "ART-2"
       ],
-      "completed_at": null
+      "completed_at": "2026-07-02T04:59:09Z",
+      "notes": "full rebuild-from-files deferred to Phase 1 (needs DSL-6 manifest); rehashFromDisk ships now \u2014 recorded in plan doc"
     },
     {
       "id": "P0-5",

@@ -38,6 +38,7 @@ export const Artifact = z.object({
 
 export const TraceLink = z.object({
   id: Ulid,
+  repo: z.string().min(1),
   upstream_id: z.string().min(1),
   downstream_id: z.string().min(1),
   upstream_hash_at_link: Sha256,
@@ -46,6 +47,7 @@ export const TraceLink = z.object({
 
 export const DriftEvent = z.object({
   id: Ulid,
+  repo: z.string().min(1),
   artifact_id: z.string().min(1),
   direction: DriftDirection,
   detected_at: IsoUtc,

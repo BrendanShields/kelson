@@ -68,16 +68,18 @@ CREATE TABLE artifact (
 
 CREATE TABLE trace_link (
   id TEXT PRIMARY KEY,
+  repo TEXT NOT NULL,
   upstream_id TEXT NOT NULL,
   downstream_id TEXT NOT NULL,
   upstream_hash_at_link TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
-CREATE INDEX idx_trace_link_upstream ON trace_link (upstream_id);
-CREATE INDEX idx_trace_link_downstream ON trace_link (downstream_id);
+CREATE INDEX idx_trace_link_upstream ON trace_link (repo, upstream_id);
+CREATE INDEX idx_trace_link_downstream ON trace_link (repo, downstream_id);
 
 CREATE TABLE drift_event (
   id TEXT PRIMARY KEY,
+  repo TEXT NOT NULL,
   artifact_id TEXT NOT NULL,
   direction TEXT NOT NULL CHECK (direction IN ('code_under_spec', 'spec_over_code', 'upstream_stale')),
   detected_at TEXT NOT NULL,

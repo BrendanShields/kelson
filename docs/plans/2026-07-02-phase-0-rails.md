@@ -21,7 +21,7 @@ Zod schemas per ERD for Phase 0 entities: `Session`, `Task` (lifecycle enum per 
 
 ## Task 4 — Artifact store (ART-1, ART-2)
 
-`artifacts` module in kernel: SHA-256 content hashing of files under `docs/` conventions, `TRACE_LINK` recording with `upstream_hash_at_link`, transitive staleness flagging via recursive CTE (ADR-0002), `rebuildIndex()` from files (ERD §1 — SQLite disposable).
+`artifacts` module in kernel: SHA-256 content hashing of files under `docs/` conventions, `TRACE_LINK` recording with `upstream_hash_at_link`, transitive staleness flagging via recursive CTE (ADR-0002), `rebuildIndex()` from files (ERD §1 — SQLite disposable). *Scope note (P0-4 audit):* full rebuild-from-files needs the Phase 1 kelspec manifest (DSL-6) to recover upstream declarations; Phase 0 ships `rehashFromDisk` (hash refresh of indexed artifacts) and the full rebuild is discharged with DSL-6.
 **Obligation tests:** ART-1 and ART-2 PBTs over generated artifact DAGs (exactly the transitive downstream set flags on edit); index rebuild idempotence.
 
 ## Task 5 — Telemetry capture (TEL-1, TEL-2, TEL-5, TEL-7 skeleton)
