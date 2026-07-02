@@ -14,6 +14,7 @@ Open-source harness covering feedback → ideation → planning → spec → bui
 | `docs/specs/2026-07-02-eval-procedure.md` | Benchmark format, replay validity, gate math (`EVP-*`) |
 | `docs/specs/2026-07-02-routing-policy.md` | Policy/registry formats, feature vector, bandit (`RPOL-*`) |
 | `docs/specs/2026-07-02-signal-contract.md` | External signal schema (`SIG-*`) |
+| `docs/specs/2026-07-03-standalone-harness-design.md` | Native agent runtime design + phases 6–10 (clauses `AGT-*`, `PERM-*`, `SES-*`, `PROV-*` land in `agent-runtime.md` via feature-pipeline) |
 | `docs/adr/` | Decisions (0001 language/storage, 0002 no graph DB/RAG, 0003 Bun/OpenTUI/tooling) |
 
 **Spec-first rule:** behavior changes start in the spec doc, never in code. Every behavioral requirement carries an `*Obligation:*` line (its executable test). A clause without an obligation is vague by definition and will be rejected by the spec-lint hook.
@@ -22,7 +23,7 @@ Open-source harness covering feedback → ideation → planning → spec → bui
 
 ## Conventions (from ADR-0001 / ERD §2, §9)
 
-- TypeScript strict, ESM, Bun ≥ 1.3 (ADR-0003); Bun workspaces: `packages/schemas` (Zod, no internal deps) ← `kernel` ← `cli`, `cc-plugin`.
+- TypeScript strict, ESM, Bun ≥ 1.3 (ADR-0003); Bun workspaces: `packages/schemas` (Zod, no internal deps) ← `kernel` ← `agent` (native runtime, AI SDK) ← `cli`; `kernel` ← `cc-plugin`. Kernel never imports `agent` — the api executor is injected via `runEval`'s `extraExecutors` (composition in cli).
 - Zod schemas in `packages/schemas` are the single source of truth for types; validate at every storage/IO boundary. Every exported Zod schema is paired with `export type X = z.infer<typeof X>` in the same file — a value export without its type export is incomplete (postmortem: caused a TS2749 typecheck retry). Every schema *field* change updates the paired arbitrary in `packages/schemas/test/roundtrip.test.ts` in the same edit — otherwise the round-trip gate fails at gates time, not edit time (postmortem: TraceLink.downstream_hash_at_link).
 - SQLite via `bun:sqlite`, hand-written SQL, forward-only numbered migrations. No ORM.
 - ULIDs for events; SHA-256 content hashes for artifacts; money as integer micro-USD; UTC ISO-8601 strings; append-only event tables (no UPDATE). Event-stream queries order by `rowid`, never by ULID or timestamp — both tie within one millisecond (F-060, F-067).
@@ -30,7 +31,9 @@ Open-source harness covering feedback → ideation → planning → spec → bui
 - Comments: only constraints the code can't express. No narration, no doc-comments on internals.
 - **Task lists are JSON, always.** Multi-step work is tracked in `.kelson/tasks.json` (committed): `{id, title, state: open|in_progress|completed, clauses[], completed_at}` — mirror of the TEL-7 lifecycle, simplified until Phase 0 builds the real store. Mark tasks `in_progress` when started and `completed` (with timestamp) the moment they finish — never leave state stale, never use markdown checklists for tracking. Edit the board and the findings log with `bun scripts/board.mjs` (validates shape, stamps timestamps, auto-numbers finding IDs) — not hand-written JSON edits; `board.mjs task <id> <state> --title "..."` creates a task that doesn't exist yet.
 
-**Registry-before-versions rule:** never write a dependency version or tool config from memory — get versions from the registry (`npm view <pkg> version` / `bun pm view`) and scaffold configs with the tool's own init command, then edit; likewise any metadata claim about a repo file (license, version, config value) is read from that file in the same edit — the LICENSE said Apache-2.0 while README/package.json got MIT from memory (F-093). (Postmortem lesson: guessed versions and stale config syntax both failed this way.)
+**Registry-before-versions rule:** never write a dependency version or tool config from memory — get versions from the registry (`npm view <pkg> version` / `bun pm view`) and scaffold configs with the tool's own init command, then edit; likewise any metadata claim about a repo file (license, version, config value) is read from that file in the same edit — the LICENSE said Apache-2.0 while README/package.json got MIT from memory (F-093). (Postmortem lesson: guessed versions and stale config syntax both failed this way.) This extends to library APIs: AI SDK stream-part shapes, option names, and provider factory signatures are read from the installed `node_modules` `.d.ts` (or official docs) in the same edit, never recalled — the SDK has renamed stream parts across majors.
+
+**LLM-layer test rules (Phases 6–10):** provider/loop tests are fixture-based — recorded stream fixtures, never live endpoints; anything that must hit a real model runs behind an explicit flag, is quarantined out of `bun run gates`, and CI never executes it. Live smoke tests run against Ollama first (free, local); Anthropic runs use subscription quota only — never metered API-key spend without explicit approval.
 
 **Gates:** `bun run gates` runs every gate (doctor → spec-lint → kelspec-lint → typecheck → biome → test). CI runs exactly this script. Session hooks (spec-lint/kelspec-lint/typecheck on edits, cc-plugin telemetry) fire automatically — but still run `bun run gates` before every commit; hooks check single files, gates check everything. `scripts/doctor.mjs` fails on bun/CI-pin skew and writes the environment manifest to `.kelson/env.json` (proto EVP §4).
 

@@ -1,6 +1,6 @@
 ---
 name: obligation-test
-description: Compile a Kelson spec clause's *Obligation:* line into an executable test. Use whenever writing tests for this repo — any bun-test/fast-check test, any time a PRD/UX clause (TEL-*, EVAL-*, RTR-*, ART-*, SPEC-*, PIPE-*, LOOP-*, CTX-*, SEC-*, OSS-*, UX-*, DSL-*, PACK-*, EVP-*, RPOL-*, SIG-*) needs its obligation implemented, when asked to "add tests" for kernel/CLI code, or when a new clause lands via spec-sync and has no test yet. Tests in this repo are obligation tests first; don't write ad-hoc test files without checking which clause they discharge.
+description: Compile a Kelson spec clause's *Obligation:* line into an executable test. Use whenever writing tests for this repo — any bun-test/fast-check test, any time a PRD/UX clause (TEL-*, EVAL-*, RTR-*, ART-*, SPEC-*, PIPE-*, LOOP-*, CTX-*, SEC-*, OSS-*, UX-*, DSL-*, PACK-*, EVP-*, RPOL-*, SIG-*, AGT-*, PERM-*, SES-*, PROV-*) needs its obligation implemented, when asked to "add tests" for kernel/CLI code, or when a new clause lands via spec-sync and has no test yet. Tests in this repo are obligation tests first; don't write ad-hoc test files without checking which clause they discharge.
 ---
 
 # Obligation Test
