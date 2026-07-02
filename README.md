@@ -4,51 +4,59 @@
 
 > A *keelson* is the member that binds a ship's frames to its keel — the piece that fastens everything to the spine.
 
-**Status: spec-complete, pre-code.** The full specification suite is written and internally cross-checked; implementation (Phase 0) starts next. The specs are the product right now — read them, poke holes in them.
+**Status: Phases 0–5 implemented, pre-release.** Kernel, eval runner, router, self-improvement loop, and supply-chain machinery are built with every behavioral clause discharged by an obligation test (`packages/*/test/obligations/<CLAUSE-ID>.test.ts`). Nothing is published to npm or hosted anywhere yet; this repository is the source of truth.
 
 ## The idea
 
 Engineers using coding agents lose value three ways: ambiguous prompts produce rework, tokens burn on the wrong models and bloated context, and every session starts from zero — nobody can answer *"does skill X actually help?"* Kelson attacks all three structurally:
 
 - **Specs that can't be vague.** Work flows through [Kelspec](docs/specs/2026-07-02-kelspec-dsl.md), a constrained DSL where every behavioral claim must compile to an executable obligation (a property-based test or formal-model check). A claim that can't be compiled is rejected before build starts. Divergence testing — two isolated agents implementing the same spec — catches under-specification that compilation can't.
-- **A learned router.** Each SDLC step gets the cheapest model, effort level, context loadout, and agent (including your fine-tuned ones) that meets the quality bar; a conservative bandit tunes the policy from verified outcomes.
-- **Eval-gated self-improvement.** A postmortem compiler mines each session for friction and proposes configuration diffs. Nothing applies without passing statistical gating (paired bootstrap over benchmark suites + counterfactual replay of your real sessions), and live regressions auto-revert. The loop can never modify the kernel, the eval suites, or its own safety thresholds — the evaluator does not grade its own homework.
+- **A learned router.** Each SDLC step gets the cheapest model, effort level, context loadout, and agent (including your fine-tuned ones) that meets the quality bar; a conservative bandit (T0-only, downward-only exploration) tunes the policy from verified outcomes.
+- **Eval-gated self-improvement.** A postmortem compiler mines each session for friction and proposes configuration diffs with machine-checkable evidence links. Nothing applies without passing statistical gating (paired bootstrap over benchmark suites + counterfactual replay of your real sessions), and live regressions auto-revert. The loop can never modify the kernel, the gating suites, or its own safety thresholds — the evaluator does not grade its own homework. The state machine is specified in TLA+ and model-checked in CI.
 
-Everything the system can change about itself is a versioned, evaluable, revertible **pack**. That makes ablation free: `kelson eval ablate <pack>` answers "is this skill/MCP/agent/rule worth it?" with effect sizes and confidence intervals, not vibes.
+## Quickstart (greenfield, < 30 minutes)
 
-**North stars:** First-Pass Acceptance Rate (FPAR ↑) and cost-normalized Tokens per Accepted Change (TPAC ↓).
+<!-- quickstart-ci: the docs CI executes exactly these commands -->
+
+```bash
+# 1. Install (from a checkout, until the npm release)
+bun install
+
+# 2. Initialize a project — creates .kelson/, a starter lockfile, and layers
+#    Claude Code hooks non-destructively
+bun packages/cli/src/index.ts init
+
+# 3. See how a step would route (model, effort, budget, escalation ladder)
+bun packages/cli/src/index.ts route explain --step build --tier T0 --task-type mechanical
+
+# 4. Ask the improvement loop what it would change (proposals need evidence)
+bun packages/cli/src/index.ts loop propose
+bun packages/cli/src/index.ts loop status
+```
+
+From there: write a kelspec (`docs/kelspec/<component>.spec.md`) and the compiler turns every clause into an executable obligation, every domain into a property-based generator, and every T1+ invariant into a runtime probe plus a TLA+ CI obligation.
+
+## The distinctive mechanic: evidence over taste
+
+Every togglable piece of configuration — skills, rules, routing tables, agents — is a **pack**, pinned in `kelson.lock`. Packs earn their place with `kelson eval ablate <pack>`: a paired, sandboxed, statistically-gated A/B over a benchmark suite, producing a four-way verdict (`helps / hurts / no_effect / underpowered`) with effect sizes and confidence intervals — never a bare pass/fail. Community packs merge on reproducible eval evidence (OSS-4), not maintainer taste; results live in the in-repo [ledger](ledger/).
 
 ## Documentation
 
-| Document | Owns |
-|---|---|
-| [PRD](docs/specs/2026-07-02-agent-harness-prd.md) | Requirements (EARS clauses with executable obligations), metrics, end state, security model, phases |
-| [ERD](docs/specs/2026-07-02-agent-harness-erd.md) | Data model, storage tiers, OTel projection |
-| [UX & journeys](docs/specs/2026-07-02-agent-harness-ux.md) | Command surface, user journeys, TUI legibility rules |
-| [Kelspec DSL](docs/specs/2026-07-02-kelspec-dsl.md) | The spec grammar and compile-to-obligation rules |
-| [Pack format](docs/specs/2026-07-02-pack-format.md) | Pack layout, capabilities, signing, lockfile, registry |
-| [Eval procedure](docs/specs/2026-07-02-eval-procedure.md) | Benchmark format, replay validity, the gate math |
-| [Routing policy](docs/specs/2026-07-02-routing-policy.md) | Policy grammar, feature vector, escalation, bandit rules |
-| [Signal contract](docs/specs/2026-07-02-signal-contract.md) | The JSON schema external systems implement to feed the loop |
-| [ADRs](docs/adr/) | 0001 language/storage · 0002 no graph DB, no vector RAG · 0003 Bun/OpenTUI tooling |
-| [Phase 0 plan](docs/plans/2026-07-02-phase-0-rails.md) | First implementation milestone |
+- [Privacy policy](docs/PRIVACY.md) — local-first; shared telemetry is structurally free-text-free
+- [Pack author guide](docs/guides/pack-author.md)
+- [Safety & self-improvement model](docs/guides/safety-model.md)
+- [Brownfield adoption](docs/guides/brownfield.md)
+- Spec suite: `docs/specs/` — the PRD/ERD/DSL documents are the system's contract
 
-The PRD practices what it preaches: every requirement is an EARS clause carrying an `*Obligation:*` line naming its executable test, enforced by a lint hook in this repo. When the spec compiler exists (Phase 1), the PRD becomes its own first compilation target.
+## Development
 
-## Stack
+```bash
+bun install
+bun run gates   # doctor → spec-lint → kelspec-lint → typecheck → biome → test
+```
 
-TypeScript on **Bun** · [OpenTUI](https://github.com/sst/opentui) terminal UI · `bun:sqlite` + git-tracked files (local-first; SQLite index rebuildable from files) · Zod schemas as single source of truth · fast-check for property-based obligations · TLA+ (TLC in CI) for the self-improvement state machine · OpenTelemetry projection for observability. V1 ships as a Claude Code plugin plus a standalone `kelson` CLI (compiled binary — end users install no runtime). Full rationale in [ADR-0003](docs/adr/0003-runtime-and-tooling.md).
-
-## Roadmap
-
-Walking skeleton first, then deepen — each phase releasable ([PRD §16](docs/specs/2026-07-02-agent-harness-prd.md)):
-
-**0 · Rails** telemetry + traceable artifacts → **1 · Specs that bite** Kelspec compiler, drift detection → **2 · Eval tool** sandboxed runner, statistical gating → **3 · Routing** learned policy, context compiler, budgets → **4 · The loop** postmortem compiler, TLA+-checked self-improvement → **5 · Open source** packaging, pack registry, contribution gate.
-
-## Contributing
-
-Not yet accepting code (pre-Phase-0), but spec review is contribution: file an issue against any clause you can read two ways — ambiguity reports are exactly what this project exists to eliminate. Once the registry opens, community packs merge on evidence: a reproducible eval run showing the pack helps, not maintainer taste.
+CI runs exactly `bun run gates`, plus TLC model-checking of the loop state machine, the changelog append-only check, and the pack contribution gate.
 
 ## License
 
-[Apache-2.0](LICENSE)
+Apache-2.0

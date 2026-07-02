@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "pack": "routing-default",
+  "version": "0.1.0",
+  "run_manifest_hash": "sha256:13910a0b02c17b90318629b0d545f6f43c9bd44cec354e97b376cb94ac3578a1",
+  "suite": "seed@1",
+  "verdict": "underpowered",
+  "fpar_delta": {
+    "mean": 0,
+    "ci95": [
+      0,
+      0
+    ]
+  },
+  "cost_delta_pct": {
+    "mean": -26.42181511692816,
+    "ci95": [
+      -37.631253213069826,
+      -16.193089776204925
+    ]
+  },
+  "n": 6,
+  "date": "2026-07-02T12:47:42.234Z"
+}

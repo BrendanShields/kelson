@@ -24,6 +24,11 @@ const SPAWN_PATTERNS = [/from\s+["'](node:)?child_process["']/, /Bun\.spawn\b/];
 
 const SPAWN_ALLOWED = new Set(["sandbox.ts", "snapshots.ts"]);
 
+// TEL-6 is TEL-2's sanctioned opt-in: otel.ts performs network IO only when
+// the caller supplies an endpoint; nothing calls it ambiently. The scan
+// exempts exactly that file — everywhere else the ban stands.
+const NETWORK_ALLOWED = new Set(["otel.ts"]);
+
 const sourceFiles = (dir: string): string[] =>
   readdirSync(dir, { recursive: true })
     .map(String)
@@ -40,7 +45,9 @@ describe("TEL-2: telemetry has no off-machine path unless explicitly opted in", 
     expect(files.length).toBeGreaterThan(0);
     for (const file of files) {
       const src = readFileSync(file, "utf8");
-      for (const pattern of NETWORK_PATTERNS) expect(src).not.toMatch(pattern);
+      if (![...NETWORK_ALLOWED].some((f) => file.endsWith(`/${f}`)))
+        for (const pattern of NETWORK_PATTERNS)
+          expect(src).not.toMatch(pattern);
       if (![...SPAWN_ALLOWED].some((f) => file.endsWith(`/${f}`)))
         for (const pattern of SPAWN_PATTERNS) expect(src).not.toMatch(pattern);
     }

@@ -54,8 +54,25 @@ description: One line.
 | Entry added, entry content changed with same surface | **minor** |
 | Typo/metadata-only (no content-hash change to entries) | **patch** |
 
-- **PACK-3.** `kelson pack lint` shall compute the required bump by diffing manifests and entry hashes against the previous published version and shall fail CI when the declared version bump is lower than required.
+- **PACK-3.** `kelson pack lint` shall compute the required bump by diffing manifests and entry hashes against the previous published version — capabilities or kind changed → major; any content hash changed → minor; manifest-metadata-only → patch — and shall fail CI when the declared version bump is lower than required.
   *Obligation:* fixture pairs per table row — each change class yields the required bump; an under-bumped fixture fails.
+
+## 3.1 Capability surfaces (normative for SEC-4)
+
+"Content addresses a surface" is decided by **path prefix only** — file contents are never inspected (a rules file that *talks about* routing cannot *influence* routing through any harness mechanism; text-sniffing would make loading nondeterministic across wording):
+
+| Path prefix | Surface |
+|---|---|
+| `routing/**` | `routing-table` |
+| `agents/**` | `agent-registry` |
+| `rules/**` | `rules` |
+| `suites/**` | `eval-suite` |
+| `context/**` | `context-assembly` |
+| `stages/<name>/**` | `stage:<name>` (name must be in the closed stage set; unknown names can never be declared, so they can never load) |
+| `README.md`, `LICENSE`, `CHANGELOG.md`, `docs/**` | no surface (documentation allowlist — invisible to the check) |
+| anything else | **refused fail-closed** (PACK-1): an unmappable path is an unknown surface |
+
+Declared capabilities are a **ceiling**: declared-but-absent content is legal (an empty pack with `capabilities: []` is valid and inert). Excess = addressed − declared; non-empty excess refuses the load **atomically** with a diagnostic naming every excess surface and one example path each. (Pinned after divergence testing: both blind readers converged on exactly this table.)
 
 ## 4. Lockfile (`kelson.lock`, in the target repo, git-tracked)
 

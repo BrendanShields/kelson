@@ -1,8 +1,9 @@
 #!/usr/bin/env bun
-import { readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   applyProposal,
+  bumpSatisfies,
   compileProposals,
   createProposal,
   DEFAULT_DB_PATH,
@@ -10,6 +11,7 @@ import {
   evaluateGate,
   extractFeatures,
   getProposal,
+  loadPack,
   loadPolicy,
   loadRegistry,
   loadSuite,
@@ -19,6 +21,7 @@ import {
   promoteTask,
   readChangelog,
   releaseQuarantined,
+  requiredBump,
   resolveRule,
   revertProposal,
   runEval,
@@ -434,8 +437,91 @@ const loopCommand = (argv: string[]): void => {
   }
 };
 
+// OSS-1: one-command install — creates .kelson, a starter lockfile, and
+// layers hooks into .claude/settings.json non-destructively (existing hooks
+// and settings are preserved; ours append only if absent).
+const initCommand = (argv: string[]): void => {
+  const { named } = parseArgs(argv);
+  const root = str(named.dir, process.cwd());
+
+  mkdirSync(join(root, ".kelson", "telemetry"), { recursive: true });
+  mkdirSync(join(root, ".claude", "hooks"), { recursive: true });
+
+  const lockPath = join(root, "kelson.lock");
+  if (!existsSync(lockPath)) {
+    writeFileSync(
+      lockPath,
+      `${JSON.stringify({ schema_version: 1, parent_hash: null, entries: [] }, null, 2)}\n`,
+    );
+    console.log("created kelson.lock");
+  } else console.log("kelson.lock exists — left untouched");
+
+  const settingsPath = join(root, ".claude", "settings.json");
+  const settings = existsSync(settingsPath)
+    ? (JSON.parse(readFileSync(settingsPath, "utf8")) as Record<
+        string,
+        unknown
+      >)
+    : {};
+  const hooks = (settings.hooks ?? {}) as Record<
+    string,
+    { hooks: { type: string; command: string }[] }[]
+  >;
+  const ensure = (event: string, command: string) => {
+    hooks[event] ??= [];
+    const flat = hooks[event].flatMap((h) => h.hooks.map((x) => x.command));
+    if (!flat.some((c) => c.includes(command.split("/").pop() as string))) {
+      hooks[event].push({ hooks: [{ type: "command", command }] });
+      console.log(`hooked ${event}`);
+    } else console.log(`${event} hook exists — left untouched`);
+  };
+  ensure(
+    "SessionStart",
+    'bun "$CLAUDE_PROJECT_DIR/node_modules/kelson/../cc-plugin/hooks/session-start.ts"',
+  );
+  ensure(
+    "SessionEnd",
+    'bun "$CLAUDE_PROJECT_DIR/node_modules/kelson/../cc-plugin/hooks/session-end.ts"',
+  );
+  settings.hooks = hooks;
+  writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
+  const db = openDb(join(root, ".kelson", "kelson.db"));
+  db.close();
+  console.log(
+    "kelson initialized: .kelson store ready, hooks layered, lockfile pinned",
+  );
+};
+
+// PACK-3: kelson pack lint — required bump from diffing against the
+// previous version's directory; declared bump below required exits 1.
+const packCommand = (argv: string[]): void => {
+  const { positional, named } = parseArgs(argv);
+  const sub = positional[0];
+  if (sub !== "lint") die("usage: kelson pack lint <dir> --prev <dir>");
+  const dir =
+    positional[1] ?? die("usage: kelson pack lint <dir> --prev <dir>");
+  const prevDir =
+    typeof named.prev === "string" ? named.prev : die("--prev <dir> required");
+  const next = loadPack(dir as string);
+  const prev = loadPack(prevDir);
+  const required = requiredBump(prev, next);
+  const declared = { prev: prev.manifest.version, next: next.manifest.version };
+  if (!bumpSatisfies(declared, required))
+    die(
+      `pack lint (PACK-3): required bump "${required}" but ${declared.prev} -> ${declared.next} does not satisfy it`,
+    );
+  console.log(
+    `pack lint: ok — required "${required}", declared ${declared.prev} -> ${declared.next}`,
+  );
+};
+
 const [cmd, ...rest] = process.argv.slice(2);
 if (cmd === "eval") evalCommand(rest);
 else if (cmd === "route") routeCommand(rest);
 else if (cmd === "loop") loopCommand(rest);
-else die(`unknown command: ${cmd ?? "(none)"} (have: eval, route, loop)`);
+else if (cmd === "init") initCommand(rest);
+else if (cmd === "pack") packCommand(rest);
+else
+  die(
+    `unknown command: ${cmd ?? "(none)"} (have: init, eval, route, loop, pack)`,
+  );

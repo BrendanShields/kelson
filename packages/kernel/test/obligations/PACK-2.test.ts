@@ -2,7 +2,14 @@ import { describe, expect, it } from "bun:test";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { hashPackContent, verifyPackContent } from "../../src/packs.ts";
+import {
+  hashPackContent,
+  loadPack,
+  verifyPackContent,
+  verifyPackSignature,
+} from "../../src/packs.ts";
+import { generatePackKeys, signPack } from "../../src/supply.ts";
+import { makePack } from "./SEC-4.test.ts";
 
 const FILES: Record<string, string> = {
   "pack.yaml": "schema_version: 1\nname: fixture\n",
@@ -19,7 +26,7 @@ const writePack = (files: Record<string, string>): string => {
   return dir;
 };
 
-describe("PACK-2 (partial): one flipped byte in any file fails install", () => {
+describe("PACK-2: hash + Ed25519 signature verified at install; unsigned installs are untrusted", () => {
   it("verify passes on untampered content and refuses after any single-byte flip", () => {
     const dir = writePack(FILES);
     const expected = hashPackContent(dir);
@@ -50,5 +57,32 @@ describe("PACK-2 (partial): one flipped byte in any file fails install", () => {
     expect(hashPackContent(a)).not.toBe(hashPackContent(b));
   });
 
-  it.todo("Ed25519 signature verified against the registry-published key; --unsigned flags telemetry (registry keys, Phase 5)", () => {});
+  it("Ed25519: signed pack verifies; tampered, unsigned, or wrong-key installs are refused", () => {
+    const { publicKeyPem, privateKeyPem } = generatePackKeys();
+    const dir = makePack(["rules"], { "rules/a.md": "be terse" });
+    expect(() => verifyPackSignature(dir, publicKeyPem)).toThrow(/unsigned/);
+    signPack(dir, privateKeyPem);
+    verifyPackSignature(dir, publicKeyPem); // no throw
+    writeFileSync(join(dir, "rules/a.md"), "be terse (tampered)");
+    expect(() => verifyPackSignature(dir, publicKeyPem)).toThrow(
+      /signature verification failed/,
+    );
+    const other = generatePackKeys();
+    writeFileSync(join(dir, "rules/a.md"), "be terse");
+    expect(() => verifyPackSignature(dir, other.publicKeyPem)).toThrow(
+      /signature verification failed/,
+    );
+  });
+
+  it("--unsigned loads carry the untrusted flag; signed loads do not", () => {
+    const { publicKeyPem, privateKeyPem } = generatePackKeys();
+    const dir = makePack(["rules"], { "rules/a.md": "x" });
+    expect(loadPack(dir, { signature: "unsigned" }).untrusted).toBe(true);
+    signPack(dir, privateKeyPem);
+    expect(loadPack(dir, { signature: { publicKeyPem } }).untrusted).toBe(
+      false,
+    );
+    // Telemetry-event propagation of the flag is a recorded deferral
+    // (needs install/session wiring) — see the findings ledger.
+  });
 });

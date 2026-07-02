@@ -35,15 +35,22 @@ export const evaluateFlakiness = (
     for (const config of args.configs) {
       const rows = db
         .query(
-          `SELECT r.fpar_pass FROM eval_task_result r
+          `SELECT r.fpar_pass, r.schema_version FROM eval_task_result r
              JOIN eval_run er ON er.id = r.run_id
             WHERE r.bench_task_id = ?
               AND ((r.side = 'A' AND er.config_a = ?) OR (r.side = 'B' AND er.config_b = ?))
             ORDER BY er.started_at DESC, r.repeat_index DESC
             LIMIT ?`,
         )
-        .all(task.id, config, config, k) as { fpar_pass: number }[];
+        .all(task.id, config, config, k) as {
+        fpar_pass: number;
+        schema_version: number;
+      }[];
       if (rows.length < k) continue;
+      if (new Set(rows.map((r) => r.schema_version)).size > 1)
+        throw new Error(
+          `cross-schema-version flakiness window refused (OSS-6): task ${task.id} — migrate or re-run`,
+        );
       const window = rows.reverse().map((r) => r.fpar_pass === 1);
       const passes = window.filter(Boolean).length;
       const minority = Math.min(passes, k - passes);

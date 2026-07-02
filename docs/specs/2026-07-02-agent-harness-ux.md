@@ -36,6 +36,7 @@
 **CLI:**
 
 - `kelson init` — install/onboard (J0).
+- `kelson pack lint|new` — pack authoring: version-bump lint (PACK-3) and scaffolding (J5).
 - `kelson eval ablate|compare|replay|report|suite|publish` — the eval tool (PRD §10); `publish` writes the ledger entry for a completed run (EVT-3/EVP-6).
 - `kelson loop propose|status|review|gate|approve|reject|apply|release|revert` — improvement-loop operations (J4).
 - `kelson route explain <task>` — routing transparency (PRD §11).
@@ -50,7 +51,7 @@ Format: trigger → numbered touchpoints (**what the user does / sees**) → suc
 
 ### J0 — Onboarding (any persona; OSS-5: < 30 minutes to first value)
 
-1. `npx kelson init` → detects Claude Code, existing config, repo type (greenfield/brownfield); shows a plan panel of what it will install (plugin, CLI, local store) and **changes nothing until confirmed**.
+1. `npx kelson init` → detects Claude Code, existing config, repo type (greenfield/brownfield); shows a plan panel of what it will install (plugin, CLI, local store) and **changes nothing until confirmed (TUI journey; the plain CLI form `kelson init` is non-interactive: it prints each action as it is taken, is idempotent, and never overwrites existing config — the non-destructive guarantee is the same, the confirmation panel is TUI-only)**.
 2. Confirmation → installs, runs a 60-second self-check (telemetry round-trip, sandbox availability), prints a "first steps" panel: greenfield → *run `/kelson:feature`*; brownfield → *run excavation (J2)*.
 3. First session shows the statusline segment — the only visible change to normal Claude Code use.
 

@@ -8,6 +8,8 @@ import {
   Lockfile,
   PackManifest,
   Session,
+  SharedSessionEvent,
+  SharedStepEvent,
   StepEvent,
   Task,
   TraceLink,
@@ -33,6 +35,47 @@ const semver = fc
 const count = fc.integer({ min: 0, max: 1_000_000 });
 
 const arbs: Record<string, [z.ZodType, fc.Arbitrary<unknown>]> = {
+  SharedStepEvent: [
+    SharedStepEvent,
+    fc.record({
+      id: ulid,
+      session_id: ulid,
+      sdlc_step: fc.constantFrom(
+        "feedback",
+        "ideation",
+        "planning",
+        "spec",
+        "build",
+        "verify",
+      ),
+      model: fc.constantFrom(
+        "claude-sonnet-5",
+        "claude-haiku-4-5",
+        "gemma4:e4b",
+      ),
+      effort: fc.constantFrom("low", "medium", "high"),
+      tokens_in: count,
+      tokens_out: count,
+      tokens_cache_read: count,
+      tokens_cache_write: count,
+      cost_micro_usd: count,
+      budget_tokens: fc.integer({ min: 1, max: 1_000_000 }),
+      overrun: fc.constantFrom("none", "soft", "paused"),
+      schema_version: fc.integer({ min: 1, max: 99 }),
+    }),
+  ],
+  SharedSessionEvent: [
+    SharedSessionEvent,
+    fc.record({
+      id: ulid,
+      status: fc.constantFrom("complete", "incomplete", "degraded"),
+      step_count: fc.integer({ min: 0, max: 100000 }),
+      total_cost_micro_usd: count,
+      started_at: isoUtc,
+      ended_at: fc.option(isoUtc, { nil: null }),
+      schema_version: fc.integer({ min: 1, max: 99 }),
+    }),
+  ],
   Session: [
     Session,
     fc.record({

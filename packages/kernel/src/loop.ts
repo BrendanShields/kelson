@@ -464,7 +464,7 @@ export const evaluateGate = (
   const side = args.candidateSide;
   const rows = db
     .query(
-      "SELECT bench_task_id, side, fpar_pass, cost_micro_usd FROM eval_task_result WHERE run_id = ? ORDER BY rowid",
+      "SELECT bench_task_id, side, fpar_pass, cost_micro_usd, schema_version FROM eval_task_result WHERE run_id = ? ORDER BY rowid",
     )
     .all(args.runId) as {
     bench_task_id: string;
@@ -472,6 +472,13 @@ export const evaluateGate = (
     fpar_pass: number;
     cost_micro_usd: number;
   }[];
+  const versions = new Set(
+    rows.map((r) => (r as { schema_version?: number }).schema_version ?? 1),
+  );
+  if (versions.size > 1)
+    throw new Error(
+      `cross-schema-version eval comparison refused (OSS-6): task results carry versions ${[...versions].join(", ")} — migrate or re-run; never silently coerce`,
+    );
   const byTask = new Map<string, { A: typeof rows; B: typeof rows }>();
   for (const r of rows) {
     const acc = byTask.get(r.bench_task_id) ?? { A: [], B: [] };

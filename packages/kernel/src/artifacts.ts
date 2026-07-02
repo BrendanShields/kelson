@@ -30,7 +30,9 @@ export const registerArtifact = (db: Database, a: RegisterArtifact): string => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT (repo, logical_id) DO UPDATE SET
          type = excluded.type, content_hash = excluded.content_hash,
-         authority = excluded.authority, tier = excluded.tier, updated_at = excluded.updated_at`,
+         authority = excluded.authority, tier = excluded.tier,
+         updated_at = CASE WHEN artifact.content_hash = excluded.content_hash
+                           THEN artifact.updated_at ELSE excluded.updated_at END`,
     ).run(
       a.repo,
       a.logical_id,

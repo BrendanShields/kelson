@@ -474,6 +474,122 @@
       ],
       "completed_at": "2026-07-02T12:09:31Z",
       "notes": "S4 machinery demonstrated end-to-end on real evidence: compiler mined the fresh hurts ledger entry -> evidence-linked proposal 01KWHB8V.. -> pre-gate re-check -> candidate-side gate returned no_effect + replay veto -> auto-approval structurally refused -> human-confirmed rejection recorded. TLC model-checked locally (114k states, 0 violations). S4-the-metric (applied change surviving 30d) correctly awaits evidence that passes the gate"
+    },
+    {
+      "id": "P5-1",
+      "title": "bandit routing — epsilon-greedy updater, weight-only write surface",
+      "state": "completed",
+      "clauses": [
+        "RTR-5",
+        "RPOL-4"
+      ],
+      "completed_at": "2026-07-02T12:39:14Z"
+    },
+    {
+      "id": "P5-2",
+      "title": "TEL-3 content stripping + shared-telemetry schema (OSS-2)",
+      "state": "completed",
+      "clauses": [
+        "TEL-3",
+        "OSS-2"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-3",
+      "title": "TEL-6 OTel exporter (opt-in, content-stripped, OTLP fixture test)",
+      "state": "completed",
+      "clauses": [
+        "TEL-6"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-4",
+      "title": "SEC-4 capability enforcement at pack load",
+      "state": "completed",
+      "clauses": [
+        "SEC-4"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-5",
+      "title": "PACK-2 Ed25519 signing + SEC-5 injection scanner + PACK-3 version-bump lint",
+      "state": "completed",
+      "clauses": [
+        "PACK-2",
+        "PACK-3",
+        "SEC-5"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-6",
+      "title": "SEC-6 pack write-isolation permission test + audit",
+      "state": "completed",
+      "clauses": [
+        "SEC-6"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-7",
+      "title": "OSS-3/OSS-6 versioning + migration/upgrade-path tests + cross-version refusal",
+      "state": "completed",
+      "clauses": [
+        "OSS-3",
+        "OSS-6"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-8",
+      "title": "OSS-1 kelson init packaging (non-destructive, npm pack dry-run only — NO publish)",
+      "state": "completed",
+      "clauses": [
+        "OSS-1"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-9",
+      "title": "OSS-2 PRIVACY.md + OSS-5 docs (quickstart/pack-author/safety) + docs CI",
+      "state": "completed",
+      "clauses": [
+        "OSS-2",
+        "OSS-5"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-10",
+      "title": "OSS-4 contribution gate CI (pack PRs need ledger + manifest)",
+      "state": "completed",
+      "clauses": [
+        "OSS-4"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-11",
+      "title": "SPEC-4/5 divergence GA — two-agent tester + build block",
+      "state": "completed",
+      "clauses": [
+        "SPEC-4",
+        "SPEC-5"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-12",
+      "title": "SPEC-7/8 excavation — inferred clauses + promotion queue",
+      "state": "completed",
+      "clauses": [
+        "SPEC-7",
+        "SPEC-8"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
     }
   ]
 }

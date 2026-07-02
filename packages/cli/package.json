@@ -1,6 +1,6 @@
 {
-  "name": "@kelson/cli",
-  "version": "0.0.1",
+  "name": "kelson",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
   "exports": {
@@ -12,5 +12,10 @@
   "dependencies": {
     "@kelson/kernel": "workspace:*",
     "@kelson/schemas": "workspace:*"
-  }
+  },
+  "description": "Self-improving, token-efficient engineering harness: executable specs, evidence-gated config, statistical evals",
+  "license": "Apache-2.0",
+  "files": [
+    "src"
+  ]
 }

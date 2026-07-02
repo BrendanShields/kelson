@@ -5,4 +5,5 @@ export * from "./loop.ts";
 export * from "./packs.ts";
 export * from "./routing.ts";
 export * from "./scalars.ts";
+export * from "./shared.ts";
 export * from "./telemetry.ts";

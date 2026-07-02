@@ -15,10 +15,29 @@ jobs:
       - run: bun install --frozen-lockfile
       - name: gates (doctor, spec-lint, kelspec-lint, typecheck, biome, test)
         run: bun run gates
+      - name: contribution gate (OSS-4)
+        run: node scripts/contribution-check.mjs
+      - name: quickstart end-to-end + clean init + npm pack dry-run (OSS-1/OSS-5)
+        run: node scripts/quickstart-check.mjs
+      - name: pack version-bump lint (PACK-3)
+        run: |
+          git fetch origin main
+          bun scripts/pack-bump-check.mjs "$(git merge-base origin/main HEAD)"
       - name: changelog append-only (PACK-5)
         run: |
           git fetch origin main
           node scripts/changelog-check.mjs "$(git merge-base origin/main HEAD)"
+
+  install-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - run: bun install --frozen-lockfile
+      - name: clean-machine install test (OSS-1, macOS half)
+        run: node scripts/quickstart-check.mjs
 
   tlc:
     # LOOP-5/DSL-5: the loop state machine model-checks in CI (TLC).

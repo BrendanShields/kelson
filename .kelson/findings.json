@@ -1211,6 +1211,216 @@
       "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-085"
+    },
+    {
+      "task": "P5-11",
+      "source": "divergence",
+      "severity": "warning",
+      "clauses": [
+        "SPEC-4",
+        "DSL-7"
+      ],
+      "summary": "SPEC-4 admitted opposite float-comparison rules (harness epsilon vs bit-exact) and two invented interface contracts (kelspec declares no functions)",
+      "root_cause": "spec_gap",
+      "fix": "DSL-7 + kelspec §5 pin per-clause harness exports, bit-exact comparison (spec licenses imprecision only via domains/nondeterministic), spec-hash seeding, obligation gate",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-086"
+    },
+    {
+      "task": "P5-4",
+      "source": "divergence",
+      "severity": "warning",
+      "clauses": [
+        "SEC-4"
+      ],
+      "summary": "SEC-4 surface-addressing was unspecified — both readers convergently invented the same path-prefix table, which was recorded nowhere",
+      "root_cause": "spec_gap",
+      "fix": "pack-format §3.1 pins the path-prefix table, ceiling semantics, atomic refusal",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-087"
+    },
+    {
+      "task": "P5-1",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "RPOL-4"
+      ],
+      "summary": "promotionCandidate 50-consecutive streak was fake — recent.every() re-evaluated the same point-in-time weights, empirically returning true after 49 straight failures",
+      "root_cause": "design_bug",
+      "fix": "real chronological EMA replay over both arms; margin must hold after each of the last 50 outcomes; late-crosser obligation fixture added",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-088"
+    },
+    {
+      "task": "P5-4",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "SEC-4"
+      ],
+      "summary": "docs allowlist regex unanchored — README.mdx, LICENSE-evil.sh, CHANGELOG.mdfoo/ bypassed fail-closed refusal",
+      "root_cause": "design_bug",
+      "fix": "anchored exact-match set plus docs/ prefix; near-miss fixtures added",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-089"
+    },
+    {
+      "task": "P5-12",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "SPEC-8"
+      ],
+      "summary": "survival clock reset on identical-content re-registration (updated_at bumped unconditionally) and session count ignored repo",
+      "root_cause": "design_bug",
+      "fix": "updated_at conditional on content-hash change; repo-filtered session count; identical-reingest fixture",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-090"
+    },
+    {
+      "task": "P5-5",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "PACK-3"
+      ],
+      "summary": "metadata-only->patch row unimplementable (manifest inside content hash) and kelson pack lint + CI enforcement did not exist",
+      "root_cause": "spec_gap",
+      "fix": "entries_hash split from content_hash; patch fixture; kelson pack lint CLI; scripts/pack-bump-check.mjs in CI vs merge base",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-091"
+    },
+    {
+      "task": "P5-5",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "PACK-2"
+      ],
+      "summary": "PACK-2 obligation test stale ((partial) + it.todo) while Ed25519 landed elsewhere; untrusted flag unimplemented",
+      "root_cause": "test_blindspot",
+      "fix": "PACK-2.test.ts owns the signature suite; loadPack signature option returns untrusted; telemetry-event propagation of the flag recorded here as a deferral (needs install/session wiring)",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-092"
+    },
+    {
+      "task": "P5-9",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [],
+      "summary": "README/package.json declared MIT while LICENSE is Apache-2.0 — a license switch smuggled into an implementation diff",
+      "root_cause": "unverified_claim",
+      "fix": "reverted to Apache-2.0 (registry-before-versions rule: read the LICENSE file, not memory)",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-093"
+    },
+    {
+      "task": "P5-5",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "SEC-5"
+      ],
+      "summary": "scanner missed the canonical Ignore-all-previous-instructions string, leaving exactly 19/20 = 0.95 — threshold margin fully consumed at baseline",
+      "root_cause": "test_blindspot",
+      "fix": "regex accepts stacked qualifiers ((all|previous|prior)\\s+)*; 20/20 with margin restored",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-094"
+    },
+    {
+      "task": "P5-11",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "DSL-7"
+      ],
+      "summary": "DSL-7 fixture rows discharged via gate-stripped {...spec, clauses: []} casts — unreachable through the production API",
+      "root_cause": "spec_gap",
+      "fix": "probeImplementations exposed as the sanctioned gate-free stage (spec amended); test uses it, casts gone",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-095"
+    },
+    {
+      "task": "P5-3",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "TEL-6"
+      ],
+      "summary": "TEL-6 metrics half (north-star/secondary as OTel metrics) unimplemented — traces/spans only",
+      "root_cause": "unrecorded_deferral",
+      "fix": "deferral recorded here: metrics export lands when FPAR/TPAC aggregation queries exist as kernel functions",
+      "fix_commit": null,
+      "status": "open",
+      "id": "F-096"
+    },
+    {
+      "task": "P5-8",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "OSS-1"
+      ],
+      "summary": "OSS-1 obligation names macOS + Linux; CI was ubuntu-only; UX J0 confirm-panel contract not honored by the CLI form",
+      "root_cause": "spec_gap",
+      "fix": "macos-latest install job added; UX J0 amended: plan-panel confirm is TUI-only, CLI form is non-interactive + idempotent + non-destructive",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-097"
+    },
+    {
+      "task": "P5-9",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "OSS-5"
+      ],
+      "summary": "operator docs referenced nonexistent commands (kelson drift promote, kelson pack lint)",
+      "root_cause": "unverified_claim",
+      "fix": "pack lint now exists; drift promote marked as shipping with the TUI",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-098"
+    },
+    {
+      "task": "P5-7",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "OSS-6",
+        "OSS-2"
+      ],
+      "summary": "flaky window read historical results without schema-version check; shared schemas lacked paired round-trip arbitraries",
+      "root_cause": "test_blindspot",
+      "fix": "flakiness window refuses mixed versions; SharedStepEvent/SharedSessionEvent arbitraries added",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-099"
+    },
+    {
+      "task": "P5-12",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "SPEC-8"
+      ],
+      "summary": "identical-reingest fixture was vacuous — 2099 fixture sessions vs wall-clock updated_at meant even the regressed unconditional bump passed (verification-independence rule, F-031 class)",
+      "root_cause": "test_blindspot",
+      "fix": "direct column assertion: updated_at byte-identical across identical re-ingest, moves on content change",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-100"
     }
   ]
 }

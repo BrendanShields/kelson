@@ -384,8 +384,25 @@ erDiagram
     ROUTING_WEIGHT {
         string policy_version PK,FK
         string arm PK
-        real weight "ONLY field the online bandit may write (RTR-5)"
+        real weight "ONLY field the online bandit may write (RTR-5; SQL trigger pins keys immutable)"
         string updated_at
+    }
+    ROUTING_OUTCOME {
+        string id PK "append-only bookkeeping for the RPOL-4 promotion trigger"
+        string policy_version FK
+        string arm
+        int outcome "verify-pass 0|1 (EMA input)"
+        string at
+        int schema_version
+    }
+    DIVERGENCE_REPORT {
+        string id PK "SPEC-4/DSL-7; open reports block build (SPEC-5)"
+        string spec_hash
+        json clause_ids "suspect clauses"
+        json entries "probe input, differing path, both records, redactions"
+        boolean resolved
+        string at
+        int schema_version
     }
     SIGNAL {
         string id PK

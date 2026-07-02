@@ -108,7 +108,16 @@ Clause IDs are the join key everywhere: obligation test files (`test/obligations
 
 `docs/kelspec/rate-limiter.spec.md` in a target repo would contain the §2 blocks above plus narrative. The compiler output: 1 component, 2 domains, 1 clause → 1 fast-check property, 1 invariant → 1 runtime probe + 1 TLA+ CI obligation, and a manifest with 2 hashed entries (one per clause/invariant ID, per DSL-6). This example is normative test fixture #1 for the Phase 1 compiler (`packages/kernel/test/fixtures/DSL/rate-limiter.spec.md`).
 
-## 5. What Kelspec Does Not Do (v1)
+## 5. Divergence Contract (normative for SPEC-4/SPEC-5)
+
+A divergence run gives two isolated agents the same kelspec; each produces an implementation module exporting `harnesses: Record<ClauseId, (inputs) => observed>` — one observation harness per clause, the same shape the compiled obligations consume. Sequencing: both implementations must pass the compiled obligation suite first; a failure is `implementation_rejected` naming the sandbox and clause — a spec-violating implementation is a bug, never evidence of ambiguity. The **shared probe set** (identical frozen array fed to both) is built per clause: a boundary corpus enumerated from the domain declarations (min, max, zero, ±1 off each bound, half-increment ties) prepended to `fc.sample` draws from the compiled generators, 256 probes per clause, seed derived from the spec content hash — same spec bytes, byte-identical probes, recorded in the report header.
+
+**Comparison:** fields declared `nondeterministic` are deleted from both observation records first (redactions recorded in the report); a throw-vs-return tag mismatch is a divergence unconditionally; both-throw compares error constructor names only (messages are prose); both-return compares by canonical deep equality with **bit-exact numbers** (`Object.is`; `NaN` = `NaN`) — no harness epsilon, ever: a floating-point difference the spec does not license via a quantized domain or a `nondeterministic` declaration is exactly the underdetermination this tool exists to surface. A report entry carries the probe input, the differing path, both post-redaction records, and the suspect clause IDs.
+
+- **DSL-7.** The divergence tester shall implement this contract exactly: per-clause harness exports, obligation gate before probing, spec-hash-seeded shared probes with the boundary corpus, nondeterministic redaction, tag-then-errorName-then-bit-exact comparison, and report entries naming the probe input and suspect clauses. The probe/compare stage is additionally exposed gate-free (`probeImplementations`) for fixtures and tooling; the composed `runDivergence` always gates first.
+  *Obligation:* fixture matrix (extends SPEC-4's) — the planted-ambiguity spec diverges naming the tie probe; the tightened spec does not; throw-vs-return diverges; a nondeterministic-only difference does not; identical spec bytes produce byte-identical probe sets.
+
+## 6. What Kelspec Does Not Do (v1)
 
 - No cross-component clauses (compose at the component boundary; a clause naming two components is a compile error — split it or lift it to a new component).
 - No temporal-logic operators in `check` (that's what the `model` file is for; TypeScript predicates stay state-at-a-point).
