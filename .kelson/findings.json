@@ -110,9 +110,9 @@
       "clauses": [
         "OSS-6"
       ],
-      "summary": "ERD §2 declared drift_event append-only while §3 requires resolution to mutate",
+      "summary": "ERD \u00a72 declared drift_event append-only while \u00a73 requires resolution to mutate",
       "root_cause": "spec_contradiction",
-      "fix": "ERD §2 amended: drift_event is insert-then-resolve",
+      "fix": "ERD \u00a72 amended: drift_event is insert-then-resolve",
       "fix_commit": "P0-3",
       "status": "fixed"
     },
@@ -122,7 +122,7 @@
       "source": "clause-auditor",
       "severity": "violation",
       "clauses": [],
-      "summary": "ERD §3 DRIFT_EVENT PK comment still said append-only after §2 amendment (ripple miss)",
+      "summary": "ERD \u00a73 DRIFT_EVENT PK comment still said append-only after \u00a72 amendment (ripple miss)",
       "root_cause": "spec_gap",
       "fix": "comment updated in same commit",
       "fix_commit": "P0-3",
@@ -138,7 +138,7 @@
       ],
       "summary": "artifact composite PK (repo, logical_id) in DDL diverged from ERD's logical_id-only PK",
       "root_cause": "silent_divergence",
-      "fix": "ERD §3 amended to composite key (code was right, spec followed)",
+      "fix": "ERD \u00a73 amended to composite key (code was right, spec followed)",
       "fix_commit": "P0-3",
       "status": "fixed"
     },
@@ -150,7 +150,7 @@
       "clauses": [
         "OSS-6"
       ],
-      "summary": "schema_version missing on intervention_event/drift_event; spec-internal contradiction resolved silently toward ERD §5",
+      "summary": "schema_version missing on intervention_event/drift_event; spec-internal contradiction resolved silently toward ERD \u00a75",
       "root_cause": "spec_contradiction",
       "fix": "column added across ERD, schemas, DDL, tests",
       "fix_commit": "P0-3",
@@ -181,7 +181,7 @@
       ],
       "summary": "trace_link/drift_event not repo-scoped: colliding logical_ids across repos corrupt links and staleness; both single-repo PBTs blind to it",
       "root_cause": "spec_gap",
-      "fix": "ERD §3 repo columns, schemas, DDL, repo-scoped queries, cross-repo collision test",
+      "fix": "ERD \u00a73 repo columns, schemas, DDL, repo-scoped queries, cross-repo collision test",
       "fix_commit": "P0-4",
       "status": "fixed"
     },
@@ -195,7 +195,7 @@
       ],
       "summary": "link-replacement semantics existed only as a code comment, not in the ERD",
       "root_cause": "spec_gap",
-      "fix": "ERD §3 sentence: trace_link is replace-on-register",
+      "fix": "ERD \u00a73 sentence: trace_link is replace-on-register",
       "fix_commit": "P0-4",
       "status": "fixed"
     },
@@ -288,9 +288,9 @@
       "clauses": [
         "TEL-7"
       ],
-      "summary": "code granted abandon edges (open/in_progress → abandoned) the PRD chain never defined",
+      "summary": "code granted abandon edges (open/in_progress \u2192 abandoned) the PRD chain never defined",
       "root_cause": "silent_divergence",
-      "fix": "PRD §3 amended: abandoned reachable from any non-terminal state",
+      "fix": "PRD \u00a73 amended: abandoned reachable from any non-terminal state",
       "fix_commit": "P0-5",
       "status": "fixed"
     },
@@ -304,7 +304,7 @@
       ],
       "summary": "correction_count semantics undefined in spec; increment wired to wrong edge",
       "root_cause": "spec_gap",
-      "fix": "PRD §3 + ERD define it as ingestion-maintained from correction interventions; code wired accordingly",
+      "fix": "PRD \u00a73 + ERD define it as ingestion-maintained from correction interventions; code wired accordingly",
       "fix_commit": "P0-5",
       "status": "fixed"
     },
@@ -359,9 +359,9 @@
       "clauses": [
         "PACK-2"
       ],
-      "summary": "content-hash spec did not exclude pack.sig — signature would cover itself",
+      "summary": "content-hash spec did not exclude pack.sig \u2014 signature would cover itself",
       "root_cause": "spec_gap",
-      "fix": "spec §2 amended: pack.sig excluded; exclusion test in PACK-2.test.ts",
+      "fix": "spec \u00a72 amended: pack.sig excluded; exclusion test in PACK-2.test.ts",
       "fix_commit": "P0-6",
       "status": "fixed"
     },
@@ -376,7 +376,7 @@
       ],
       "summary": "listFiles emitted platform-sep paths: win32 hashes diverge and every nested path refused as unmapped",
       "root_cause": "design_bug",
-      "fix": "paths normalized to POSIX / before mapping/hashing; spec §1 pins POSIX paths",
+      "fix": "paths normalized to POSIX / before mapping/hashing; spec \u00a71 pins POSIX paths",
       "fix_commit": "P0-6",
       "status": "fixed"
     },
@@ -390,7 +390,7 @@
       ],
       "summary": "spec never defined which semver-range grammar counts as valid (hyphen ranges, x.x undefined)",
       "root_cause": "spec_gap",
-      "fix": "grammar pinned in §1: comparator sets joined by ||; hyphen ranges/build metadata out in v1",
+      "fix": "grammar pinned in \u00a71: comparator sets joined by ||; hyphen ranges/build metadata out in v1",
       "fix_commit": "P0-6",
       "status": "fixed"
     },
@@ -414,7 +414,7 @@
       "clauses": [
         "PACK-4"
       ],
-      "summary": "PACK-4 obligation said 'every field mutation' while §4 prose and impl exclude parent_hash",
+      "summary": "PACK-4 obligation said 'every field mutation' while \u00a74 prose and impl exclude parent_hash",
       "root_cause": "spec_contradiction",
       "fix": "obligation amended: 'every content field mutation (parent_hash excluded)'",
       "fix_commit": "P0-6",
@@ -428,7 +428,7 @@
       "clauses": [
         "TEL-1"
       ],
-      "summary": "step boundary counted JSONL lines, not unique message ids — real transcripts emitted ~1.9 records/step and over-counted input tokens ~3x; manual exit check compared the parser to itself",
+      "summary": "step boundary counted JSONL lines, not unique message ids \u2014 real transcripts emitted ~1.9 records/step and over-counted input tokens ~3x; manual exit check compared the parser to itself",
       "root_cause": "design_bug",
       "fix": "TEL-1 amended to pin the boundary (unique message.id, last usage wins); parser dedupes; exit criterion re-run against independent dedup-by-id truth (327 steps, all four classes exact)",
       "fix_commit": "P0-7",
@@ -456,7 +456,7 @@
       "clauses": [
         "KERN-1"
       ],
-      "summary": "hook module-level imports sat outside try/catch — fresh clone before bun install would fail loud; no KERN-1 fault-injection test exists in any package",
+      "summary": "hook module-level imports sat outside try/catch \u2014 fresh clone before bun install would fail loud; no KERN-1 fault-injection test exists in any package",
       "root_cause": "design_bug",
       "fix": "dynamic imports moved inside try in all three hooks; KERN-1 fault-injection matrix deferred to Phase 0.5 (this row records it)",
       "fix_commit": "P0-7",
@@ -538,7 +538,7 @@
       "source": "ci",
       "severity": "violation",
       "clauses": [],
-      "summary": "CI PBT seed found StepEvent.unit_prices accepted arbitrary string keys; a __proto__ key round-trips through JSON but Zod v4 silently strips it — data dropped at a storage boundary, invisible to local runs (seed-dependent flake)",
+      "summary": "CI PBT seed found StepEvent.unit_prices accepted arbitrary string keys; a __proto__ key round-trips through JSON but Zod v4 silently strips it \u2014 data dropped at a storage boundary, invisible to local runs (seed-dependent flake)",
       "root_cause": "spec_gap",
       "fix": "ERD pins unit_prices keys as lowercase identifier tokens; schema enforces the pattern (rejects ordinary bad keys) and the Zod proto-strip is pinned by test as structurally-unstorable; arb aligned to the valid domain",
       "fix_commit": "P0-7",
@@ -554,8 +554,8 @@
       ],
       "summary": "ART-3 admitted two materially different code-side drift baselines: frozen per-link hash vs last-synced index hash; the latter silently erases pending drift on index rebuild",
       "root_cause": "spec_gap",
-      "fix": "ART-5 added pinning per-link frozen downstream_hash_at_link; ERD trace_link + §3 note updated",
-      "fix_commit": null,
+      "fix": "ART-5 added pinning per-link frozen downstream_hash_at_link; ERD trace_link + \u00a73 note updated",
+      "fix_commit": "3923587",
       "status": "fixed",
       "id": "F-040"
     },
@@ -567,10 +567,10 @@
         "DSL-3",
         "DSL-6"
       ],
-      "summary": "kelspec-dsl.md normative example violated its own rules: example check referenced undeclared ctx.count/ctx.windowRemainder (rejected by DSL-3), invariant used nonexistent sum() helper, §4 manifest entry count contradicted DSL-6",
+      "summary": "kelspec-dsl.md normative example violated its own rules: example check referenced undeclared ctx.count/ctx.windowRemainder (rejected by DSL-3), invariant used nonexistent sum() helper, \u00a74 manifest entry count contradicted DSL-6",
       "root_cause": "spec_contradiction",
-      "fix": "example declares count input + window_remainder observable; invariant check self-contained reduce; §4 corrected to 2 manifest entries",
-      "fix_commit": null,
+      "fix": "example declares count input + window_remainder observable; invariant check self-contained reduce; \u00a74 corrected to 2 manifest entries",
+      "fix_commit": "3923587",
       "status": "fixed",
       "id": "F-041"
     },
@@ -584,7 +584,7 @@
       "summary": "DSL-3 mutation obligation was seed-dependent: count===rate trigger vanishingly rare under random int pairs, so falsification passed or failed by luck between runs",
       "root_cause": "test_blindspot",
       "fix": "pinned the triggering boundary as an explicit fc examples entry so falsification is deterministic",
-      "fix_commit": null,
+      "fix_commit": "3923587",
       "status": "fixed",
       "id": "F-042"
     },
@@ -595,10 +595,10 @@
       "clauses": [
         "ART-4"
       ],
-      "summary": "buildGate accepted override {by, reason} and discarded both — no record of who overrode or why existed anywhere, violating ART-4 recorded-override requirement; obligation test only checked resolution/resolved_at so it could not catch the drop",
+      "summary": "buildGate accepted override {by, reason} and discarded both \u2014 no record of who overrode or why existed anywhere, violating ART-4 recorded-override requirement; obligation test only checked resolution/resolved_at so it could not catch the drop",
       "root_cause": "test_blindspot",
       "fix": "drift_event gains resolved_by/resolution_reason (ERD + migration 0002 + schema); buildGate persists both; ART-4 obligation and test extended to assert attribution round-trips",
-      "fix_commit": null,
+      "fix_commit": "3923587",
       "status": "fixed",
       "id": "F-043"
     },
@@ -612,7 +612,7 @@
       "summary": "runVerify takes caller-supplied obligation thunks; manifest-driven discovery of touched clauses is not implemented and the narrowing was not in any deferral note",
       "root_cause": "unrecorded_deferral",
       "fix": "narrowing recorded in P1-8 board note; manifest-driven obligation discovery deferred until pipeline stages exist (Phase 3 context compiler gives touched-file sets)",
-      "fix_commit": null,
+      "fix_commit": "3923587",
       "status": "fixed",
       "id": "F-044"
     },
@@ -626,7 +626,7 @@
       "summary": "ART-4 text named only confirmed as blocking while buildGate blocked all non-inferred authorities; authored behavior was pinned only by an implementation comment",
       "root_cause": "spec_gap",
       "fix": "ART-4 respecified as stale non-inferred (authored or confirmed); obligation matrix and test gained the authored row",
-      "fix_commit": null,
+      "fix_commit": "3923587",
       "status": "fixed",
       "id": "F-045"
     }
