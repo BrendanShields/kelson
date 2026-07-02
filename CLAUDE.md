@@ -31,7 +31,15 @@ Open-source harness covering feedback → ideation → planning → spec → bui
 
 ## Workflow
 
-1. Changing behavior? Use the **spec-sync** skill (locate clause → edit spec + obligation → then code).
-2. Writing tests for a clause? Use the **obligation-test** skill.
-3. Before committing a diff that touches behavior, run the **clause-auditor** agent on it.
-4. Commit spec and code changes together, referencing clause IDs (`feat(kernel): implement TEL-1 step event emission`).
+1. New feature or behavior change? Run the **feature-pipeline** skill (Kelson's SDLC stages, emulated: ideation → EARS clauses → divergence-test risky clauses → build → verify).
+2. Changing behavior? Use the **spec-sync** skill (locate clause → edit spec + obligation → then code).
+3. Writing tests for a clause? Use the **obligation-test** skill.
+4. Mechanical work (renames, formatting, reference updates, changelog lines) → delegate to the **mechanical** agent (Haiku) — the routing emulation; don't do it at frontier cost.
+5. Ambiguity suspected in a clause? Run the **divergence** skill (two blind agents, compare readings — SPEC-4 emulated).
+6. Before committing a diff that touches behavior, run the **clause-auditor** agent on it.
+7. Commit spec and code changes together, referencing clause IDs (`feat(kernel): implement TEL-1 step event emission`).
+8. End of a substantial session → **postmortem** skill (LOOP-1 emulated, propose-only; human is the gate).
+
+## Dogfood telemetry
+
+Hooks append session/tool events to `.kelson/telemetry/events.jsonl` (gitignored, local-first per TEL-2). This is proto-TEL-1: its event shape informs the Phase 0 schema. Known gap discovered by dogfooding: Claude Code hooks expose no token counts — real TEL-1 needs transcript parsing, exactly as the PRD assumes.
