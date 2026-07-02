@@ -287,6 +287,99 @@
       ],
       "completed_at": "2026-07-02T10:28:26Z",
       "notes": "validated live: gemma4:e4b via Ollama 0.30.6 solved greenfield-slugify through the full runner (fpar true, proxy cost 287k musd, real spend $0); overridden runs bar the ledger and scrub operator credentials"
+    },
+    {
+      "id": "P3-1",
+      "title": "schemas + migration 0004 — routing decision/weight, registry entry, policy, bundle manifest",
+      "state": "completed",
+      "clauses": [
+        "RTR-1",
+        "RPOL-1",
+        "CTX-1"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z",
+      "notes": "roundtrip arbitraries for routing schemas deferred (same P2-1 rationale)"
+    },
+    {
+      "id": "P3-2",
+      "title": "kernel — policy loader + feature vector + first-match resolution",
+      "state": "completed",
+      "clauses": [
+        "RPOL-1",
+        "RPOL-2"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-3",
+      "title": "kernel — registry loader + capability matching",
+      "state": "completed",
+      "clauses": [
+        "RTR-4",
+        "RPOL-5"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-4",
+      "title": "kernel — router: decide/record, escalation ladder + cap, exploration guard",
+      "state": "completed",
+      "clauses": [
+        "RTR-1",
+        "RTR-2",
+        "RTR-3",
+        "RPOL-3"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-5",
+      "title": "kernel — budgets: attach, overrun events, 2x triage pause",
+      "state": "completed",
+      "clauses": [
+        "CTX-4"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-6",
+      "title": "kernel — context compiler v1: bundle + manifest + token accounting + miss recording",
+      "state": "completed",
+      "clauses": [
+        "CTX-1"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-7",
+      "title": "default routing pack (policy.yaml + agent registry entries, real model ids)",
+      "state": "completed",
+      "clauses": [
+        "RPOL-1",
+        "RPOL-5"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-8",
+      "title": "cli kelson route explain + eval executor integration (routed session model)",
+      "state": "completed",
+      "clauses": [
+        "RTR-1",
+        "RTR-4"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-9",
+      "title": "exit criterion — measured TPAC drop: eval compare routed vs frontier on seed suite",
+      "state": "completed",
+      "clauses": [
+        "RTR-1",
+        "CTX-4"
+      ],
+      "completed_at": "2026-07-02T11:13:42Z",
+      "notes": "measured TPAC drop: routed (sonnet via build/T0 rule) vs frontier baseline on seed suite — cost -26.4% [-37.6,-16.2], CI excludes zero at n=6; fpar delta 0 (5/6 both sides); hand-verified A=1667381 vs B=2266135 musd; 6 routing decisions recorded, 0 overruns; subscription quota"
     }
   ]
 }

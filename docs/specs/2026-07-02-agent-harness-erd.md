@@ -12,7 +12,7 @@ Three tiers, one rule each:
 | Tier | Holds | Rule |
 |---|---|---|
 | **Git-tracked files** (in the target repo and in pack repos) | Specs/PRDs/ERDs/ADRs, spec clauses, packs (manifests, rules, routing policy structure, agent registry), lockfile, changelog, eval ledger | Anything a human reviews, a PR carries, or that must survive Kelson's removal is a file |
-| **Local SQLite** (per operator, `~/.kelson/kelson.db`, WAL mode) | Sessions, tasks, step events, interventions, routing decisions, bundle manifests, verification reports, eval runs/results/verdicts, replay records, drift events, routing weights, the artifact index | Anything measured, high-volume, or queried statistically lives in SQLite |
+| **Local SQLite** (per operator, `~/.kelson/kelson.db`, WAL mode) | Sessions, tasks, step events, interventions, routing decisions, bundle/budget events, verification reports, eval runs/results/verdicts, replay records, drift events, routing weights, the artifact index | Anything measured, high-volume, or queried statistically lives in SQLite |
 | **OTel projection** (optional, off by default; PRD TEL-6) | Traces/spans/metrics derived from SQLite-bound events at emit time | A projection, never a source of truth; content-stripped per TEL-3 |
 
 The **artifact index** (hashes, trace links, staleness) is derived from files and rebuildable at any time (`kelson index rebuild`) — SQLite is disposable without losing anything a human authored.
@@ -153,8 +153,9 @@ erDiagram
     TASK ||--o{ STEP_EVENT : "routed as"
     TASK ||--o{ INTERVENTION_EVENT : receives
     TASK ||--o{ VERIFICATION_REPORT : produces
-    STEP_EVENT ||--o| ROUTING_DECISION : "chosen by"
-    STEP_EVENT ||--o| BUNDLE_MANIFEST : "context from"
+    TASK ||--o{ ROUTING_DECISION : "steps routed by"
+    TASK ||--o{ BUNDLE_EVENT : "context from"
+    BUNDLE_EVENT ||--o{ BUNDLE_MISS_EVENT : "on-demand loads"
 
     SESSION {
         string id PK "ULID"
@@ -207,21 +208,48 @@ erDiagram
         int schema_version
     }
     ROUTING_DECISION {
-        string id PK
-        string step_event_id FK
+        string id PK "append-only"
+        string task_id FK
+        string step_id
+        int attempt "0 = initial; escalations increment (RTR-2)"
+        string kind "initial|escalation"
         json feature_vector "RTR-1"
-        string policy_pack_version
-        string chosen_target FK
-        json alternatives "next candidates + est cost (route explain)"
-        string mode "exploit|explore (RTR-3)"
-        string escalated_from "regret event when set (RTR-2)"
+        int rule_index "-1 = default rule (RPOL-1)"
+        string matched_by "rule|capability — capability match overrides the rule target (RTR-4)"
+        string target FK
+        string effort
+        json loadout
+        int budget_tokens "CTX-4"
+        json escalation "remaining ladder"
+        string policy_hash "canonical policy content hash"
+        boolean regret "escalation = the RTR-2 regret event"
+        string at
+        int schema_version
     }
-    BUNDLE_MANIFEST {
-        string id PK
-        string step_event_id FK
-        int token_count
-        json entries "kind, ref, tokens (CTX-1)"
-        json misses "on-demand loads (CTX-2)"
+    BUNDLE_EVENT {
+        string id PK "append-only (CTX-1)"
+        string task_id FK
+        string tokenizer "pinned identity (CTX-5)"
+        int token_count "whole-text tokenization of the assembled bundle (CTX-5)"
+        json manifest "kind, ref, hash, tokens per section — the verification route"
+        string at
+        int schema_version
+    }
+    BUNDLE_MISS_EVENT {
+        string id PK "append-only; on-demand loads join the accounting (CTX-1)"
+        string bundle_id FK
+        string ref
+        int tokens "tokenization of the delivered content"
+        string at
+        int schema_version
+    }
+    BUDGET_EVENT {
+        string id PK "append-only; ordering by rowid — ULIDs tie within 1ms (F-060)"
+        string step_id
+        string kind "overrun|triage_requested|triage_resolved (RPOL-6)"
+        json payload "attribution on overrun; action/actor/reason on resolution"
+        string at
+        int schema_version
     }
     VERIFICATION_REPORT {
         string id PK

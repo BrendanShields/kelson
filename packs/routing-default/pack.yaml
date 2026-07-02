@@ -1,0 +1,7 @@
+schema_version: 1
+name: routing-default
+version: 0.1.0
+kind: routing
+kernel_compat: "*"
+capabilities: [routing-table, agent-registry]
+description: Default v1 routing policy and base-model registry (routing-policy spec §6).

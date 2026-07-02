@@ -1,0 +1,59 @@
+# Default v1 policy (routing-policy spec §6). Model IDs live in the agent
+# registry entries — data, not spec — so model generations rotate without
+# spec edits.
+schema_version: 1
+rules:
+  - match: { task_type: mechanical, tier: T0 }
+    target: small
+    effort: low
+    loadout: []
+    budget_tokens: 8000
+    escalation: [mid-tier, frontier]
+  - match: { step: ideation }
+    target: frontier
+    effort: high
+    loadout: []
+    budget_tokens: 40000
+    escalation: []
+  - match: { step: planning }
+    target: frontier
+    effort: high
+    loadout: []
+    budget_tokens: 40000
+    escalation: []
+  - match: { step: spec }
+    target: frontier
+    effort: high
+    loadout: [spec-tooling]
+    budget_tokens: 40000
+    escalation: []
+  - match: { step: build, tier: T1 }
+    target: frontier
+    effort: high
+    loadout: []
+    budget_tokens: 40000
+    escalation: []
+  - match: { step: build, tier: T2 }
+    target: frontier
+    effort: high
+    loadout: []
+    budget_tokens: 40000
+    escalation: []
+  - match: { step: build, tier: T0 }
+    target: mid-tier
+    effort: medium
+    loadout: []
+    budget_tokens: 20000
+    escalation: [frontier]
+  - match: { step: verify }
+    target: mid-tier
+    effort: medium
+    loadout: []
+    budget_tokens: 20000
+    escalation: [frontier]
+default:
+  target: mid-tier
+  effort: medium
+  loadout: []
+  budget_tokens: 20000
+  escalation: [frontier]

@@ -1,0 +1,7 @@
+schema_version: 1
+id: mid-tier
+kind: base_model
+capabilities: []
+cost_class: 2
+constraints: { max_context_tokens: 200000 }
+endpoint: { type: base_model, ref: claude-sonnet-5 }

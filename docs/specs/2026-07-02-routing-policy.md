@@ -44,7 +44,7 @@ default:                      # required — total function over feature space
 | Feature | Values | Definition |
 |---|---|---|
 | `step` | the six SDLC steps | the explicitly-entered stage (UX interaction model) |
-| `tier` | T0/T1/T2 | max criticality tier among spec clauses the task touches (PRD §7.4) |
+| `tier` | T0/T1/T2 | max criticality tier among spec clauses the task touches (PRD §7.4); touching no clause-governed logic → T0 (no criticality floor exists to inherit) |
 | `size` | S/M/L | files the task's plan expects to touch: S ≤ 2, M ≤ 10, L > 10; unknown → M |
 | `lang` | primary language id | dominant language of touched files by count; ties → repo primary |
 | `novelty` | 0..1, bucketed low (<0.3) / mid / high (>0.7) | 1 − max Jaccard similarity between the task's **planned** touched-file set (same set `size` uses, fixed at routing time) and each of the last 200 tasks' **actual** touched sets recorded at task close in this repo; no history → 1 |
@@ -56,10 +56,17 @@ default:                      # required — total function over feature space
 
 ## 3. Escalation (normative for RTR-2, CTX-4)
 
-One verification failure at the routed target → retry once at the next ladder entry (regret event recorded). **Cap: 2 escalations per step**; a step failing at the top of its ladder pauses for triage using the CTX-4 panel (continue / escalate manually / re-spec). Budgets travel with the rule; an escalated retry gets the escalated rule's budget, not the original's.
+One verification failure at the routed target → retry once at the next ladder entry (regret event recorded). **Cap: 2 escalations per step**; a step failing at the top of its ladder pauses for triage using the CTX-4 panel (continue / escalate manually / re-spec). Budgets travel with the rule; an escalated retry gets the escalated rule's budget, not the original's. Ladder entries are *targets*, so the escalated budget derives as: the first policy rule whose target equals the escalated target **and** whose match accepts the step's feature vector; else the first rule owning that target regardless of match; else the default when it owns the target; else the previous attempt's budget.
 
 - **RPOL-3.** The router shall cap automatic escalations at 2 per step and shall route a third failure to the CTX-4 triage pause rather than a further retry.
   *Obligation:* integration test — three injected failures produce exactly two escalations, two regret events, one pause.
+
+### 3.1 Triage semantics (pins the CTX-4 divergence-test split)
+
+Budget thresholds are checked at each accounting point (a model call completing): the `1×` overrun fires when usage strictly exceeds the budget (`used > budget`, matching CTX-4's "exceeds"); the `2×` pause fires inclusively (`used >= 2×budget`); overshoot past a threshold is recorded honestly, never clamped. `1×` is record-and-continue, latched once per attempt; a burst crossing both thresholds emits the `1×` then the `2×` overrun event in one append, then the pause. The pause is durable state (`paused_triage`), not a blocked thread. `continue` grants exactly one further budget of headroom (next pause at `used_at_resolution + budget`). Headless runs resolve the pause immediately by policy: `escalate` while under the RPOL-3 cap, else transition to durable state `blocked` (resumable by an operator, recorded with `actor: "auto"`); a headless step never hangs and never silently burns on. Overrun attribution minimally carries `{task_id, step_id, attempt, rule_id, policy_hash, model_id, escalation_depth, budget_tokens, used_tokens, ratio}`. Escalation resets the usage counter and threshold latches (attempt-scoped); the escalation count is step-scoped and never resets.
+
+- **RPOL-6.** The budget monitor shall implement §3.1 exactly: latched per-attempt threshold events, durable pause, one-budget `continue` headroom, the headless escalate-then-block default under the RPOL-3 cap, and the minimal attribution set on every overrun event.
+  *Obligation:* integration matrix — burst crossing both thresholds yields exactly two overrun events + one pause; `continue` re-pauses at one further budget; headless resolution escalates under cap and blocks at cap with `actor: "auto"` recorded; attribution fields present on every overrun event.
 
 ## 4. Online Learning (normative for RTR-5; bounded by RTR-3)
 

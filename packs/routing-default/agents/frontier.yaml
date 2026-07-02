@@ -1,0 +1,7 @@
+schema_version: 1
+id: frontier
+kind: base_model
+capabilities: []
+cost_class: 3
+constraints: { max_context_tokens: 200000 }
+endpoint: { type: base_model, ref: claude-opus-4-8 }

@@ -18,9 +18,17 @@ import {
   type VerdictDecision,
 } from "@kelson/schemas";
 import { hashContent } from "./artifacts.ts";
+import { BudgetMonitor } from "./budget.ts";
 import { EXECUTORS, runTask } from "./evaltask.ts";
 import { evaluateFlakiness, type QuarantineEvent } from "./flaky.ts";
 import { canonicalJson, hashLockfile } from "./packs.ts";
+import {
+  extractFeatures,
+  loadPolicy,
+  loadRegistry,
+  policyHash,
+  route,
+} from "./routing.ts";
 import { createWorkspace } from "./sandbox.ts";
 import { DEFAULT_SNAPSHOT_DIR } from "./snapshots.ts";
 import {
@@ -142,6 +150,10 @@ export interface EvalRunOptions {
   modelVersions?: Record<string, string>;
   // EVP-8: same override on both sides; recorded in the manifest; bars ledger.
   sessionModel?: { model: string; baseUrl?: string };
+  // RTR-1/CTX-4 integration: when the named pack is enabled on a side, each
+  // task is routed (decision recorded, model + budget from the policy);
+  // a disabled side runs the baseline (highest-cost) registry model.
+  routing?: { pack: string; policyPath: string; registryDir: string };
   gateOpts?: GateOptions;
   flaky?: { k?: number; minMinority?: number };
 }
@@ -173,6 +185,22 @@ export const runEval = (db: Database, opts: EvalRunOptions): EvalRunResult => {
   const configA = hashLockfile(opts.lockfileA);
   const configB = hashLockfile(opts.lockfileB);
 
+  if (opts.routing && opts.sessionModel)
+    throw new Error(
+      "routing and a session model override cannot combine — the routed model would silently clobber the override while the manifest still records it (EVP-8)",
+    );
+  const routing = opts.routing
+    ? (() => {
+        const policy = loadPolicy(opts.routing.policyPath);
+        const registry = loadRegistry(opts.routing.registryDir);
+        const baseline = [...registry].sort(
+          (a, b) => b.cost_class - a.cost_class,
+        )[0];
+        if (!baseline) throw new Error("routing registry is empty");
+        return { policy, registry, baseline, hash: policyHash(policy) };
+      })()
+    : null;
+
   const manifest = RunManifest.parse({
     schema_version: 1,
     kind: opts.kind,
@@ -186,6 +214,12 @@ export const runEval = (db: Database, opts: EvalRunOptions): EvalRunResult => {
     sandbox_profile: opts.profile,
     model_versions: {
       ...opts.modelVersions,
+      ...(routing
+        ? {
+            routing_policy: routing.hash,
+            baseline_model: routing.baseline.endpoint.ref,
+          }
+        : {}),
       ...(opts.sessionModel
         ? {
             session_model: opts.sessionModel.model,
@@ -262,17 +296,78 @@ export const runEval = (db: Database, opts: EvalRunOptions): EvalRunResult => {
         try {
           if (opts.executor === "claude")
             materializeClaudeSide(ws.dir, lockfile);
-          const outcome = runTask(
-            task,
-            ws,
-            executor,
-            sideEnvFor(
+          const stepId = `${runId}:${task.id}:${side}:${i}`;
+          let routedEnv: Record<string, string> = {};
+          let monitor: BudgetMonitor | null = null;
+          if (routing) {
+            const enabled = lockfile.entries.some(
+              (e) => e.name === opts.routing?.pack && e.enabled,
+            );
+            if (enabled) {
+              // Benchmark tasks carry no plan yet, so every feature falls
+              // back per the RPOL-2 table (lang honestly "unknown") — per-task
+              // extraction lands with the Phase 4 pipeline (F-062).
+              const vector = extractFeatures({
+                step: "build",
+                repo: suite.id,
+              });
+              const decision = route(db, {
+                policy: routing.policy,
+                registry: routing.registry,
+                vector,
+                taskId: task.id,
+                stepId,
+              });
+              const entry = routing.registry.find(
+                (e) => e.id === decision.target,
+              );
+              if (!entry)
+                throw new Error(
+                  `routed target not in registry: ${decision.target}`,
+                );
+              routedEnv = { ANTHROPIC_MODEL: entry.endpoint.ref };
+              monitor = new BudgetMonitor(db, {
+                taskId: task.id,
+                stepId,
+                attempt: 0,
+                ruleId: `rule:${decision.rule_index}`,
+                policyHash: routing.hash,
+                modelId: entry.endpoint.ref,
+                escalationDepth: 0,
+                budgetTokens: decision.budget_tokens,
+              });
+            } else {
+              routedEnv = { ANTHROPIC_MODEL: routing.baseline.endpoint.ref };
+            }
+          }
+          const outcome = runTask(task, ws, executor, {
+            ...sideEnvFor(
               side,
               lockfile,
               taskSeed(runSeed, task.id, side, i),
               opts.sessionModel,
             ),
-          );
+            ...routedEnv,
+          });
+          if (monitor && outcome.raw_ref) {
+            try {
+              const usage = (
+                JSON.parse(outcome.raw_ref) as {
+                  usage?: { input_tokens?: number; output_tokens?: number };
+                }
+              ).usage;
+              const tokens =
+                (usage?.input_tokens ?? 0) + (usage?.output_tokens ?? 0);
+              // Single post-session accounting point. A 2x pause stays OPEN:
+              // the session already finished, so any resolution event would
+              // be fiction — the durable pause is the honest record (F-063).
+              monitor.record(tokens);
+            } catch (e) {
+              console.error(
+                `budget accounting skipped for ${stepId}: unparseable session usage (${(e as Error).message})`,
+              );
+            }
+          }
           db.query(
             `INSERT INTO eval_task_result (id, run_id, bench_task_id, side, repeat_index, fpar_pass, cost_micro_usd, check_results, raw_ref, schema_version)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,

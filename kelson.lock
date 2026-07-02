@@ -7,6 +7,12 @@
       "version": "4.7.0",
       "hash": "sha256:807bee4dadc4cdccaf477a98b3847baecb7a920b2d2f74ad75c91836d3d5f167",
       "enabled": true
+    },
+    {
+      "name": "routing-default",
+      "version": "0.1.0",
+      "hash": "sha256:400979a9bd7dc22407882f68cd839fe607849fd23f5dce688e372d6cdb39a8ce",
+      "enabled": true
     }
   ]
 }

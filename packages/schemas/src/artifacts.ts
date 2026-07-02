@@ -62,6 +62,11 @@ export const DriftEvent = z.object({
   schema_version: SchemaVersion,
 });
 
+export type ArtifactType = z.infer<typeof ArtifactType>;
+export type Authority = z.infer<typeof Authority>;
+export type Tier = z.infer<typeof Tier>;
+export type DriftDirection = z.infer<typeof DriftDirection>;
+export type DriftResolution = z.infer<typeof DriftResolution>;
 export type Artifact = z.infer<typeof Artifact>;
 export type TraceLink = z.infer<typeof TraceLink>;
 export type DriftEvent = z.infer<typeof DriftEvent>;

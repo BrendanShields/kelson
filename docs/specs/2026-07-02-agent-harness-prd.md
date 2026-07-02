@@ -457,6 +457,8 @@ Builds a minimal task bundle instead of loading raw files: compressed repo map (
   *Obligation:* PBT — bundle token accounting matches actual context tokens within 2%.
 - **CTX-2.** Bundle-miss rate per task type shall be a tracked metric; the improvement loop may propose compiler heuristic changes gated on: bundle-miss rate down without FPAR down.
   *Obligation:* covered by EVAL-2 applied to compiler packs.
+- **CTX-5.** Bundle accounting shall use one version-pinned local tokenizer: the recorded count is the whole-text tokenization of exactly the assembled bundle content (plus per-miss counts as their own events), the manifest carries independently verifiable per-section counts, and session-reported token usage never participates; every bundle event records the tokenizer identity; a task with no bundleable content produces an empty bundle recording zero tokens with an empty manifest, never a synthetic preamble. (Pins the CTX-1 divergence split — empty-bundle value, tokenizer identity — and the implementation finding that per-section sums cannot hold 2% on small bundles: one BPE seam merge exceeds the whole tolerance, so the recorded number is the exact whole-text count and per-section sums are the manifest's verification route.)
+  *Obligation:* unit tests — bundle events carry the tokenizer id; an empty compile records exactly zero with `manifest: []`; the CTX-1 PBT runs entirely offline with the pinned tokenizer on both sides.
 
 ### 12.2 Verbosity & Behavior Rules
 

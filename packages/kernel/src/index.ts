@@ -1,4 +1,6 @@
 export * from "./artifacts.ts";
+export * from "./budget.ts";
+export * from "./bundle.ts";
 export * from "./evalrun.ts";
 export * from "./evaltask.ts";
 export * from "./flaky.ts";
@@ -6,6 +8,7 @@ export * from "./generators.ts";
 export * from "./kelspec.ts";
 export * from "./packs.ts";
 export * from "./predicate.ts";
+export * from "./routing.ts";
 export * from "./sandbox.ts";
 export * from "./snapshots.ts";
 export * from "./stats.ts";

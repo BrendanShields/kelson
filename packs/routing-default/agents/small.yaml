@@ -1,0 +1,7 @@
+schema_version: 1
+id: small
+kind: base_model
+capabilities: []
+cost_class: 1
+constraints: { max_context_tokens: 200000 }
+endpoint: { type: base_model, ref: claude-haiku-4-5-20251001 }

@@ -3,11 +3,17 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   DEFAULT_DB_PATH,
+  extractFeatures,
+  loadPolicy,
+  loadRegistry,
   loadSuite,
+  matchAgent,
   openDb,
   promoteTask,
+  resolveRule,
   runEval,
   togglePack,
+  validatePolicyTargets,
   writeLedgerEntry,
 } from "@kelson/kernel";
 import {
@@ -136,6 +142,24 @@ const evalCommand = (argv: string[]): void => {
         ...(typeof named.snapshots === "string"
           ? { snapshotStoreDir: named.snapshots }
           : {}),
+        ...(typeof named["routing-pack"] === "string"
+          ? {
+              routing: {
+                pack: named["routing-pack"],
+                policyPath: str(
+                  named.policy,
+                  join(
+                    process.cwd(),
+                    "packs/routing-default/routing/policy.yaml",
+                  ),
+                ),
+                registryDir: str(
+                  named.registry,
+                  join(process.cwd(), "packs/routing-default/agents"),
+                ),
+              },
+            }
+          : {}),
         ...(typeof named.model === "string"
           ? {
               sessionModel: {
@@ -202,6 +226,63 @@ const evalCommand = (argv: string[]): void => {
   );
 };
 
+// UX §3: kelson route explain <task> — read-only routing transparency.
+const routeCommand = (argv: string[]): void => {
+  if (argv[0] !== "explain")
+    die(`unknown route subcommand: ${argv[0] ?? "(none)"} (have: explain)`);
+  const { named } = parseArgs(argv.slice(1));
+  const policy = loadPolicy(
+    str(
+      named.policy,
+      join(process.cwd(), "packs/routing-default/routing/policy.yaml"),
+    ),
+  );
+  const registry = loadRegistry(
+    str(named.registry, join(process.cwd(), "packs/routing-default/agents")),
+  );
+  validatePolicyTargets(policy, registry);
+  const vector = extractFeatures({
+    step: str(named.step, "build") as never,
+    repo: str(named.repo, "local"),
+    ...(typeof named.tier === "string"
+      ? { touchedTiers: [named.tier as never] }
+      : {}),
+    ...(named["task-type"] === "mechanical" ? { mechanical: true } : {}),
+    ...(typeof named.lang === "string"
+      ? { langCounts: { [named.lang]: 1 } }
+      : {}),
+  });
+  const { spec, ruleIndex } = resolveRule(policy, vector);
+  const agent = matchAgent(
+    registry,
+    vector,
+    typeof named.domain === "string" ? named.domain : undefined,
+  );
+  const target = agent?.id ?? spec.target;
+  const entry = registry.find((e) => e.id === target);
+  const decision = {
+    vector,
+    rule_index: ruleIndex,
+    target,
+    model: entry?.endpoint.ref ?? null,
+    effort: spec.effort,
+    budget_tokens: spec.budget_tokens,
+    escalation: spec.escalation,
+    via_capability_match: agent !== null,
+  };
+  if (named.json === true) console.log(JSON.stringify(decision, null, 2));
+  else
+    console.log(
+      [
+        `route: ${target} (${entry?.endpoint.ref ?? "?"}) effort=${spec.effort} budget=${spec.budget_tokens}`,
+        `  matched: ${ruleIndex === -1 ? "default rule" : `rule #${ruleIndex}`}${agent ? " overridden by capability match" : ""}`,
+        `  escalation ladder: ${spec.escalation.join(" -> ") || "(none)"}`,
+        `  vector: ${JSON.stringify(decision.vector)}`,
+      ].join("\n"),
+    );
+};
+
 const [cmd, ...rest] = process.argv.slice(2);
 if (cmd === "eval") evalCommand(rest);
-else die(`unknown command: ${cmd ?? "(none)"} (have: eval)`);
+else if (cmd === "route") routeCommand(rest);
+else die(`unknown command: ${cmd ?? "(none)"} (have: eval, route)`);

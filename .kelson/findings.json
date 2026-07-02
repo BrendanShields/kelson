@@ -110,9 +110,9 @@
       "clauses": [
         "OSS-6"
       ],
-      "summary": "ERD \u00a72 declared drift_event append-only while \u00a73 requires resolution to mutate",
+      "summary": "ERD §2 declared drift_event append-only while §3 requires resolution to mutate",
       "root_cause": "spec_contradiction",
-      "fix": "ERD \u00a72 amended: drift_event is insert-then-resolve",
+      "fix": "ERD §2 amended: drift_event is insert-then-resolve",
       "fix_commit": "P0-3",
       "status": "fixed"
     },
@@ -122,7 +122,7 @@
       "source": "clause-auditor",
       "severity": "violation",
       "clauses": [],
-      "summary": "ERD \u00a73 DRIFT_EVENT PK comment still said append-only after \u00a72 amendment (ripple miss)",
+      "summary": "ERD §3 DRIFT_EVENT PK comment still said append-only after §2 amendment (ripple miss)",
       "root_cause": "spec_gap",
       "fix": "comment updated in same commit",
       "fix_commit": "P0-3",
@@ -138,7 +138,7 @@
       ],
       "summary": "artifact composite PK (repo, logical_id) in DDL diverged from ERD's logical_id-only PK",
       "root_cause": "silent_divergence",
-      "fix": "ERD \u00a73 amended to composite key (code was right, spec followed)",
+      "fix": "ERD §3 amended to composite key (code was right, spec followed)",
       "fix_commit": "P0-3",
       "status": "fixed"
     },
@@ -150,7 +150,7 @@
       "clauses": [
         "OSS-6"
       ],
-      "summary": "schema_version missing on intervention_event/drift_event; spec-internal contradiction resolved silently toward ERD \u00a75",
+      "summary": "schema_version missing on intervention_event/drift_event; spec-internal contradiction resolved silently toward ERD §5",
       "root_cause": "spec_contradiction",
       "fix": "column added across ERD, schemas, DDL, tests",
       "fix_commit": "P0-3",
@@ -181,7 +181,7 @@
       ],
       "summary": "trace_link/drift_event not repo-scoped: colliding logical_ids across repos corrupt links and staleness; both single-repo PBTs blind to it",
       "root_cause": "spec_gap",
-      "fix": "ERD \u00a73 repo columns, schemas, DDL, repo-scoped queries, cross-repo collision test",
+      "fix": "ERD §3 repo columns, schemas, DDL, repo-scoped queries, cross-repo collision test",
       "fix_commit": "P0-4",
       "status": "fixed"
     },
@@ -195,7 +195,7 @@
       ],
       "summary": "link-replacement semantics existed only as a code comment, not in the ERD",
       "root_cause": "spec_gap",
-      "fix": "ERD \u00a73 sentence: trace_link is replace-on-register",
+      "fix": "ERD §3 sentence: trace_link is replace-on-register",
       "fix_commit": "P0-4",
       "status": "fixed"
     },
@@ -288,9 +288,9 @@
       "clauses": [
         "TEL-7"
       ],
-      "summary": "code granted abandon edges (open/in_progress \u2192 abandoned) the PRD chain never defined",
+      "summary": "code granted abandon edges (open/in_progress → abandoned) the PRD chain never defined",
       "root_cause": "silent_divergence",
-      "fix": "PRD \u00a73 amended: abandoned reachable from any non-terminal state",
+      "fix": "PRD §3 amended: abandoned reachable from any non-terminal state",
       "fix_commit": "P0-5",
       "status": "fixed"
     },
@@ -304,7 +304,7 @@
       ],
       "summary": "correction_count semantics undefined in spec; increment wired to wrong edge",
       "root_cause": "spec_gap",
-      "fix": "PRD \u00a73 + ERD define it as ingestion-maintained from correction interventions; code wired accordingly",
+      "fix": "PRD §3 + ERD define it as ingestion-maintained from correction interventions; code wired accordingly",
       "fix_commit": "P0-5",
       "status": "fixed"
     },
@@ -359,9 +359,9 @@
       "clauses": [
         "PACK-2"
       ],
-      "summary": "content-hash spec did not exclude pack.sig \u2014 signature would cover itself",
+      "summary": "content-hash spec did not exclude pack.sig — signature would cover itself",
       "root_cause": "spec_gap",
-      "fix": "spec \u00a72 amended: pack.sig excluded; exclusion test in PACK-2.test.ts",
+      "fix": "spec §2 amended: pack.sig excluded; exclusion test in PACK-2.test.ts",
       "fix_commit": "P0-6",
       "status": "fixed"
     },
@@ -376,7 +376,7 @@
       ],
       "summary": "listFiles emitted platform-sep paths: win32 hashes diverge and every nested path refused as unmapped",
       "root_cause": "design_bug",
-      "fix": "paths normalized to POSIX / before mapping/hashing; spec \u00a71 pins POSIX paths",
+      "fix": "paths normalized to POSIX / before mapping/hashing; spec §1 pins POSIX paths",
       "fix_commit": "P0-6",
       "status": "fixed"
     },
@@ -390,7 +390,7 @@
       ],
       "summary": "spec never defined which semver-range grammar counts as valid (hyphen ranges, x.x undefined)",
       "root_cause": "spec_gap",
-      "fix": "grammar pinned in \u00a71: comparator sets joined by ||; hyphen ranges/build metadata out in v1",
+      "fix": "grammar pinned in §1: comparator sets joined by ||; hyphen ranges/build metadata out in v1",
       "fix_commit": "P0-6",
       "status": "fixed"
     },
@@ -414,7 +414,7 @@
       "clauses": [
         "PACK-4"
       ],
-      "summary": "PACK-4 obligation said 'every field mutation' while \u00a74 prose and impl exclude parent_hash",
+      "summary": "PACK-4 obligation said 'every field mutation' while §4 prose and impl exclude parent_hash",
       "root_cause": "spec_contradiction",
       "fix": "obligation amended: 'every content field mutation (parent_hash excluded)'",
       "fix_commit": "P0-6",
@@ -428,7 +428,7 @@
       "clauses": [
         "TEL-1"
       ],
-      "summary": "step boundary counted JSONL lines, not unique message ids \u2014 real transcripts emitted ~1.9 records/step and over-counted input tokens ~3x; manual exit check compared the parser to itself",
+      "summary": "step boundary counted JSONL lines, not unique message ids — real transcripts emitted ~1.9 records/step and over-counted input tokens ~3x; manual exit check compared the parser to itself",
       "root_cause": "design_bug",
       "fix": "TEL-1 amended to pin the boundary (unique message.id, last usage wins); parser dedupes; exit criterion re-run against independent dedup-by-id truth (327 steps, all four classes exact)",
       "fix_commit": "P0-7",
@@ -456,7 +456,7 @@
       "clauses": [
         "KERN-1"
       ],
-      "summary": "hook module-level imports sat outside try/catch \u2014 fresh clone before bun install would fail loud; no KERN-1 fault-injection test exists in any package",
+      "summary": "hook module-level imports sat outside try/catch — fresh clone before bun install would fail loud; no KERN-1 fault-injection test exists in any package",
       "root_cause": "design_bug",
       "fix": "dynamic imports moved inside try in all three hooks; KERN-1 fault-injection matrix deferred to Phase 0.5 (this row records it)",
       "fix_commit": "P0-7",
@@ -538,7 +538,7 @@
       "source": "ci",
       "severity": "violation",
       "clauses": [],
-      "summary": "CI PBT seed found StepEvent.unit_prices accepted arbitrary string keys; a __proto__ key round-trips through JSON but Zod v4 silently strips it \u2014 data dropped at a storage boundary, invisible to local runs (seed-dependent flake)",
+      "summary": "CI PBT seed found StepEvent.unit_prices accepted arbitrary string keys; a __proto__ key round-trips through JSON but Zod v4 silently strips it — data dropped at a storage boundary, invisible to local runs (seed-dependent flake)",
       "root_cause": "spec_gap",
       "fix": "ERD pins unit_prices keys as lowercase identifier tokens; schema enforces the pattern (rejects ordinary bad keys) and the Zod proto-strip is pinned by test as structurally-unstorable; arb aligned to the valid domain",
       "fix_commit": "P0-7",
@@ -554,7 +554,7 @@
       ],
       "summary": "ART-3 admitted two materially different code-side drift baselines: frozen per-link hash vs last-synced index hash; the latter silently erases pending drift on index rebuild",
       "root_cause": "spec_gap",
-      "fix": "ART-5 added pinning per-link frozen downstream_hash_at_link; ERD trace_link + \u00a73 note updated",
+      "fix": "ART-5 added pinning per-link frozen downstream_hash_at_link; ERD trace_link + §3 note updated",
       "fix_commit": "3923587",
       "status": "fixed",
       "id": "F-040"
@@ -567,9 +567,9 @@
         "DSL-3",
         "DSL-6"
       ],
-      "summary": "kelspec-dsl.md normative example violated its own rules: example check referenced undeclared ctx.count/ctx.windowRemainder (rejected by DSL-3), invariant used nonexistent sum() helper, \u00a74 manifest entry count contradicted DSL-6",
+      "summary": "kelspec-dsl.md normative example violated its own rules: example check referenced undeclared ctx.count/ctx.windowRemainder (rejected by DSL-3), invariant used nonexistent sum() helper, §4 manifest entry count contradicted DSL-6",
       "root_cause": "spec_contradiction",
-      "fix": "example declares count input + window_remainder observable; invariant check self-contained reduce; \u00a74 corrected to 2 manifest entries",
+      "fix": "example declares count input + window_remainder observable; invariant check self-contained reduce; §4 corrected to 2 manifest entries",
       "fix_commit": "3923587",
       "status": "fixed",
       "id": "F-041"
@@ -595,7 +595,7 @@
       "clauses": [
         "ART-4"
       ],
-      "summary": "buildGate accepted override {by, reason} and discarded both \u2014 no record of who overrode or why existed anywhere, violating ART-4 recorded-override requirement; obligation test only checked resolution/resolved_at so it could not catch the drop",
+      "summary": "buildGate accepted override {by, reason} and discarded both — no record of who overrode or why existed anywhere, violating ART-4 recorded-override requirement; obligation test only checked resolution/resolved_at so it could not catch the drop",
       "root_cause": "test_blindspot",
       "fix": "drift_event gains resolved_by/resolution_reason (ERD + migration 0002 + schema); buildGate persists both; ART-4 obligation and test extended to assert attribution round-trips",
       "fix_commit": "3923587",
@@ -653,9 +653,9 @@
         "EVP-7",
         "EVP-5"
       ],
-      "summary": "migration 0003 added eval_run.executor and eval_task_result.repeat_index but ERD \u00a76 (owner of the data model) was not rippled",
+      "summary": "migration 0003 added eval_run.executor and eval_task_result.repeat_index but ERD §6 (owner of the data model) was not rippled",
       "root_cause": "spec_gap",
-      "fix": "ERD \u00a76 EVAL_RUN gains executor, EVAL_TASK_RESULT gains repeat_index with clause annotations",
+      "fix": "ERD §6 EVAL_RUN gains executor, EVAL_TASK_RESULT gains repeat_index with clause annotations",
       "fix_commit": "2119a15",
       "status": "fixed",
       "id": "F-047"
@@ -682,7 +682,7 @@
       "clauses": [
         "EVP-7"
       ],
-      "summary": "EVP \u00a72.1 said claude cost comes from transcript token usage priced at run time; code uses the CLI self-reported total_cost_usd, and a zero-exit unparseable session silently recorded cost 0",
+      "summary": "EVP §2.1 said claude cost comes from transcript token usage priced at run time; code uses the CLI self-reported total_cost_usd, and a zero-exit unparseable session silently recorded cost 0",
       "root_cause": "spec_contradiction",
       "fix": "spec row now states the self-reported-cost source; unparseable zero-exit output is a session failure",
       "fix_commit": "2119a15",
@@ -711,7 +711,7 @@
       "clauses": [
         "PACK-4"
       ],
-      "summary": "kelson.lock ponytail entry hash is synthetic (sha256 of the string ponytail@4.7.0) \u2014 no pack content dir exists yet for CC plugins, so PACK-1 content hashing cannot apply",
+      "summary": "kelson.lock ponytail entry hash is synthetic (sha256 of the string ponytail@4.7.0) — no pack content dir exists yet for CC plugins, so PACK-1 content hashing cannot apply",
       "root_cause": "unrecorded_deferral",
       "fix": "provenance recorded here: placeholder hash until plugin packs get content dirs (Phase 5 packaging); lockfile exists to pin the P2-10 exit-run config",
       "fix_commit": "2119a15",
@@ -742,7 +742,7 @@
       ],
       "summary": "kelson eval publish subcommand was absent from the UX command surface",
       "root_cause": "spec_gap",
-      "fix": "UX \u00a73 eval command list gains publish",
+      "fix": "UX §3 eval command list gains publish",
       "fix_commit": "2119a15",
       "status": "fixed",
       "id": "F-053"
@@ -789,6 +789,241 @@
       "fix_commit": "2af189c",
       "status": "fixed",
       "id": "F-056"
+    },
+    {
+      "task": "P3-6",
+      "source": "divergence",
+      "severity": "warning",
+      "clauses": [
+        "CTX-1",
+        "CTX-5"
+      ],
+      "summary": "CTX-1 admitted two empty-bundle readings (synthetic preamble recording nonzero vs empty string recording zero) and left the tokenizer identity unpinned across implementations",
+      "root_cause": "spec_gap",
+      "fix": "CTX-5 added: one pinned tokenizer both sides recorded on events, session usage never participates, empty bundle records exactly zero",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-057"
+    },
+    {
+      "task": "P3-5",
+      "source": "divergence",
+      "severity": "warning",
+      "clauses": [
+        "CTX-4",
+        "RPOL-6"
+      ],
+      "summary": "CTX-4 admitted diverging continue-headroom semantics (one-more-budget vs next whole multiple) and unnamed headless cap-exhausted terminal state",
+      "root_cause": "spec_gap",
+      "fix": "RPOL-6 + §3.1 added pinning latched thresholds, durable pause, one-budget continue headroom, headless escalate-then-block, minimal attribution set",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-058"
+    },
+    {
+      "task": "P3-6",
+      "source": "implementation",
+      "severity": "warning",
+      "clauses": [
+        "CTX-1",
+        "CTX-5"
+      ],
+      "summary": "per-section-sum accounting cannot satisfy the 2% bound on small bundles — a single BPE seam merge exceeds the whole tolerance (fast-check shrunk a 5-item counterexample); CTX-5 as first written pinned the failing derivation as the recorded count",
+      "root_cause": "spec_contradiction",
+      "fix": "recorded count respecified as exact whole-text tokenization; per-section manifest sums become the independent verification route; CTX-1 PBT verifies both routes",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-059"
+    },
+    {
+      "task": "P3-5",
+      "source": "implementation",
+      "severity": "warning",
+      "clauses": [
+        "RPOL-6"
+      ],
+      "summary": "budget event queries ordered by ULID, which does not sort within one millisecond — burst-ordering assertions (1x-then-2x-then-pause) failed nondeterministically",
+      "root_cause": "design_bug",
+      "fix": "event-stream queries order by rowid (insertion order); comment pins the constraint",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-060"
+    },
+    {
+      "task": "P3-1",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "RTR-1",
+        "CTX-1",
+        "RPOL-6"
+      ],
+      "summary": "ERD not rippled: ROUTING_DECISION diverged from shipped table, bundle/budget event tables had no ERD entities, and the capability-override vs rule-target distinction was unrecorded",
+      "root_cause": "spec_gap",
+      "fix": "ERD §5 rewritten to the shipped model; routing_decision gains matched_by (rule|capability) in schema+migration+code",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-061"
+    },
+    {
+      "task": "P3-8",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "RPOL-2",
+        "RTR-1"
+      ],
+      "summary": "eval routing integration fabricated langCounts {typescript:1} — a dominance never derived from files — so recorded RTR-1 vectors carried a made-up feature; per-task extraction is a real deferral",
+      "root_cause": "silent_divergence",
+      "fix": "fabricated count dropped (lang honestly falls back to unknown); per-task feature extraction deferred to Phase 4 pipeline, recorded here",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-062"
+    },
+    {
+      "task": "P3-8",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "CTX-4",
+        "RPOL-6"
+      ],
+      "summary": "post-hoc headless resolution recorded triage_resolved action=escalate that would never be acted on — false telemetry; unparseable usage silently skipped accounting",
+      "root_cause": "silent_divergence",
+      "fix": "post-session 2x pauses now stay open (the durable pause is the honest record); unparseable usage logs a diagnostic",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-063"
+    },
+    {
+      "task": "P3-6",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "CTX-1",
+        "CTX-5"
+      ],
+      "summary": "CTX-1 2% bound was discharged self-referentially (recorded and actual were the same countTokens call on the same string) and the designated per-section verification route was never summed",
+      "root_cause": "test_blindspot",
+      "fix": "realistic-size fixture asserts manifest sums + separators within 2% of the recorded count — the independent derivation CTX-5 designates",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-064"
+    },
+    {
+      "task": "P3-5",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "RPOL-6",
+        "CTX-4"
+      ],
+      "summary": "§3.1 pinned >= for all thresholds but both divergence readers and CTX-4 text use strict > for 1x; code was strict, spec said otherwise, equality boundary untested",
+      "root_cause": "spec_contradiction",
+      "fix": "§3.1 respecified (1x strictly exceeds, 2x inclusive); boundary cases added (==budget no event, ==2x pauses)",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-065"
+    },
+    {
+      "task": "P3-4",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "RPOL-3"
+      ],
+      "summary": "targetBudget derivation existed only as a code comment and could grab a rule from a different step; escalate() triage outcome is a sentinel with no durable pause event",
+      "root_cause": "spec_gap",
+      "fix": "derivation pinned in RPOL §3 (vector-matching rule first); durable pause wiring for router-triggered triage deferred to the Phase 4 pipeline that owns step state",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-066"
+    },
+    {
+      "task": "P3-4",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "RTR-2"
+      ],
+      "summary": "readInitialLadder ordered by ISO timestamp — the F-060 within-millisecond tie hazard reintroduced",
+      "root_cause": "design_bug",
+      "fix": "ORDER BY rowid",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-067"
+    },
+    {
+      "task": "P3-7",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "RTR-1"
+      ],
+      "summary": "routing-default pack had no pack.yaml (PACK-1 loader would refuse it) and the policy loads by raw path without verifyPackContent against the lock hash",
+      "root_cause": "unrecorded_deferral",
+      "fix": "pack.yaml added (loader verified), lock hash refreshed to real content hash; verifyPackContent wiring on the routing load path deferred to Phase 5 supply chain",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-068"
+    },
+    {
+      "task": "P3-2",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "RPOL-2",
+        "RTR-3"
+      ],
+      "summary": "tier fallback to T0 (exploration-permissive) was undeclared in the RPOL-2 feature table — fail-open under the RTR-3 guard",
+      "root_cause": "spec_gap",
+      "fix": "table row pinned: touching no clause-governed logic yields T0 (no criticality floor exists to inherit)",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-069"
+    },
+    {
+      "task": "P3-5",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "RPOL-6"
+      ],
+      "summary": "blocked existed only as in-process monitor state — another process could not distinguish blocked from running",
+      "root_cause": "design_bug",
+      "fix": "stepTriageState derives running|paused|blocked from the event stream; obligation case added",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-070"
+    },
+    {
+      "task": "P3-8",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "EVP-8"
+      ],
+      "summary": "--model with --routing-pack silently clobbered the session-model override while the manifest still recorded it",
+      "root_cause": "design_bug",
+      "fix": "runEval refuses the combination pre-flight with a diagnostic",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-071"
+    },
+    {
+      "task": "P3-6",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "CTX-1",
+        "CTX-5"
+      ],
+      "summary": "recordBundleMiss counted a synthetic frame never delivered to context",
+      "root_cause": "design_bug",
+      "fix": "miss tokens count exactly the delivered content",
+      "fix_commit": null,
+      "status": "fixed",
+      "id": "F-072"
     }
   ]
 }
