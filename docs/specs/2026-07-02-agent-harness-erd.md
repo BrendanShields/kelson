@@ -187,7 +187,7 @@ erDiagram
         int tokens_out
         int tokens_cache_read
         int tokens_cache_write
-        json unit_prices "price snapshot at execution (cost normalization, PRD 3)"
+        json unit_prices "price snapshot at execution (cost normalization, PRD 3); keys are lowercase identifier tokens (^[a-z][a-z0-9_.:-]*$) — never arbitrary strings"
         int cost_micro_usd
         int budget_tokens
         string overrun "none|soft|paused (CTX-4)"

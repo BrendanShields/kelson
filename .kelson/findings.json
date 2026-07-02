@@ -531,6 +531,18 @@
       "fix": "clauses added to the task row and commit message",
       "fix_commit": "P0-7",
       "status": "fixed"
+    },
+    {
+      "id": "F-039",
+      "task": "P0-7",
+      "source": "ci",
+      "severity": "violation",
+      "clauses": [],
+      "summary": "CI PBT seed found StepEvent.unit_prices accepted arbitrary string keys; a __proto__ key round-trips through JSON but Zod v4 silently strips it \u2014 data dropped at a storage boundary, invisible to local runs (seed-dependent flake)",
+      "root_cause": "spec_gap",
+      "fix": "ERD pins unit_prices keys as lowercase identifier tokens; schema enforces the pattern (rejects ordinary bad keys) and the Zod proto-strip is pinned by test as structurally-unstorable; arb aligned to the valid domain",
+      "fix_commit": "P0-7",
+      "status": "fixed"
     }
   ]
 }

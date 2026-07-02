@@ -63,7 +63,13 @@ export const StepEvent = z.object({
   tokens_out: z.number().int().nonnegative(),
   tokens_cache_read: z.number().int().nonnegative(),
   tokens_cache_write: z.number().int().nonnegative(),
-  unit_prices: z.record(z.string(), z.number().nonnegative()),
+  // Keys are identifier tokens (ERD: price classes / model ids). Zod v4
+  // additionally strips "__proto__" from records before key validation, so
+  // proto-polluting keys can never reach storage — stripped, not rejected.
+  unit_prices: z.record(
+    z.string().regex(/^[a-z][a-z0-9_.:-]*$/),
+    z.number().nonnegative(),
+  ),
   cost_micro_usd: MicroUsd,
   budget_tokens: z.number().int().positive(),
   overrun: BudgetOverrun,

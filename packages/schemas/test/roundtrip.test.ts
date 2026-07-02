@@ -92,7 +92,7 @@ const arbs: Record<string, [z.ZodType, fc.Arbitrary<unknown>]> = {
       tokens_cache_read: count,
       tokens_cache_write: count,
       unit_prices: fc.dictionary(
-        nonEmpty,
+        fc.constantFrom("input", "output", "cache_read", "claude-fable-5"),
         fc.double({ min: 0, max: 1000, noNaN: true }),
         { maxKeys: 4 },
       ),
@@ -272,5 +272,42 @@ describe("P0-2 verification: schemas reject malformed scalars", () => {
         description: "d",
       }).success,
     ).toBe(false);
+  });
+
+  it("unit_prices keys: non-identifier keys rejected; proto-polluting keys structurally stripped (found by CI PBT seed)", () => {
+    const base = {
+      id: "0".repeat(26),
+      task_id: "0".repeat(26),
+      session_id: "0".repeat(26),
+      sdlc_step: "build",
+      model: "m",
+      effort: "low",
+      agent_id: "a",
+      tokens_in: 0,
+      tokens_out: 0,
+      tokens_cache_read: 0,
+      tokens_cache_write: 0,
+      cost_micro_usd: 0,
+      budget_tokens: 1,
+      overrun: "none",
+      span_id: null,
+      schema_version: 1,
+    };
+    expect(
+      StepEvent.safeParse({ ...base, unit_prices: { "Not A Key!": 0 } })
+        .success,
+    ).toBe(false);
+    const stripped = StepEvent.safeParse({
+      ...base,
+      unit_prices: JSON.parse('{"__proto__": 0, "input": 0.5}'),
+    });
+    expect(stripped.success).toBe(true);
+    if (stripped.success) {
+      expect(Object.keys(stripped.data.unit_prices)).toEqual(["input"]);
+      expect(Object.hasOwn(stripped.data.unit_prices, "__proto__")).toBe(false);
+    }
+    expect(
+      StepEvent.safeParse({ ...base, unit_prices: { input: 0.5 } }).success,
+    ).toBe(true);
   });
 });
