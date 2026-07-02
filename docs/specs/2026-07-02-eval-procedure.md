@@ -53,6 +53,11 @@ The session under test is produced by a named **executor**, chosen per run and r
 - **EVP-7.** The eval runner shall execute every task through the run's named executor, record the executor in the run manifest, use the same executor on both sides of a paired run, and refuse ledger publication for runs whose executor is not `claude`.
   *Obligation:* manifest schema validation includes the executor field; a command-executor fixture writing a known micro-USD value to `$KELSON_COST_FILE` yields exactly that `cost_micro_usd` in its task result; ledger generation from a command-executor run is refused with a diagnostic.
 
+**Session model override (cost-free iteration runs).** The `claude` executor may drive an alternate model endpoint (e.g. a local Ollama model via its Anthropic-compatible API) by setting `ANTHROPIC_BASE_URL`/`ANTHROPIC_MODEL` for the session process. Paired comparisons stay internally valid (both sides run the same model), but two things change: the session's self-reported `total_cost_usd` prices tokens at API rates — a TPAC *proxy*, not spend — and the verdict is evidence about packs *under that model*, not under the operator's default models.
+
+- **EVP-8.** Where a run specifies a session model override, the eval runner shall apply the same override to both sides, record the override in the run manifest (`model_versions.session_model`, and `model_versions.session_base_url` when an endpoint is set), shall withhold operator credentials from sessions pointed at an override endpoint (the API key replaced with a dummy, the OAuth token dropped — SEC-1's auth exception covers the operator's own account, never an arbitrary endpoint), and shall refuse ledger publication for overridden runs.
+  *Obligation:* manifest validation — an overridden run's manifest carries `session_model` (and the base URL when given); env-construction test — with real credentials in the parent env and a base-URL override, the session env carries the dummy key and no OAuth token; ledger generation from an overridden run is refused with a diagnostic naming the override.
+
 ## 3. Sandbox Profiles (SEC-1..3)
 
 | Profile | Isolation | Network | Used for |

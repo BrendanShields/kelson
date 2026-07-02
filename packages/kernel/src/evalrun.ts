@@ -78,6 +78,7 @@ const sideEnvFor = (
   side: "A" | "B",
   lockfile: Lockfileish,
   seed: number,
+  sessionModel?: { model: string; baseUrl?: string },
 ): Record<string, string> => ({
   KELSON_SIDE: side,
   KELSON_SEED: String(seed),
@@ -85,6 +86,19 @@ const sideEnvFor = (
     .filter((e) => e.enabled)
     .map((e) => e.name)
     .join(","),
+  // EVP-8: the override rides the session env, so it lands after the auth
+  // passthrough and wins; local endpoints need a non-empty dummy key.
+  ...(sessionModel
+    ? {
+        ANTHROPIC_MODEL: sessionModel.model,
+        ...(sessionModel.baseUrl
+          ? {
+              ANTHROPIC_BASE_URL: sessionModel.baseUrl,
+              ANTHROPIC_API_KEY: "kelson-local",
+            }
+          : {}),
+      }
+    : {}),
 });
 
 const materializeClaudeSide = (dir: string, lockfile: Lockfileish): void => {
@@ -126,6 +140,8 @@ export interface EvalRunOptions {
   repeats?: number;
   snapshotStoreDir?: string;
   modelVersions?: Record<string, string>;
+  // EVP-8: same override on both sides; recorded in the manifest; bars ledger.
+  sessionModel?: { model: string; baseUrl?: string };
   gateOpts?: GateOptions;
   flaky?: { k?: number; minMinority?: number };
 }
@@ -168,7 +184,17 @@ export const runEval = (db: Database, opts: EvalRunOptions): EvalRunResult => {
     repeats,
     executor: opts.executor,
     sandbox_profile: opts.profile,
-    model_versions: opts.modelVersions ?? {},
+    model_versions: {
+      ...opts.modelVersions,
+      ...(opts.sessionModel
+        ? {
+            session_model: opts.sessionModel.model,
+            ...(opts.sessionModel.baseUrl
+              ? { session_base_url: opts.sessionModel.baseUrl }
+              : {}),
+          }
+        : {}),
+    },
     tasks: tasks.map((t) => ({ id: t.id, snapshot: t.snapshot })),
   });
   const manifestHash = hashContent(canonicalJson(manifest));
@@ -240,7 +266,12 @@ export const runEval = (db: Database, opts: EvalRunOptions): EvalRunResult => {
             task,
             ws,
             executor,
-            sideEnvFor(side, lockfile, taskSeed(runSeed, task.id, side, i)),
+            sideEnvFor(
+              side,
+              lockfile,
+              taskSeed(runSeed, task.id, side, i),
+              opts.sessionModel,
+            ),
           );
           db.query(
             `INSERT INTO eval_task_result (id, run_id, bench_task_id, side, repeat_index, fpar_pass, cost_micro_usd, check_results, raw_ref, schema_version)
@@ -350,7 +381,7 @@ export const writeLedgerEntry = (
 ): string => {
   const run = db
     .query(
-      "SELECT executor, suite_id, suite_version, manifest_hash, finished_at FROM eval_run WHERE id = ?",
+      "SELECT executor, suite_id, suite_version, manifest_hash, finished_at, model_versions FROM eval_run WHERE id = ?",
     )
     .get(args.runId) as {
     executor: string;
@@ -358,6 +389,7 @@ export const writeLedgerEntry = (
     suite_version: string;
     manifest_hash: string;
     finished_at: string | null;
+    model_versions: string;
   } | null;
   if (!run) throw new Error(`unknown run: ${args.runId}`);
   if (run.executor !== "claude")
@@ -366,6 +398,11 @@ export const writeLedgerEntry = (
     );
   if (!run.finished_at)
     throw new Error(`refusing to publish run ${args.runId}: run not finished`);
+  const models = JSON.parse(run.model_versions) as Record<string, string>;
+  if (models.session_model)
+    throw new Error(
+      `refusing to publish run ${args.runId}: session model override "${models.session_model}" — overridden runs are proxy evidence and never reach the ledger (EVP-8)`,
+    );
   const v = db
     .query("SELECT decision, deltas, n, alpha FROM verdict WHERE run_id = ?")
     .get(args.runId) as {

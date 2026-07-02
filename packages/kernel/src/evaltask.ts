@@ -92,12 +92,25 @@ export const claudeSessionEnv = (): Record<string, string> => {
   return env;
 };
 
+// EVP-8: sessions pointed at an override endpoint never carry operator
+// credentials — the dummy key (in sideEnv) wins over the passthrough by merge
+// order, and the OAuth token is dropped outright.
+export const buildClaudeEnv = (
+  sideEnv: Record<string, string>,
+): Record<string, string> => {
+  const passthrough = claudeSessionEnv();
+  if (sideEnv.ANTHROPIC_BASE_URL) {
+    delete passthrough.CLAUDE_CODE_OAUTH_TOKEN;
+    delete passthrough.ANTHROPIC_API_KEY;
+  }
+  return { ...passthrough, ...sideEnv };
+};
+
 export const claudeExecutor: ExecutorFn = (ctx) => {
   if (ctx.workspace.profile.isolation === "container")
     throw new Error(
       "claude executor under the container profile is not implemented yet — container runs use the command executor",
     );
-  const passthrough = claudeSessionEnv();
   const res = ctx.workspace.exec(
     // Disposable detached workspace + temp HOME: skipping permission prompts
     // is the sandbox's point — a headless session cannot answer them. The
@@ -106,8 +119,7 @@ export const claudeExecutor: ExecutorFn = (ctx) => {
     {
       timeoutMs: ctx.timeoutMs,
       env: {
-        ...passthrough,
-        ...ctx.sideEnv,
+        ...buildClaudeEnv(ctx.sideEnv),
         KELSON_STATEMENT: ctx.task.statement,
       },
     },

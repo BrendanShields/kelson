@@ -97,6 +97,13 @@ const evalCommand = (argv: string[]): void => {
           ? { policy: "deny", allowlist: [] }
           : { policy: "inherit" },
     });
+    if (
+      typeof named["base-url"] === "string" &&
+      typeof named.model !== "string"
+    )
+      die(
+        "--base-url requires --model (an endpoint without a model would run real-spend sessions)",
+      );
     let lockfileA: Lockfile;
     let lockfileB: Lockfile;
     if (sub === "ablate") {
@@ -128,6 +135,16 @@ const evalCommand = (argv: string[]): void => {
           : {}),
         ...(typeof named.snapshots === "string"
           ? { snapshotStoreDir: named.snapshots }
+          : {}),
+        ...(typeof named.model === "string"
+          ? {
+              sessionModel: {
+                model: named.model,
+                ...(typeof named["base-url"] === "string"
+                  ? { baseUrl: named["base-url"] }
+                  : {}),
+              },
+            }
           : {}),
       });
       if (json) console.log(JSON.stringify(result, null, 2));
