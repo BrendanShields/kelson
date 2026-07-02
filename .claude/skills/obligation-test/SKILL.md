@@ -41,5 +41,6 @@ it('parsing yields exactly N step records summing to transcript total', () => {
 ## Working rules
 
 - Read the clause AND its obligation from the spec doc before writing — the obligation text defines pass/fail, not your intuition. If the obligation is untestable as written, that's a spec bug: fix it via the spec-sync skill first.
+- **Arbitrary domain = valid domain, exactly.** Generators must produce the clause's full valid input domain and nothing outside it. Wider (arb generates inputs the schema shouldn't accept) makes the property seed-dependent; narrower hides real inputs. A PBT that fails only on CI means seed-dependent truth: suspect arb/schema domain mismatch first, and treat the failure as a finding to record, never a flake to re-run (postmortem: F-039 — a CI seed generated `__proto__`, exposing a silent data drop local runs never hit).
 - A PR that implements clause X without `<X>.test.ts` is incomplete — the clause-auditor agent will flag it.
 - Don't pad: one obligation line = one focused test file. Coverage beyond the obligation belongs to ordinary tests, added only when there's a concrete failure mode to pin.

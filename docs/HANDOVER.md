@@ -13,12 +13,12 @@ Spec suite complete (8 specs + 3 ADRs, ambiguity-swept). **Phase 0 (docs/plans/2
 
 ## The proven loop (repeat for each task)
 
-1. Flip task `in_progress` in `.kelson/tasks.json` (python one-liner).
+1. Flip task `in_progress` via `bun scripts/board.mjs task <id> in_progress`.
 2. Implement; spec bugs found by code get fixed **spec-first** (spec-sync skill) in the same commit.
 3. `bunx biome check --write .` then `bun run gates` (all 6 must pass).
 4. `git add -A`, then launch **clause-auditor** agent on the staged diff with task context + specific questions. It has found real violations every task (see `.kelson/findings.json` — 39 entries, root-cause taxonomy in the file).
-5. Fix findings (spec-first for spec_gap/contradiction), add findings rows, flip task `completed` + timestamp.
-6. Commit (reference clause IDs + audit outcome), push, `sleep 45 && gh run list --limit 1` to confirm CI.
+5. Fix findings (spec-first for spec_gap/contradiction), add findings rows (`bun scripts/board.mjs finding '<json>'`), flip task `completed` (`bun scripts/board.mjs task <id> completed --note "..."`).
+6. Commit (reference clause IDs + audit outcome), push, confirm CI with `gh run watch $(gh run list -L1 --json databaseId -q '.[0].databaseId') --exit-status`.
 
 ## Session-critical operational notes
 
