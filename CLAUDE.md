@@ -9,7 +9,12 @@ Open-source harness covering feedback → ideation → planning → spec → bui
 | `docs/specs/2026-07-02-agent-harness-prd.md` | Requirements (EARS clauses `TEL-*`, `EVAL-*`, `RTR-*`, `ART-*`, `SPEC-*`, `PIPE-*`, `LOOP-*`, `EVT-*`, `CTX-*`, `SEC-*`, `OSS-*`, `KERN-*`), metrics, phases |
 | `docs/specs/2026-07-02-agent-harness-erd.md` | Data model, storage tiers, package layout |
 | `docs/specs/2026-07-02-agent-harness-ux.md` | Command surface, journeys, TUI rules (`UX-*`) |
-| `docs/adr/` | Decisions (ADR-0001 stack, ADR-0002 no graph DB/RAG) |
+| `docs/specs/2026-07-02-kelspec-dsl.md` | The spec DSL grammar (`DSL-*`) |
+| `docs/specs/2026-07-02-pack-format.md` | Pack/lockfile/registry formats (`PACK-*`) |
+| `docs/specs/2026-07-02-eval-procedure.md` | Benchmark format, replay validity, gate math (`EVP-*`) |
+| `docs/specs/2026-07-02-routing-policy.md` | Policy/registry formats, feature vector, bandit (`RPOL-*`) |
+| `docs/specs/2026-07-02-signal-contract.md` | External signal schema (`SIG-*`) |
+| `docs/adr/` | Decisions (0001 language/storage, 0002 no graph DB/RAG, 0003 Bun/OpenTUI/tooling) |
 
 **Spec-first rule:** behavior changes start in the spec doc, never in code. Every behavioral requirement carries an `*Obligation:*` line (its executable test). A clause without an obligation is vague by definition and will be rejected by the spec-lint hook.
 
