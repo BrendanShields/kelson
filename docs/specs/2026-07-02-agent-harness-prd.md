@@ -202,7 +202,7 @@ The gate. Two layers — **benchmark suites** (causal, curated) and **live telem
 
 - **EVAL-1.** The eval harness shall support running any benchmark suite under any two lockfile configurations and shall report paired per-task deltas for FPAR, TPAC, and suite-specific checks.
   *Obligation:* self-test suite — a fixture pack with a known injected effect produces the expected sign of delta on every run.
-- **EVAL-2.** The eval harness shall approve a candidate diff only if the configured statistical test (default: paired bootstrap on FPAR and TPAC, α = 0.05) shows non-inferiority on **both** north-star metrics **and** improvement in at least one, at no less than the suite's configured minimum sample size.
+- **EVAL-2.** The eval harness shall approve a candidate diff only if the configured statistical test (default: paired bootstrap on FPAR and TPAC; full procedure, margins, and defaults in the [Eval procedure spec](./2026-07-02-eval-procedure.md) §5) shows non-inferiority on **both** north-star metrics **and** improvement in at least one, at no less than the suite's configured minimum sample size.
   *Obligation:* statistical unit tests — synthetic result distributions with known effect sizes are accepted/rejected at the configured error rates (±2%); underpowered runs (n below minimum) are always rejected regardless of observed delta.
 - **EVAL-3.** If a benchmark task is non-deterministic across identical configurations beyond a configured variance threshold, then the eval harness shall quarantine the task and exclude it from gating until re-approved by a human.
   *Obligation:* flakiness detector test — a deliberately random fixture task is quarantined within K runs (K configured, default 5).
@@ -219,7 +219,7 @@ The gate. Two layers — **benchmark suites** (causal, curated) and **live telem
 
 Maps `(SDLC step, task features)` → `(model, effort, context loadout, agent)`.
 
-**Task features** (initial set): step type, estimated task size (files touched), language/framework, novelty (similarity to past tasks), criticality tier of the touched spec (§7.4), and repo.
+**Task features** (initial set): step type, estimated task size (files touched), language/framework, novelty, criticality tier of the touched spec (§7.4), and repo — each defined precisely, with buckets and the novelty formula, in the [Routing policy spec](./2026-07-02-routing-policy.md) §2.
 
 **Routing targets** are entries in an open **agent registry** (a pack): base models at effort tiers, subagent definitions, and custom/fine-tuned agents with declared capabilities (e.g., "payments-domain migration agent"). Fine-grained routing to business-specific agents is a first-class case, not an extension.
 
@@ -279,6 +279,8 @@ A constrained, reviewable DSL (YAML/Markdown hybrid; exact syntax is an implemen
 ### 7.3 Divergence Testing (the Ambiguity Linter)
 
 Compilation catches vagueness; divergence testing catches *under-specification* — clauses that compile but still admit materially different implementations.
+
+**Material divergence, defined:** any difference in observable behavior — return values, persisted state, or emitted events — between the two implementations on the same probe input, excluding fields the spec explicitly declares nondeterministic (timestamps, IDs). The **probe set** is generated from the spec's compiled domain generators plus their declared boundary values; it is shared verbatim by both implementations.
 
 - **SPEC-4.** Where a spec is marked for divergence testing (default: all new specs at tier T1+), the harness shall have two isolated agents implement the spec independently, run both against the compiled obligation suite plus a shared behavioral probe set, and report any input where the two implementations' observable behavior differs.
   *Obligation:* fixture test — a spec with a known planted ambiguity (unspecified rounding rule) yields a reported divergence naming the probe input; a tightened version of the same spec yields none.
@@ -345,7 +347,7 @@ Covered by §7. Pipeline integration:
 
 - **PIPE-6.** When a build step begins, the harness shall assemble the agent's context exclusively through the context compiler (§12.1): the compiled task bundle, the relevant spec clauses, and the step's loadout — not raw whole-file dumps by default.
   *Obligation:* context audit test — for benchmark tasks, the assembled context contains no file content beyond the bundle manifest (override requires a recorded justification event).
-- **PIPE-7.** The build stage shall run obligations relevant to touched spec clauses continuously (on each substantive edit batch), not only at stage end.
+- **PIPE-7.** The build stage shall run obligations relevant to touched spec clauses after every agent tool-use batch that modified at least one file governed by a spec clause, not only at stage end.
   *Obligation:* integration test — an edit violating an invariant is flagged before the stage completes.
 
 ### 8.6 Verify
@@ -379,7 +381,7 @@ After each session (or batch), the **postmortem compiler** runs:
   *Obligation:* schema validation — proposals without resolvable evidence links are rejected pre-gate.
 - **LOOP-2.** The harness shall apply a loop-originated diff only after it passes the eval gate per EVAL-2 and EVAL-5, and shall record a changelog entry sufficient to revert it in one command.
   *Obligation:* end-to-end test — apply then revert restores the exact prior lockfile hash.
-- **LOOP-3.** While a recently applied diff is within its monitoring window (default 14 days or 30 sessions, whichever is later), if live FPAR or TPAC regresses beyond the configured threshold attributable to sessions using that diff, then the harness shall auto-revert the diff and mark it quarantined.
+- **LOOP-3.** While a recently applied diff is within its monitoring window (default 14 days or 30 sessions, whichever is later), if live FPAR or TPAC regresses beyond the configured threshold (default: FPAR down ≥ 5 percentage points, or TPAC up ≥ 10%, at p < 0.05 paired against the pre-apply baseline) attributable to sessions using that diff, then the harness shall auto-revert the diff and mark it quarantined.
   *Obligation:* simulation test — injected post-apply regression triggers revert within the window; quarantined diffs cannot be re-proposed without human release.
 - **LOOP-7.** Sessions shall pin their lockfile hash at session start; applied diffs shall take effect only for sessions started after the apply, so that concurrent sessions remain attributable to exactly one configuration.
   *Obligation:* concurrency test — two overlapping sessions spanning an apply record different pinned hashes, and every telemetry event joins to exactly one lockfile.
