@@ -14,6 +14,35 @@ try {
   const db = openDb(join(root, ".kelson", "kelson.db"));
   const id = beginSession(db, root);
   db.close();
+  // EVP §4: content-addressed session snapshot + environment manifest, the
+  // raw material for counterfactual replay (EVAL-5). Committed state only;
+  // working-tree diff capture is a recorded gap.
+  const { storeSnapshot, DEFAULT_SNAPSHOT_DIR, hashLockfile } = await import(
+    "@kelson/kernel"
+  );
+  const { readFileSync, existsSync } = await import("node:fs");
+  const snapshot = storeSnapshot(root, DEFAULT_SNAPSHOT_DIR);
+  const lockPath = join(root, "kelson.lock");
+  // Model IDs are unknown at session start — a recorded manifest gap until
+  // session-end enrichment lands.
+  writeFileSync(
+    join(
+      DEFAULT_SNAPSHOT_DIR,
+      `${snapshot.replace("sha256:", "")}.session.json`,
+    ),
+    JSON.stringify({
+      kelson_session_id: id,
+      snapshot,
+      lockfile_hash: existsSync(lockPath)
+        ? hashLockfile(JSON.parse(readFileSync(lockPath, "utf8")))
+        : null,
+      kelson_version: "0.1.0",
+      models: [],
+      bun: Bun.version,
+      os: process.platform,
+      at: new Date().toISOString(),
+    }),
+  );
   if (input.session_id) {
     const runtime = join(root, ".kelson", "runtime");
     mkdirSync(runtime, { recursive: true });

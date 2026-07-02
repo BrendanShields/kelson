@@ -47,6 +47,34 @@ describe("EVAL-2: synthetic distributions are accepted/rejected at configured er
     expect(rateOf("helps", 24, 0.7, 0.7)).toBeLessThanOrEqual(0.05 + 0.02);
   });
 
+  it("a suite-configured minimum applies (EVAL-2 'suite's configured minimum'), floored at 6 by schema", () => {
+    const pairs = trial(1, 6, 1.0, 0.0);
+    expect(gate(pairs, { resamples: RESAMPLES, seed: 1 }).decision).toBe(
+      "underpowered",
+    );
+    expect(
+      gate(pairs, { resamples: RESAMPLES, seed: 1, minSample: 6 }).decision,
+    ).not.toBe("underpowered");
+    const { EvalSuite } =
+      require("@kelson/schemas") as typeof import("@kelson/schemas");
+    expect(
+      EvalSuite.safeParse({
+        id: "s",
+        version: "1",
+        role: "gating",
+        min_sample: 5,
+      }).success,
+    ).toBe(false);
+    expect(
+      EvalSuite.safeParse({
+        id: "s",
+        version: "1",
+        role: "gating",
+        min_sample: 6,
+      }).success,
+    ).toBe(true);
+  });
+
   it("underpowered runs (n below minimum) are always rejected regardless of observed delta", () => {
     for (let s = 0; s < 50; s++) {
       const pairs = trial(s, 19, 1.0, 0.0);

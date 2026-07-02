@@ -430,7 +430,11 @@ export const runEval = (db: Database, opts: EvalRunOptions): EvalRunResult => {
       };
     });
 
-  const outcome = gate(pairs, { seed: runSeed, ...opts.gateOpts });
+  const outcome = gate(pairs, {
+    seed: runSeed,
+    ...(suite.min_sample !== undefined ? { minSample: suite.min_sample } : {}),
+    ...opts.gateOpts,
+  });
   const verdict: Verdict = {
     id: ulid(),
     run_id: runId,

@@ -5,3 +5,4 @@ node_modules/
 packages/schemas/json-schema/
 .kelson/kelson.db*
 .kelson/runtime/
+.kelson/tools/

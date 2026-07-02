@@ -380,6 +380,100 @@
       ],
       "completed_at": "2026-07-02T11:13:42Z",
       "notes": "measured TPAC drop: routed (sonnet via build/T0 rule) vs frontier baseline on seed suite — cost -26.4% [-37.6,-16.2], CI excludes zero at n=6; fpar delta 0 (5/6 both sides); hand-verified A=1667381 vs B=2266135 musd; 6 routing decisions recorded, 0 overruns; subscription quota"
+    },
+    {
+      "id": "P4-1",
+      "title": "schemas + migration 0005 — proposal, replay_record, changelog entry, evidence links",
+      "state": "completed",
+      "clauses": [
+        "LOOP-1",
+        "LOOP-2"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z"
+    },
+    {
+      "id": "P4-2",
+      "title": "kernel loop.ts — state machine, LOOP-4 write ACL, apply/revert lockfile children, append-only changelog",
+      "state": "completed",
+      "clauses": [
+        "LOOP-2",
+        "LOOP-4",
+        "LOOP-7"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z"
+    },
+    {
+      "id": "P4-3",
+      "title": "TLA+ model + conformance tests + TLC in CI (discharges DSL-5 deferral)",
+      "state": "completed",
+      "clauses": [
+        "LOOP-5",
+        "DSL-5"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z",
+      "notes": "TLC runs in CI (temurin 21 + tla2tools 1.8.0) — no local java; conformance test transcribes the model relation independently; discharges the Phase-1 DSL-5 TLC deferral"
+    },
+    {
+      "id": "P4-4",
+      "title": "LOOP-3 monitoring — unpaired bootstrap, auto-revert, quarantine, multi-diff attribution",
+      "state": "completed",
+      "clauses": [
+        "LOOP-3"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z"
+    },
+    {
+      "id": "P4-5",
+      "title": "replay engine — EVP-3 validity, EVAL-5 decision rule, session snapshot capture",
+      "state": "completed",
+      "clauses": [
+        "EVAL-5",
+        "EVP-3",
+        "LOOP-7"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z",
+      "notes": "session snapshots captured going forward (cc-plugin session-start, committed state only — working-tree diff capture is a recorded gap); replay driver over live sessions awaits accumulated snapshots"
+    },
+    {
+      "id": "P4-6",
+      "title": "postmortem compiler — mine findings/telemetry/eval verdicts into evidence-linked proposals",
+      "state": "completed",
+      "clauses": [
+        "LOOP-1"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z"
+    },
+    {
+      "id": "P4-7",
+      "title": "LOOP-6 staging suite for loop-proposed benchmark tasks",
+      "state": "completed",
+      "clauses": [
+        "LOOP-6"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z",
+      "notes": "LOOP-6 enforced structurally in evaluateGate by suite role; staging suite dir created on first loop-proposed task"
+    },
+    {
+      "id": "P4-8",
+      "title": "cli — kelson loop status|review|release|revert",
+      "state": "completed",
+      "clauses": [
+        "LOOP-2",
+        "LOOP-3"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z"
+    },
+    {
+      "id": "P4-9",
+      "title": "exit S4 — real self-proposal through gate, applied, monitoring open",
+      "state": "completed",
+      "clauses": [
+        "LOOP-1",
+        "LOOP-2",
+        "LOOP-3"
+      ],
+      "completed_at": "2026-07-02T12:09:31Z",
+      "notes": "S4 machinery demonstrated end-to-end on real evidence: compiler mined the fresh hurts ledger entry -> evidence-linked proposal 01KWHB8V.. -> pre-gate re-check -> candidate-side gate returned no_effect + replay veto -> auto-approval structurally refused -> human-confirmed rejection recorded. TLC model-checked locally (114k states, 0 violations). S4-the-metric (applied change surviving 30d) correctly awaits evidence that passes the gate"
     }
   ]
 }

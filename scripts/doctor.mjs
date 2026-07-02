@@ -41,3 +41,14 @@ if (errs.length) {
   process.exit(1)
 }
 console.log(`doctor: ok (bun ${bun}, ${process.platform}/${process.arch})`)
+
+// TLC (LOOP-5/DSL-5) runs in CI regardless; local java enables pre-push
+// model checking — warn-only, never a failure.
+try {
+  const { execSync } = await import('node:child_process')
+  const v = execSync('java -version 2>&1', { stdio: ['ignore', 'pipe', 'pipe'] }).toString()
+  const major = Number((v.match(/version "(\d+)/) ?? [])[1])
+  if (major && major < 11) console.warn(`doctor: java ${major} < 11 — TLC needs 11+ (CI pins temurin 21)`)
+} catch {
+  console.warn('doctor: no local java — TLC model checking runs in CI only (brew install --cask temurin@21 to run it locally)')
+}

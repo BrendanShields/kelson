@@ -2,17 +2,28 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+  applyProposal,
+  compileProposals,
+  createProposal,
   DEFAULT_DB_PATH,
+  enterGate,
+  evaluateGate,
   extractFeatures,
+  getProposal,
   loadPolicy,
   loadRegistry,
   loadSuite,
   matchAgent,
   openDb,
+  openMonitor,
   promoteTask,
+  readChangelog,
+  releaseQuarantined,
   resolveRule,
+  revertProposal,
   runEval,
   togglePack,
+  transition,
   validatePolicyTargets,
   writeLedgerEntry,
 } from "@kelson/kernel";
@@ -282,7 +293,149 @@ const routeCommand = (argv: string[]): void => {
     );
 };
 
+// UX §3: kelson loop status|review|release|revert (+ propose/approve/apply).
+const loopCommand = (argv: string[]): void => {
+  const sub = argv[0];
+  const { positional, named } = parseArgs(argv.slice(1));
+  const db = openDb(str(named.db, DEFAULT_DB_PATH));
+  const ctx = {
+    lockfilePath: str(named.lockfile, join(process.cwd(), "kelson.lock")),
+    changelogPath: str(
+      named.changelog,
+      join(process.cwd(), ".kelson", "changelog.jsonl"),
+    ),
+  };
+  const repoRoot = process.cwd();
+  try {
+    if (sub === "propose") {
+      const lockfile = loadLockfile(ctx.lockfilePath);
+      const drafts = compileProposals(db, {
+        ledgerDir: str(named.ledger, join(repoRoot, "ledger")),
+        lockfile,
+      });
+      if (!drafts.length) {
+        console.log("no conclusive evidence — nothing to propose");
+        return;
+      }
+      for (const draft of drafts) {
+        const proposal = createProposal(db, {
+          targetPack: draft.targetPack,
+          diff: draft.diff,
+          evidence: draft.evidence,
+          rationale: draft.rationale,
+          createdBy: "loop",
+          repoRoot,
+          gatingSuiteIds: ["seed"],
+        });
+        console.log(`proposed ${proposal.id}: ${draft.rationale}`);
+      }
+      return;
+    }
+    if (sub === "status") {
+      const rows = db
+        .query(
+          "SELECT id, target_pack, state, created_by, rationale FROM proposal ORDER BY rowid",
+        )
+        .all() as Record<string, string>[];
+      if (!rows.length) console.log("no proposals");
+      for (const r of rows)
+        console.log(
+          `${r.id} [${r.state}] ${r.target_pack} (${r.created_by}) — ${r.rationale?.slice(0, 100)}`,
+        );
+      return;
+    }
+    if (sub === "review") {
+      const id =
+        positional[0] ?? die("usage: kelson loop review <id> [--run <run-id>]");
+      const proposal = getProposal(db, id as string);
+      console.log(JSON.stringify(proposal, null, 2));
+      if (typeof named.run === "string") {
+        // A standard gating ablate runs A = current lockfile, B = toggled —
+        // so the proposal's candidate configuration is the toggled side B
+        // (both for disable-of-enabled and enable-of-disabled). Override with
+        // --candidate-side for compare runs with other geometries.
+        const candidateSide = (
+          typeof named["candidate-side"] === "string"
+            ? named["candidate-side"]
+            : "B"
+        ) as "A" | "B";
+        const basis = evaluateGate(db, {
+          runId: named.run,
+          replayConfig: str(named["replay-config"], proposal.diff_hash),
+          candidateSide,
+          ...(typeof named["min-sample"] === "string"
+            ? { minSample: Number(named["min-sample"]) }
+            : {}),
+        });
+        console.log(`gate basis: ${JSON.stringify(basis, null, 2)}`);
+      }
+      return;
+    }
+    if (sub === "gate") {
+      const id = positional[0] ?? die("usage: kelson loop gate <id>");
+      const proposal = enterGate(db, id as string, repoRoot);
+      console.log(`${id} -> ${proposal.state}`);
+      return;
+    }
+    if (sub === "approve" || sub === "reject") {
+      const id =
+        positional[0] ?? die(`usage: kelson loop ${sub} <id> --reason "..."`);
+      // LOOP-2: a human approval names what it overrides — no boilerplate
+      // default; the operator must state the reason.
+      if (sub === "approve" && typeof named.reason !== "string")
+        die(
+          "loop approve requires an explicit --reason naming the gate basis it overrides (LOOP-2)",
+        );
+      const proposal = transition(
+        db,
+        id as string,
+        sub === "approve" ? "approved" : "rejected",
+        {
+          actor: "human",
+          reason: str(named.reason, `human ${sub}`),
+        },
+      );
+      console.log(`${id} -> ${proposal.state}`);
+      return;
+    }
+    if (sub === "apply") {
+      const id = positional[0] ?? die("usage: kelson loop apply <id>");
+      const { lockfileAfter } = applyProposal(db, id as string, ctx);
+      const monitor = openMonitor(db, id as string, {
+        appliedAt: new Date().toISOString(),
+        lockfileAfter,
+        changelog: readChangelog(ctx.changelogPath),
+      });
+      console.log(
+        `applied ${id}; lockfile now ${lockfileAfter}; monitoring open (baseline n=${monitor.baseline_session_ids.length}${monitor.baseline_insufficient ? ", insufficient — alert-only" : ""})`,
+      );
+      return;
+    }
+    if (sub === "revert") {
+      const id = positional[0] ?? die("usage: kelson loop revert <id>");
+      const { lockfileAfter } = revertProposal(db, id as string, ctx, {
+        actor: "human",
+        reason: str(named.reason, "human revert"),
+      });
+      console.log(`reverted ${id}; lockfile now ${lockfileAfter}`);
+      return;
+    }
+    if (sub === "release") {
+      const id = positional[0] ?? die("usage: kelson loop release <id>");
+      releaseQuarantined(db, id as string, "human");
+      console.log(`released ${id} -> proposed (must re-pass the gate)`);
+      return;
+    }
+    die(
+      `unknown loop subcommand: ${sub ?? "(none)"} (have: propose, status, review, gate, approve, reject, apply, revert, release)`,
+    );
+  } finally {
+    db.close();
+  }
+};
+
 const [cmd, ...rest] = process.argv.slice(2);
 if (cmd === "eval") evalCommand(rest);
 else if (cmd === "route") routeCommand(rest);
-else die(`unknown command: ${cmd ?? "(none)"} (have: eval, route)`);
+else if (cmd === "loop") loopCommand(rest);
+else die(`unknown command: ${cmd ?? "(none)"} (have: eval, route, loop)`);

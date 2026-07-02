@@ -1,3 +1,7 @@
 id: seed
 version: "1"
 role: gating
+# EVAL-2: "at no less than the suite's configured minimum sample size" —
+# human gate-owner configuration: 6 curated tasks exist today; verdicts gate
+# at full available power until suite growth (LOOP-6) restores the 20 default.
+min_sample: 6

@@ -37,7 +37,7 @@
 
 - `kelson init` — install/onboard (J0).
 - `kelson eval ablate|compare|replay|report|suite|publish` — the eval tool (PRD §10); `publish` writes the ledger entry for a completed run (EVT-3/EVP-6).
-- `kelson loop status|review|release|revert` — improvement-loop operations (J4).
+- `kelson loop propose|status|review|gate|approve|reject|apply|release|revert` — improvement-loop operations (J4).
 - `kelson route explain <task>` — routing transparency (PRD §11).
 - `kelson agents register <manifest>` — custom agent onboarding.
 - `kelson drift list|promote` — drift review and batched clause promotion (SPEC-8).

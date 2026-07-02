@@ -101,6 +101,8 @@ erDiagram
     PACK ||--o{ PROPOSAL : targets
     PROPOSAL ||--o{ EVAL_RUN : "gated by"
     PROPOSAL ||--o{ CHANGELOG_ENTRY : produces
+    PROPOSAL ||--o| MONITOR_RECORD : "watched by"
+    PROPOSAL ||--o{ LOOP_EVENT : "audited by"
 
     PACK {
         string name PK
@@ -122,14 +124,18 @@ erDiagram
         boolean enabled
     }
     PROPOSAL {
-        string id PK
+        string id PK "insert-then-transition (state machine §9.2)"
         string target_pack FK "never kernel/eval-suite/loop-spec (LOOP-4)"
-        string diff_ref "file ref to the diff"
-        json evidence_links "telemetry refs (LOOP-1)"
+        json diff "v1: inline lockfile ops (enable|disable); content diffs later"
+        string diff_hash "canonical hash — quarantine blocks re-proposal by content (LOOP-9)"
+        json evidence "ev: links (LOOP-1/LOOP-8)"
+        string rationale
         string state "proposed|gated|approved|rejected|applied|monitoring|stable|reverted|quarantined"
         string created_by "loop|human"
-        string monitoring_until
         string quarantine_reason
+        string created_at
+        string updated_at
+        int schema_version
     }
     CHANGELOG_ENTRY {
         int seq PK "append-only (invariant I5)"
@@ -138,6 +144,26 @@ erDiagram
         string lockfile_before FK
         string lockfile_after FK
         string at
+    }
+    MONITOR_RECORD {
+        string proposal_id PK "one monitor per applied proposal (LOOP-3/LOOP-9)"
+        string applied_at
+        string lockfile_after FK
+        json baseline_session_ids "frozen at apply, quarantine-filtered (LOOP-9)"
+        boolean baseline_insufficient "under 8 baseline sessions: alert-only, never auto-revert"
+        string status "open|cleared|reverted|abandoned"
+        int check_seq "bootstrap seed derives from (proposal_id, check_seq)"
+        boolean stalled_notified "one stalled event at day 14 (LOOP-9)"
+        string closed_at
+        int schema_version
+    }
+    LOOP_EVENT {
+        string id PK "append-only; the monotone audit trail (I5)"
+        string proposal_id FK "nullable"
+        string kind "proposal_created|evidence_check|acl_rejected|state_transition|monitor_opened|monitor_check|monitor_check_skipped|regression_detected|monitor_stalled|monitor_closed|quarantine_release"
+        json payload
+        string at
+        int schema_version
     }
 ```
 

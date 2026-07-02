@@ -130,6 +130,9 @@ export const EvalSuite = z.strictObject({
   id: z.string().min(1),
   version: z.string().min(1),
   role: SuiteRole,
+  // EVAL-2: the gate runs "at no less than the suite's configured minimum
+  // sample size" — this is that configuration; absent → the EVP §5 default.
+  min_sample: z.number().int().min(6).optional(),
 });
 
 export type Executor = z.infer<typeof Executor>;

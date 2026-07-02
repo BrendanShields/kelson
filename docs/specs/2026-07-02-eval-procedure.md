@@ -86,12 +86,12 @@ Replays that fail validity are labeled `advisory` in the verdict and excluded fr
 
 ## 5. Statistical Gate (the normative math for EVAL-2)
 
-Given paired per-task results (A = with candidate, B = without):
+Given paired per-task results (A = with candidate, B = without). **The gate always evaluates the candidate configuration as side A**: when a stored run's sides are reversed relative to the candidate diff (a disable proposal gated by an enabled-vs-disabled ablate), the paired results are side-swapped before the decision table applies — verdict labels on the pack are never reinterpreted directionally, because `hurts` means inferior on *either* metric and carries no information about which.
 
 1. **Metrics:** task-level FPAR (0/1, majority over repeats) and cost (mean micro-USD over repeats).
 2. **Test:** paired bootstrap, **B = 10,000 resamples**, two-sided **α = 0.05**, on mean difference for each metric.
 3. **Non-inferiority margins:** FPAR: candidate mean not worse than −2 percentage points at the 95% CI lower bound. TPAC/cost: not worse than +5% at the 95% CI upper bound.
-4. **Minimum sample:** **n ≥ 20 paired tasks** (after quarantine exclusions). Below n: verdict = `underpowered`, always rejected for gating, with the deficit reported (UX J3).
+4. **Minimum sample:** **n ≥ 20 paired tasks** by default (after quarantine exclusions). A suite may configure its own minimum (`suite.yaml` `min_sample`), **never below 6** — a hard schema floor; configuring below the default is the human gate-owner's recorded acceptance of reduced detection power at the §5 margins and must carry a findings/decision row. Below the configured minimum: verdict = `underpowered`, always rejected for gating, with the deficit reported (UX J3).
 5. **Decision table:**
 
 | FPAR | Cost | Verdict |
