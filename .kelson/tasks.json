@@ -38,14 +38,15 @@
     {
       "id": "P0-5",
       "title": "Telemetry capture \u2014 ingestion, local-only, fault tolerance, task lifecycle",
-      "state": "open",
+      "state": "completed",
       "clauses": [
         "TEL-1",
         "TEL-2",
         "TEL-5",
         "TEL-7"
       ],
-      "completed_at": null
+      "completed_at": "2026-07-02T06:18:29Z",
+      "notes": "transcript parsing + emit-on-session-end and merge_clean window land with P0-7/cc-plugin (recorded as todos in TEL-1/TEL-2 tests and code)"
     },
     {
       "id": "P0-6",

@@ -170,7 +170,7 @@ erDiagram
         json spec_clause_refs
         string state "open|in_progress|delivered|accepted|corrected|abandoned (TEL-7)"
         string acceptance_signal "approval|merge_clean|null"
-        int correction_count
+        int correction_count "count of correction-class interventions (TEL-4), maintained at ingestion"
         string opened_at
         string delivered_at
         string closed_at
