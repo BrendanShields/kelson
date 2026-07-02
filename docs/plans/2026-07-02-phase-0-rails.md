@@ -1,5 +1,18 @@
 # Implementation Plan: Phase 0 — Rails
 
+> **Status: COMPLETE (2026-07-02).** All 7 tasks done (`.kelson/tasks.json`), 39 findings logged (`.kelson/findings.json`), zero defects reached main. Exit criterion verified against a real session transcript: 327 steps (unique message ids), all four token classes matching an independent dedup-by-id count; a PRD edit flagged 7 downstream specs stale; `/kelson:status` renders. The cc-plugin hooks are wired in `.claude/settings.json` and the repo's artifact store is seeded — sessions now dogfood into `.kelson/kelson.db` (gitignored). **Next: plan Phase 1 (kelspec DSL parser, spec pipeline — PRD §16) via the feature-pipeline skill.**
+>
+> **Deferral ledger (everything intentionally left open):**
+>
+> | What | Where recorded | Discharges |
+> |---|---|---|
+> | OSS-6 pt 2: cross-version eval comparison refusal | it.todo in OSS-6.test.ts | Phase 2 |
+> | PACK-2 pt 2: Ed25519 signature verify + `--unsigned` telemetry flag | it.todo in PACK-2.test.ts | Phase 5 (registry keys) |
+> | merge_clean acceptance (correction window) | thrown error in telemetry.ts + F-020 | post-Phase-0 (unblocked) |
+> | rebuild-from-files; register.ts hardcodes the 8 spec paths | Task 4 note below + F-015 | Phase 1 / DSL-6 |
+> | Telemetry stubs: sdlc_step='build', effort='medium', cost=0, task-per-session | F-034 | Phase 3 (stage/budget/prices) |
+> | KERN-1 hook fault-injection matrix | F-033 | Phase 0.5 |
+
 - **Upstream:** PRD §16 Phase 0; ERD; UX J0. **Exit criterion:** a Claude Code session produces telemetry (structured events in SQLite) and traceable artifacts (hash-linked, staleness-flagged).
 - **Clauses in scope:** TEL-1, TEL-2, TEL-5, TEL-7 (lifecycle skeleton), ART-1, ART-2, OSS-6, SEC-4 (schema shape only), KERN-1 (telemetry path only).
 - **Discipline:** every task lands with its obligation test (`packages/<pkg>/test/obligations/<ID>.test.ts`); spec + code + test in one commit per the spec-sync skill.
