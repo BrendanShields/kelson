@@ -1,0 +1,16 @@
+schema_version: 1
+id: refactor-extract-shared-validation
+statement: >
+  src/create-user.ts and src/update-user.ts duplicate the same email/name validation logic.
+  Extract it into src/validate.ts (exporting `validateUser`) and use it from both call
+  sites. `bun test` must stay green.
+snapshot: sha256:f22e307f0c2fc1391cd0a57f8674ad6143abaf7d219d5d58c370e444567eae5b
+checks:
+  - kind: command
+    run: bun test
+  - kind: artifact_exists
+    path: src/validate.ts
+budget_ceiling_musd: 2000000
+timeout_minutes: 10
+declared_nondeterminism: []
+session_command: null

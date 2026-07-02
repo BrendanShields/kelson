@@ -14,7 +14,10 @@ statement: >                 # verbatim prompt given to the session under test
   Add per-caller rate limiting to the API per the attached kelspec.
 snapshot: sha256:…           # content-addressed repo snapshot (§4)
 checks:                      # all must pass for fpar_pass = true
-  - kind: obligations        # compiled kelspec obligations must pass
+  - kind: obligations        # every kelspec in the workspace compiles (SPEC-1); executing
+                             # compiled properties against the impl needs a harness module —
+                             # that depth arrives with Phase 3 context compilation. Until then
+                             # behavioral verification rides `command` checks (bun test).
   - kind: command            # arbitrary check command, exit 0 = pass
     run: bun test
   - kind: artifact_exists
@@ -22,6 +25,7 @@ checks:                      # all must pass for fpar_pass = true
 budget_ceiling_musd: 500000  # micro-USD; exceeding = task fail (cost discipline is part of correctness)
 timeout_minutes: 30
 declared_nondeterminism: []  # observable fields excluded from cross-run comparison
+session_command: null        # required only for the command executor (§2.1)
 ```
 
 - **EVP-1.** The eval runner shall execute each task from its snapshot inside a SEC-1 sandbox, evaluate every check, and record `fpar_pass` (all checks passed within budget and timeout) and `cost_micro_usd` per run.
@@ -35,11 +39,25 @@ declared_nondeterminism: []  # observable fields excluded from cross-run compari
 
 Each task runs `repeats` times per side (default 3) with seed derivation `seed_i = H(run_seed, task_id, side, i)` — deterministic from the run manifest, so EVAL-4 reproduction is exact.
 
+### 2.1 Executors
+
+The session under test is produced by a named **executor**, chosen per run and recorded in the run manifest (extends EVAL-4/SEC-3):
+
+| Executor | Session | Cost source |
+|---|---|---|
+| `claude` | headless Claude Code session receives the task `statement` inside the sandboxed workspace | the session's self-reported total cost (`--output-format json` → `total_cost_usd`, rounded to micro-USD); a zero-exit session with unparseable output is a session failure, never a silent zero-cost pass |
+| `command` | the task's `session_command` (task.yaml; required for this executor) runs inside the sandbox | integer micro-USD the command writes to `$KELSON_COST_FILE`, else 0 |
+
+`command` exists for fixtures, self-tests (EVAL-1), and CI; it can simulate a session's file mutations and spend deterministically. Ledger entries (EVT-3) may only be published from `claude`-executor runs — a synthetic session is evidence about the runner, not about a pack.
+
+- **EVP-7.** The eval runner shall execute every task through the run's named executor, record the executor in the run manifest, use the same executor on both sides of a paired run, and refuse ledger publication for runs whose executor is not `claude`.
+  *Obligation:* manifest schema validation includes the executor field; a command-executor fixture writing a known micro-USD value to `$KELSON_COST_FILE` yields exactly that `cost_micro_usd` in its task result; ledger generation from a command-executor run is refused with a diagnostic.
+
 ## 3. Sandbox Profiles (SEC-1..3)
 
 | Profile | Isolation | Network | Used for |
 |---|---|---|---|
-| `worktree` | git worktree + temp HOME | inherit | operator's own suites/replays (minimum, SEC-1) |
+| `worktree` | detached clone + temp HOME (claude session process alone gets the SEC-1 auth set) | inherit | operator's own suites/replays (minimum, SEC-1) |
 | `container` | docker/podman (ADR-0003), no mounts beyond workspace | deny + task allowlist | community suites/packs, CI, anything not operator-authored |
 
 Profile is recorded in the run manifest (SEC-3). If `container` is required but unavailable, the run **refuses** (it does not degrade — degradation is only for the harness's own ambient behavior, KERN-1, never for the security boundary).

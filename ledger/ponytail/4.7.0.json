@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "pack": "ponytail",
+  "version": "4.7.0",
+  "run_manifest_hash": "sha256:f6cd026b65522575dfc389a93888838781132a926d295434576983dddf3b3b10",
+  "suite": "seed@1",
+  "verdict": "underpowered",
+  "fpar_delta": {
+    "mean": 0.16666666666666666,
+    "ci95": [
+      0,
+      0.5
+    ]
+  },
+  "cost_delta_pct": {
+    "mean": 15.76290735384063,
+    "ci95": [
+      5.326651639304614,
+      31.789169765119535
+    ]
+  },
+  "n": 6,
+  "date": "2026-07-02T09:52:22.760Z"
+}

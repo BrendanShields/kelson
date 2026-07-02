@@ -1,0 +1,14 @@
+schema_version: 1
+id: spec-repair-vague-clause
+statement: >
+  docs/kelspec/importer.spec.md fails to compile: clause IMP-1 is vague (no check
+  predicate). Repair the spec so it compiles: give IMP-1 an executable check over declared
+  inputs/observables, or a signed unverifiable annotation with a justification. Do not
+  delete the clause.
+snapshot: sha256:593981ed235523c2b8ba552187159eb3803acdfc7572b253e3da265c704f2679
+checks:
+  - kind: obligations
+budget_ceiling_musd: 2000000
+timeout_minutes: 10
+declared_nondeterminism: []
+session_command: null

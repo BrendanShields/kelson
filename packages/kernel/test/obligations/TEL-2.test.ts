@@ -5,6 +5,10 @@ import { join } from "node:path";
 // TEL-2's strongest form: the kernel and schemas packages contain no network
 // path at all — nothing to opt out of. The full-session network-recorder
 // integration test lives in packages/cc-plugin/test/obligations/TEL-2.test.ts.
+// Process-spawning is exempted ONLY for the sandbox-execution modules: SEC-1
+// mandates the eval runner spawn sessions in isolated workspaces, and a
+// spawned child is not a telemetry transmission path — network modules stay
+// banned in those files too.
 const NETWORK_PATTERNS = [
   /from\s+["'](node:)?(https?|http2|net|tls|dgram|dns)["']/,
   /require\(["'](node:)?(https?|http2|net|tls|dgram|dns)["']\)/,
@@ -12,10 +16,13 @@ const NETWORK_PATTERNS = [
   /\bfetch\s*\(/,
   /new\s+WebSocket\b/,
   /XMLHttpRequest|sendBeacon/,
-  /Bun\.(connect|listen|serve|udpSocket|spawn)\b/,
-  /from\s+["'](node:)?child_process["']/,
+  /Bun\.(connect|listen|serve|udpSocket)\b/,
   /["']bun:ffi["']/,
 ];
+
+const SPAWN_PATTERNS = [/from\s+["'](node:)?child_process["']/, /Bun\.spawn\b/];
+
+const SPAWN_ALLOWED = new Set(["sandbox.ts", "snapshots.ts"]);
 
 const sourceFiles = (dir: string): string[] =>
   readdirSync(dir, { recursive: true })
@@ -34,6 +41,8 @@ describe("TEL-2: telemetry has no off-machine path unless explicitly opted in", 
     for (const file of files) {
       const src = readFileSync(file, "utf8");
       for (const pattern of NETWORK_PATTERNS) expect(src).not.toMatch(pattern);
+      if (![...SPAWN_ALLOWED].some((f) => file.endsWith(`/${f}`)))
+        for (const pattern of SPAWN_PATTERNS) expect(src).not.toMatch(pattern);
     }
   });
 });

@@ -1,4 +1,5 @@
 export * from "./artifacts.ts";
+export * from "./eval.ts";
 export * from "./kelspec.ts";
 export * from "./packs.ts";
 export * from "./scalars.ts";

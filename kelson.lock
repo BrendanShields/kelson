@@ -1,5 +1,12 @@
 {
   "schema_version": 1,
   "parent_hash": null,
-  "entries": []
+  "entries": [
+    {
+      "name": "ponytail",
+      "version": "4.7.0",
+      "hash": "sha256:807bee4dadc4cdccaf477a98b3847baecb7a920b2d2f74ad75c91836d3d5f167",
+      "enabled": true
+    }
+  ]
 }

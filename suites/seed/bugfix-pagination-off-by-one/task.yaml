@@ -1,0 +1,13 @@
+schema_version: 1
+id: bugfix-pagination-off-by-one
+statement: >
+  `bun test` fails: src/paginate.ts drops the last item when the item count is an exact
+  multiple of the page size. Find and fix the off-by-one without changing the tests.
+snapshot: sha256:785f117a871c9a5d9fc93c2351165cfa2bd8317b89640ed3e3316b4d055cf79a
+checks:
+  - kind: command
+    run: bun test
+budget_ceiling_musd: 2000000
+timeout_minutes: 10
+declared_nondeterminism: []
+session_command: null

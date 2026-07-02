@@ -166,6 +166,115 @@
       ],
       "completed_at": "2026-07-02T08:31:33Z",
       "notes": "exit criterion verified independently: vague-clause counts by regex over fixtures matched compiler diagnostics 3/3; invariant violation hand-computed (12>10 fails, 9<=10 passes)"
+    },
+    {
+      "id": "P2-1",
+      "title": "schemas — eval domain (task format, run manifest, results, verdict, ledger) + migration 0003",
+      "state": "completed",
+      "clauses": [
+        "EVAL-4",
+        "SEC-3",
+        "EVT-1",
+        "EVP-7"
+      ],
+      "completed_at": "2026-07-02T09:16:30Z",
+      "notes": "roundtrip arbitraries for eval schemas deferred — obligation tests validate them directly; add on first field change per CLAUDE.md pairing rule"
+    },
+    {
+      "id": "P2-2",
+      "title": "kernel — statistical gate: paired bootstrap, decision table",
+      "state": "completed",
+      "clauses": [
+        "EVAL-2",
+        "EVP-4",
+        "EVT-1"
+      ],
+      "completed_at": "2026-07-02T09:23:22Z"
+    },
+    {
+      "id": "P2-3",
+      "title": "kernel — flakiness quarantine",
+      "state": "completed",
+      "clauses": [
+        "EVAL-3",
+        "EVP-5"
+      ],
+      "completed_at": "2026-07-02T09:23:22Z"
+    },
+    {
+      "id": "P2-4",
+      "title": "kernel — sandbox profiles: worktree (detached clone + temp HOME), container (deny-net + allowlist), refuse-not-degrade",
+      "state": "completed",
+      "clauses": [
+        "SEC-1",
+        "SEC-2",
+        "SEC-3",
+        "EVP-2"
+      ],
+      "completed_at": "2026-07-02T09:23:22Z",
+      "notes": "container network allowlist unimplemented (deny-all only) — refuses with diagnostic; claude executor under container unimplemented (refuses); recorded per SEC-2 v1"
+    },
+    {
+      "id": "P2-5",
+      "title": "kernel — task runner: snapshot restore, checks, budget/timeout + command/claude executors",
+      "state": "completed",
+      "clauses": [
+        "EVP-1",
+        "EVP-7"
+      ],
+      "completed_at": "2026-07-02T09:23:22Z"
+    },
+    {
+      "id": "P2-6",
+      "title": "kernel — ablate/compare orchestration, run manifest, verdict",
+      "state": "completed",
+      "clauses": [
+        "EVAL-1",
+        "EVAL-4",
+        "EVT-1"
+      ],
+      "completed_at": "2026-07-02T09:23:22Z"
+    },
+    {
+      "id": "P2-7",
+      "title": "cli — kelson eval ablate|compare|suite promote (--json)",
+      "state": "completed",
+      "clauses": [
+        "EVT-1"
+      ],
+      "completed_at": "2026-07-02T09:23:22Z"
+    },
+    {
+      "id": "P2-8",
+      "title": "seed suite ~6 tasks + snapshot store; EVT-2 pack-type matrix",
+      "state": "completed",
+      "clauses": [
+        "EVT-2"
+      ],
+      "completed_at": "2026-07-02T09:34:01Z",
+      "notes": "6 seed tasks, committed bundles under suites/seed/snapshots; ~14 more tasks to reach powered n>=20 (LOOP-6 growth)"
+    },
+    {
+      "id": "P2-9",
+      "title": "ledger generation (registry CI half deferred to Phase 5)",
+      "state": "completed",
+      "clauses": [
+        "EVT-3",
+        "EVP-6"
+      ],
+      "completed_at": "2026-07-02T09:34:01Z",
+      "notes": "generation+verification halves shipped; registry-CI enforcement deferred to Phase 5 (OSS-4)"
+    },
+    {
+      "id": "P2-10",
+      "title": "exit criterion — bounded real ablate of ponytail from isolated run",
+      "state": "completed",
+      "clauses": [
+        "EVT-1",
+        "SEC-1"
+      ],
+      "completed_at": "2026-07-02T09:52:22Z",
+      "notes": "real ablate: 12 claude sessions, $10.04, verdict underpowered n=6 with fpar +0.167 [0,0.5], cost +15.8% [5.3,31.8] (ponytail costlier in-sample); deltas hand-verified; ledger/ponytail/4.7.0.json published from run manifest sha256:f6cd026b6552..."
     }
   ]
 }

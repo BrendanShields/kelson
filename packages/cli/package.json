@@ -5,5 +5,12 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
+  },
+  "bin": {
+    "kelson": "./src/index.ts"
+  },
+  "dependencies": {
+    "@kelson/kernel": "workspace:*",
+    "@kelson/schemas": "workspace:*"
   }
 }

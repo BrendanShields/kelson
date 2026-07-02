@@ -1,0 +1,16 @@
+schema_version: 1
+id: greenfield-wordcount-cli
+statement: >
+  Implement scripts/wc.ts: reads the file named by its first CLI argument and prints
+  `<lines> <words> <chars>` (single spaces, trailing newline). Words split on any whitespace
+  run; chars count every byte of the file as UTF-8 text. Make `bun test` pass.
+snapshot: sha256:5c8c611e20854c6215b67481ada220fdcfd43fddaf931ccedb032f246dcaa822
+checks:
+  - kind: command
+    run: bun test
+  - kind: artifact_exists
+    path: scripts/wc.ts
+budget_ceiling_musd: 2000000
+timeout_minutes: 10
+declared_nondeterminism: []
+session_command: null

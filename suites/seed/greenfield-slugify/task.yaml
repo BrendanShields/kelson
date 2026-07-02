@@ -1,0 +1,16 @@
+schema_version: 1
+id: greenfield-slugify
+statement: >
+  Implement src/slugify.ts exporting `slugify(s: string): string` so `bun test` passes:
+  lowercase, replace every run of non-alphanumeric characters with a single hyphen, and trim
+  leading/trailing hyphens.
+snapshot: sha256:bd2324166eb33226e34a320ec535cdae8a8289ff7bef1a2e58db394102a24b7a
+checks:
+  - kind: command
+    run: bun test
+  - kind: artifact_exists
+    path: src/slugify.ts
+budget_ceiling_musd: 2000000
+timeout_minutes: 10
+declared_nondeterminism: []
+session_command: null

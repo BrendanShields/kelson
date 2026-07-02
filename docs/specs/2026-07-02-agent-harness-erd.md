@@ -268,6 +268,7 @@ erDiagram
         string config_a "lockfile hash"
         string config_b "lockfile hash, null for replay"
         int seed
+        string executor "claude|command (EVP-7)"
         json model_versions
         json sandbox_profile "SEC-3"
         string manifest_hash "reproduction key (EVAL-4)"
@@ -279,6 +280,7 @@ erDiagram
         string run_id FK
         string bench_task_id FK
         string side "A|B"
+        int repeat_index "window ordering key (EVP-5)"
         boolean fpar_pass
         int cost_micro_usd
         json check_results
