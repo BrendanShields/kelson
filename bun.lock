@@ -20,8 +20,8 @@
       },
     },
     "packages/cli": {
-      "name": "@kelson/cli",
-      "version": "0.0.1",
+      "name": "kelson",
+      "version": "0.1.0",
       "bin": {
         "kelson": "./src/index.ts",
       },
@@ -67,8 +67,6 @@
 
     "@kelson/cc-plugin": ["@kelson/cc-plugin@workspace:packages/cc-plugin"],
 
-    "@kelson/cli": ["@kelson/cli@workspace:packages/cli"],
-
     "@kelson/kernel": ["@kelson/kernel@workspace:packages/kernel"],
 
     "@kelson/schemas": ["@kelson/schemas@workspace:packages/schemas"],
@@ -82,6 +80,8 @@
     "fast-check": ["fast-check@4.8.0", "", { "dependencies": { "pure-rand": "^8.0.0" } }, "sha512-GOJ158CUMnN6cSahsv4+ExARvIDuzzinFjkp0E9WtiBa5zcVeLozVkWaE4IzFcc+Y48Wp1EDlUZsXRyAztQcSg=="],
 
     "gpt-tokenizer": ["gpt-tokenizer@3.4.0", "", {}, "sha512-wxFLnhIXTDjYebd9A9pGl3e31ZpSypbpIJSOswbgop5jLte/AsZVDvjlbEuVFlsqZixVKqbcoNmRlFDf6pz/UQ=="],
+
+    "kelson": ["kelson@workspace:packages/cli"],
 
     "pure-rand": ["pure-rand@8.4.1", "", {}, "sha512-c58R2+SPFcSIPXoU834QN/KPDDOSd8sXcSrqf6e83Me6Rrp1EYkxukkjXMVrKvKaADs1SOyNkWdfvLf6zY8qLQ=="],
 
