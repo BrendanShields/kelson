@@ -1036,7 +1036,7 @@
       "summary": "LOOP-1 admitted diverging link schemes, check moments (creation vs pre-gate only), and rejection shapes (document mutation vs evented state transition)",
       "root_cause": "spec_gap",
       "fix": "LOOP-8 pins the two link grammars, both check moments, stated-location-only resolution, atomic evented rejection",
-      "fix_commit": null,
+      "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-073"
     },
@@ -1051,7 +1051,7 @@
       "summary": "LOOP-3 admitted two different bootstrap constructions (percentile-of-difference vs pooled-null — materially different p-values) and two attribution algorithms; both readers independently invented the same min-8 floor and conjunctive window closure, which were unpinned",
       "root_cause": "spec_gap",
       "fix": "LOOP-9 + §9.2.1 pin pooled-null seeded bootstrap, min-8, conjunctive closure, inter-apply-stratum attribution, single-revert-per-window, content-hash quarantine",
-      "fix_commit": null,
+      "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-074"
     },
@@ -1065,7 +1065,7 @@
       "summary": "CI changelog check fell back to HEAD comparison exactly when tampering was detected — a contiguous history rewrite passed CI; comparison also used origin/main instead of the merge base",
       "root_cause": "design_bug",
       "fix": "merge-base comparison, no fallback; script hard-fails on unresolvable base ref, skips only when the changelog does not exist at the base",
-      "fix_commit": null,
+      "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-075"
     },
@@ -1080,7 +1080,7 @@
       "summary": "direction-aware gate was unsound: hurts means inferior on EITHER metric, so a fpar-improving cost-inferior pack auto-approved its own disable despite the disable being fpar-inferior",
       "root_cause": "design_bug",
       "fix": "EVP §5 pins candidate-as-side-A; evaluateGate recomputes the decision table from per-task results with sides swapped when needed — verdict labels never reinterpreted",
-      "fix_commit": null,
+      "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-076"
     },
@@ -1094,7 +1094,7 @@
       "summary": "I2 cap off-by-one (3rd monitor refused vs TLA Monitor enabled at <K) and non-transactional openMonitor orphaned an open record with the proposal stuck in applied",
       "root_cause": "design_bug",
       "fix": "cap counts exclude the proposal own record, checked before insert, insert+transition atomic; cap-boundary obligation case added",
-      "fix_commit": null,
+      "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-077"
     },
@@ -1108,7 +1108,7 @@
       "summary": "the stratum-starved/re-measure simulation required by LOOP-9 obligation did not exist",
       "root_cause": "test_blindspot",
       "fix": "starved-stratum case added: revert last-applied only, survivor re-measures on fresh sessions",
-      "fix_commit": null,
+      "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-078"
     },
@@ -1122,7 +1122,7 @@
       "summary": "attribution silently narrowed: slice(-2) dropped older simultaneous suspects and isolation read FPAR only, collapsing TPAC regressions to revert-last-applied",
       "root_cause": "silent_divergence",
       "fix": "§9.2.1 pins iterative two-most-recent-per-sweep semantics; isolation is metric-aware (triggering family)",
-      "fix_commit": null,
+      "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-079"
     },
@@ -1137,7 +1137,7 @@
       "summary": "suite min_sample: 6 contradicted EVP §5 rule 4 hard n>=20 and was recorded only as a YAML comment — the Goodhart pattern the PRD risk table names",
       "root_cause": "spec_contradiction",
       "fix": "EVP §5 defines suite-configurable minimum with a hard schema floor of 6 and requires a recorded decision row (this row); EVAL-2 test covers the config path",
-      "fix_commit": null,
+      "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-080"
     },
@@ -1151,7 +1151,7 @@
       "summary": "the gate was advisory: approve/apply never consulted the gate basis, resolving the LOOP-2/EVAL-5 tension in code without spec text",
       "root_cause": "silent_divergence",
       "fix": "LOOP-2 respecified with the recorded human-override path; transition-to-approved structurally refuses loop proposals lacking a passing basis or human override; refusal case tested",
-      "fix_commit": null,
+      "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-081"
     },
@@ -1165,7 +1165,7 @@
       "summary": "session selection + manifest recording of replayed session ids unimplemented; test title overclaimed",
       "root_cause": "unrecorded_deferral",
       "fix": "gap recorded here — lands with the replay driver once sessions accumulate snapshots; aggregate.session_ids is the current record",
-      "fix_commit": null,
+      "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-082"
     },
@@ -1179,7 +1179,7 @@
       "summary": "snapshot environment manifest missing lockfile hash, kelson version, model ids per EVP §4",
       "root_cause": "unrecorded_deferral",
       "fix": "lockfile_hash + kelson_version added at capture; model ids remain a recorded gap until session-end enrichment",
-      "fix_commit": null,
+      "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-083"
     },
@@ -1193,7 +1193,7 @@
       "summary": "UX §3 loop command surface and PRD §9.2 state line + phase table not rippled for the new subcommands and quarantined->proposed release edge",
       "root_cause": "spec_gap",
       "fix": "UX command list, §9.2 release edge, and Phase 4 clause range updated",
-      "fix_commit": null,
+      "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-084"
     },
@@ -1208,7 +1208,7 @@
       "summary": "the corrected candidate-side gate had no caller passing candidateSide — the CLI evaluated every proposal as side A, resurfacing the F-076 unsoundness one layer up",
       "root_cause": "design_bug",
       "fix": "candidateSide is now a required parameter (no default); CLI derives B for standard ablate geometry with --candidate-side override; side-swap obligation case added; stale direction comment deleted; loop approve requires an explicit --reason",
-      "fix_commit": null,
+      "fix_commit": "cc6c029",
       "status": "fixed",
       "id": "F-085"
     }
