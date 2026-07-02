@@ -1,12 +1,68 @@
 {
   "schema_version": 1,
   "tasks": [
-    { "id": "P0-1", "title": "Workspace scaffold (Bun workspaces, tsconfig, CI, bun test + fast-check)", "state": "open", "clauses": [], "completed_at": null },
-    { "id": "P0-2", "title": "packages/schemas — Zod schemas for Phase 0 entities + JSON Schema export", "state": "open", "clauses": [], "completed_at": null },
-    { "id": "P0-3", "title": "Kernel storage — bun:sqlite bootstrap, forward-only migrations", "state": "open", "clauses": ["OSS-6"], "completed_at": null },
-    { "id": "P0-4", "title": "Artifact store — hashing, trace links, staleness, index rebuild", "state": "open", "clauses": ["ART-1", "ART-2"], "completed_at": null },
-    { "id": "P0-5", "title": "Telemetry capture — ingestion, local-only, fault tolerance, task lifecycle", "state": "open", "clauses": ["TEL-1", "TEL-2", "TEL-5", "TEL-7"], "completed_at": null },
-    { "id": "P0-6", "title": "Pack format + lockfile loader", "state": "open", "clauses": ["SEC-4", "PACK-1", "PACK-4"], "completed_at": null },
-    { "id": "P0-7", "title": "cc-plugin shell — hooks, /kelson:status, statusline stub", "state": "open", "clauses": [], "completed_at": null }
+    {
+      "id": "P0-1",
+      "title": "Workspace scaffold (Bun workspaces, tsconfig, CI, bun test + fast-check)",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-02T00:55:42Z"
+    },
+    {
+      "id": "P0-2",
+      "title": "packages/schemas \u2014 Zod schemas for Phase 0 entities + JSON Schema export",
+      "state": "open",
+      "clauses": [],
+      "completed_at": null
+    },
+    {
+      "id": "P0-3",
+      "title": "Kernel storage \u2014 bun:sqlite bootstrap, forward-only migrations",
+      "state": "open",
+      "clauses": [
+        "OSS-6"
+      ],
+      "completed_at": null
+    },
+    {
+      "id": "P0-4",
+      "title": "Artifact store \u2014 hashing, trace links, staleness, index rebuild",
+      "state": "open",
+      "clauses": [
+        "ART-1",
+        "ART-2"
+      ],
+      "completed_at": null
+    },
+    {
+      "id": "P0-5",
+      "title": "Telemetry capture \u2014 ingestion, local-only, fault tolerance, task lifecycle",
+      "state": "open",
+      "clauses": [
+        "TEL-1",
+        "TEL-2",
+        "TEL-5",
+        "TEL-7"
+      ],
+      "completed_at": null
+    },
+    {
+      "id": "P0-6",
+      "title": "Pack format + lockfile loader",
+      "state": "open",
+      "clauses": [
+        "SEC-4",
+        "PACK-1",
+        "PACK-4"
+      ],
+      "completed_at": null
+    },
+    {
+      "id": "P0-7",
+      "title": "cc-plugin shell \u2014 hooks, /kelson:status, statusline stub",
+      "state": "open",
+      "clauses": [],
+      "completed_at": null
+    }
   ]
 }

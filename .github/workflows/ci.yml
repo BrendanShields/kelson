@@ -1,0 +1,26 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
+      - run: bun run typecheck
+      - run: bun test
+      - run: bunx biome ci .
+      - name: spec-lint (every clause has an obligation, IDs unique)
+        run: echo '{"tool_input":{"file_path":"docs/specs/ci.md"}}' | node .claude/hooks/spec-lint.mjs
+      - name: kelspec-lint (all kelspec blocks structurally valid)
+        run: |
+          set -e
+          for f in $(find . -name '*.spec.md' -not -path './node_modules/*'); do
+            echo "{\"tool_input\":{\"file_path\":\"$f\"}}" | node .claude/hooks/kelspec-lint.mjs
+          done

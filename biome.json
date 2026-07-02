@@ -1,0 +1,5 @@
+{
+  "files": { "includes": ["packages/**", "*.json"] },
+  "formatter": { "indentStyle": "space", "indentWidth": 2 },
+  "linter": { "rules": { "preset": "none" } }
+}
