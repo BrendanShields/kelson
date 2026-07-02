@@ -273,8 +273,8 @@
         "EVT-1",
         "SEC-1"
       ],
-      "completed_at": "2026-07-02T09:52:22Z",
-      "notes": "real ablate: 12 claude sessions, $10.04, verdict underpowered n=6 with fpar +0.167 [0,0.5], cost +15.8% [5.3,31.8] (ponytail costlier in-sample); deltas hand-verified; ledger/ponytail/4.7.0.json published from run manifest sha256:f6cd026b6552..."
+      "completed_at": "2026-07-02T10:36:57Z",
+      "notes": "real ablate: 12 claude sessions via subscription quota (~$10 API-rate token equivalent, $0 real spend), verdict underpowered n=6 with fpar +0.167 [0,0.5], cost +15.8% [5.3,31.8]; deltas hand-verified; ledger/ponytail/4.7.0.json published"
     },
     {
       "id": "P2-11",
