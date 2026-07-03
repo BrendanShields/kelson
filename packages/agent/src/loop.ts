@@ -1,4 +1,5 @@
 import type { Database } from "bun:sqlite";
+import { join } from "node:path";
 import { endSession, safeIngest, ulid } from "@kelson/kernel";
 import type {
   ModelRegistryEntry,
@@ -22,6 +23,16 @@ import {
   reconstruct,
   sessionModelOf,
 } from "./sessions.ts";
+import {
+  cachedStatus,
+  emitVerificationReport,
+  failingClauses,
+  gateWrite,
+  governedFilesHash,
+  obligationChecks,
+  type SpecContext,
+  touchedClauses,
+} from "./spec.ts";
 import type { AgentTool, ToolContext } from "./tools.ts";
 
 export interface StepDeps {
@@ -44,6 +55,10 @@ export interface StepDeps {
     entry: ModelRegistryEntry;
     model: LanguageModel;
   };
+  // AGT-7/8/9: the spec-native loop. Absent or empty => inert (Phase 6/7).
+  spec?: SpecContext;
+  // AGT-8: a recorded human override unblocks the ART-4 write gate.
+  override?: { by: string; reason: string };
   onDelta?: (text: string) => void;
   onToolResult?: (name: string, ok: boolean) => void;
   onStepCost?: (costMicroUsd: number | null) => void;
@@ -160,6 +175,8 @@ const headOf = (chain: SessionEvent[]): string => {
 // value, durable in the store via the permission_request event).
 const resolveTools = (deps: StepDeps, chain: SessionEvent[]): StepResult => {
   let head = headOf(chain);
+  const modifiedPaths: string[] = [];
+  let sawBash = false;
   const rules = [...deps.rules, ...sessionRules(chain)];
   const requests = chain.filter((e) => e.kind === "permission_request");
   const decisions = new Map(
@@ -202,9 +219,25 @@ const resolveTools = (deps: StepDeps, chain: SessionEvent[]): StepResult => {
       action = decision.payload.decision === "allow" ? "allow" : "deny";
     }
 
+    // AGT-8: gate a write/edit to a governed file before it runs (spec-first
+    // ART-4). A block is a denied tool result (PERM-3 shape), never a crash.
+    let gateBlock: string | null = null;
+    if (
+      action === "allow" &&
+      deps.spec &&
+      (call.name === "write" || call.name === "edit")
+    ) {
+      const abs = join(deps.ctx.cwd, String(call.input.path));
+      const gate = gateWrite(deps.db, deps.spec, abs, deps.override);
+      if (gate.action === "block") gateBlock = gate.reason;
+    }
+
     let output: string;
     let isError = false;
-    if (action === "deny") {
+    if (gateBlock !== null) {
+      output = `blocked: ${gateBlock}`;
+      isError = true;
+    } else if (action === "deny") {
       output = `denied by permission rule: ${call.name}`;
       isError = true;
     } else if (!toolImpl) {
@@ -218,6 +251,13 @@ const resolveTools = (deps: StepDeps, chain: SessionEvent[]): StepResult => {
       } else {
         try {
           output = toolImpl.run(call.input, deps.ctx);
+          if (!isError && (call.name === "write" || call.name === "edit"))
+            modifiedPaths.push(join(deps.ctx.cwd, String(call.input.path)));
+          // AGT-7 (audit F-123): bash can modify a governed file without a
+          // declared path, which would otherwise escape the obligation runner
+          // and miss the done-gate. A bash call re-checks all governed clauses;
+          // the content-addressed cache re-runs only those whose files changed.
+          if (!isError && call.name === "bash") sawBash = true;
         } catch (err) {
           output = err instanceof Error ? err.message : String(err);
           isError = true;
@@ -237,7 +277,69 @@ const resolveTools = (deps: StepDeps, chain: SessionEvent[]): StepResult => {
     }).id;
     deps.onToolResult?.(call.name, !isError);
   }
+
+  // AGT-7: after the batch, run the touched clauses' obligations (cached by
+  // governed-file hash) and record each executed result. A bash call in the
+  // batch forces a re-check of every governed clause (the cache re-runs only
+  // those whose files actually changed).
+  if (deps.spec && !deps.spec.empty) {
+    const toCheck = sawBash
+      ? [...deps.spec.clausesByFile.keys()]
+      : modifiedPaths;
+    if (toCheck.length > 0)
+      head = runObligations(deps, deps.spec, toCheck, head);
+  }
   return { status: "continue" };
+};
+
+// AGT-7: run each touched clause's obligation as a separate `bun test`, cache
+// by (clause, governed-file hash), record an obligation_check payload per
+// execution (cache hits run nothing and record nothing).
+const runObligations = (
+  deps: StepDeps,
+  spec: SpecContext,
+  modifiedPaths: string[],
+  headId: string,
+): string => {
+  let head = headId;
+  const checks = obligationChecks(
+    reconstruct(listEvents(deps.db, deps.sessionId)),
+  );
+  for (const clause of touchedClauses(spec, modifiedPaths)) {
+    const filesHash = governedFilesHash(spec, clause);
+    if (cachedStatus(checks, clause, filesHash) !== null) continue; // cache hit
+    const obligationPath = spec.obligationPath.get(clause) ?? null;
+    let status: "pass" | "fail";
+    if (obligationPath === null) {
+      status = "fail"; // AGT-7: a clause that cannot be checked does not pass
+    } else {
+      const rel = obligationPath.startsWith(`${spec.repo}/`)
+        ? obligationPath.slice(spec.repo.length + 1)
+        : obligationPath;
+      const res = deps.ctx.exec(`bun test ${JSON.stringify(rel)}`);
+      status = res.exitCode === 0 && !res.timedOut ? "pass" : "fail";
+    }
+    head = appendEvent(deps.db, {
+      session_id: deps.sessionId,
+      parent_id: head,
+      kind: "session_meta",
+      payload: {
+        obligation_check: {
+          clause_id: clause,
+          files_hash: filesHash,
+          status,
+          obligation_path: obligationPath,
+        },
+      },
+    }).id;
+    checks.push({
+      clause_id: clause,
+      files_hash: filesHash,
+      status,
+      obligation_path: obligationPath,
+    });
+  }
+  return head;
 };
 
 // AGT-1: one step = exactly one model call plus the tool executions it
@@ -360,6 +462,34 @@ export const step = async (deps: StepDeps): Promise<StepResult> => {
   });
 
   if (calls.length === 0) {
+    // AGT-7 done-gate: refuse `done` while any accumulated touched clause's
+    // obligation is failing at its current governed-file hash. Inject the
+    // failures so the next step sees them, and demote done → continue.
+    if (deps.spec && !deps.spec.empty) {
+      const failing = failingClauses(
+        deps.spec,
+        reconstruct(listEvents(deps.db, deps.sessionId)),
+      );
+      if (failing.length > 0) {
+        appendEvent(deps.db, {
+          session_id: deps.sessionId,
+          parent_id: assistant.id,
+          kind: "user_message",
+          payload: {
+            text: `Cannot finish: obligation checks are still failing for clause(s) ${failing.join(", ")}. Fix the governed code so their tests pass before ending.`,
+          },
+        });
+        return { status: "continue" };
+      }
+    }
+    // AGT-9: a spec-native session emits one VerificationReport at end.
+    if (deps.spec && !deps.spec.empty)
+      emitVerificationReport(
+        deps.db,
+        deps.spec,
+        String(meta.payload.task_id),
+        reconstruct(listEvents(deps.db, deps.sessionId)),
+      );
     endSession(deps.db, deps.sessionId);
     return { status: "done", text };
   }

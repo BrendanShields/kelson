@@ -1729,6 +1729,20 @@
       "status": "resolved",
       "id": "F-122",
       "fix_commit": null
+    },
+    {
+      "task": "P8-5",
+      "source": "clause_auditor",
+      "severity": "warning",
+      "clauses": [
+        "AGT-7"
+      ],
+      "summary": "done-gate bypass: modifiedPaths tracked only write/edit, so a bash call breaking a governed file escaped the obligation runner and the done-gate missed (cachedStatus null at the new hash != failing) — wrongly allowing done",
+      "root_cause": "test_blindspot",
+      "fix": "a bash call in the batch forces a re-check of all governed clauses (content-addressed cache re-runs only changed ones); AGT-7 clause updated; F-123 bash-bypass obligation added; classifier both-failed nuance fixed to match AGT-9",
+      "status": "resolved",
+      "id": "F-123",
+      "fix_commit": null
     }
   ]
 }

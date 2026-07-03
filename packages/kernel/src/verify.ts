@@ -1,5 +1,9 @@
 import type { Database } from "bun:sqlite";
-import { type CheckStatus, VerificationReport } from "@kelson/schemas";
+import {
+  type CheckStatus,
+  type FailureClass,
+  VerificationReport,
+} from "@kelson/schemas";
 import { detectDrift, detectStaleness, type HashSource } from "./artifacts.ts";
 import { ulid } from "./ulid.ts";
 
@@ -16,6 +20,9 @@ export interface VerifyOptions {
   // Drift checks are skipped (not passed) without a hash source — a verify
   // that can't see the working tree must say so, not report green.
   hashSource?: HashSource;
+  // PIPE-9 classification. Absent (PIPE-8 callers) => failure_class stays
+  // null; AGT-9 opts in to classify obligation- vs code-defects.
+  classify?: (results: VerificationReport["results"]) => FailureClass | null;
 }
 
 // PIPE-8: obligations for touched clauses, conventional tests, drift checks,
@@ -67,16 +74,20 @@ export const runVerify = (
     drift = { status: "skipped", open_events: 0 };
   }
 
+  const results = {
+    obligations,
+    tests,
+    drift,
+    budget: {
+      status: "skipped" as CheckStatus,
+      detail: "routed budgets land in Phase 3",
+    },
+  };
   const report = VerificationReport.parse({
     id: ulid(),
     task_id: opts.task_id,
-    results: {
-      obligations,
-      tests,
-      drift,
-      budget: { status: "skipped", detail: "routed budgets land in Phase 3" },
-    },
-    failure_class: null,
+    results,
+    failure_class: opts.classify ? opts.classify(results) : null,
     at: new Date().toISOString(),
     schema_version: 1,
   });

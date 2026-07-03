@@ -737,23 +737,23 @@
     {
       "id": "P8-3",
       "title": "Build: SpecContext + in-loop obligation runner (touched-clause, hash-cached)",
-      "state": "open",
+      "state": "completed",
       "clauses": [],
-      "completed_at": null
+      "completed_at": "2026-07-03T04:31:21Z"
     },
     {
       "id": "P8-4",
       "title": "Build: clause-auditor gate agent + ART-4 runtime block",
-      "state": "open",
+      "state": "completed",
       "clauses": [],
-      "completed_at": null
+      "completed_at": "2026-07-03T04:31:21Z"
     },
     {
       "id": "P8-5",
       "title": "Verify: planted-violation blocks done, spec-less T1 blocked, Ollama smoke, audit",
-      "state": "open",
+      "state": "completed",
       "clauses": [],
-      "completed_at": null
+      "completed_at": "2026-07-03T04:38:39Z"
     }
   ]
 }

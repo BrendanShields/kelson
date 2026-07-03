@@ -7,6 +7,7 @@ import {
   loadConfig,
   loadRegistry as loadModelRegistry,
   loadRules,
+  loadSpecContext,
   localExec,
   resolveCredential,
   resolveEntry,
@@ -78,6 +79,9 @@ export const setupAgent = (
       );
     return { entry: nextEntry, model: instantiate(nextEntry, nextCredential) };
   };
+  // AGT-7/8/9: spec-native loop over the operator repo's artifact store —
+  // empty (inert) when the repo has no trace links.
+  const spec = loadSpecContext(db, root);
   return {
     deps: {
       db,
@@ -88,6 +92,7 @@ export const setupAgent = (
       ctx: { cwd: root, exec: localExec(root) },
       authKind,
       resolveModel,
+      spec,
     },
     entry,
     config,

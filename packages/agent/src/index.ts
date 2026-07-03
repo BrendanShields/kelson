@@ -7,4 +7,5 @@ export * from "./llm/resolve.ts";
 export * from "./loop.ts";
 export * from "./permissions.ts";
 export * from "./sessions.ts";
+export * from "./spec.ts";
 export * from "./tools.ts";
