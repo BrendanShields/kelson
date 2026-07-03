@@ -47,6 +47,7 @@ The session under test is produced by a named **executor**, chosen per run and r
 |---|---|---|
 | `claude` | headless Claude Code session receives the task `statement` inside the sandboxed workspace | the session's self-reported total cost (`--output-format json` → `total_cost_usd`, rounded to micro-USD); a zero-exit session with unparseable output is a session failure, never a silent zero-cost pass |
 | `command` | the task's `session_command` (task.yaml; required for this executor) runs inside the sandbox | integer micro-USD the command writes to `$KELSON_COST_FILE`, else 0 |
+| `api` | the native runtime (`packages/agent`) runs the task `statement` headlessly with the sandbox workspace as its ToolContext (AGT-4) | the session's first-hand StepEvent costs (PROV-3): registry list prices × provider-reported usage; null when the model is unpriced |
 
 `command` exists for fixtures, self-tests (EVAL-1), and CI; it can simulate a session's file mutations and spend deterministically. `cost_micro_usd` equals real spend only under API-key auth: subscription-authenticated sessions consume plan quota and report API-rate-priced tokens (a consistent TPAC yardstick, not dollars) — the same proxy semantics as EVP-8 overrides. Ledger entries (EVT-3) may only be published from `claude`-executor runs — a synthetic session is evidence about the runner, not about a pack.
 
@@ -57,6 +58,9 @@ The session under test is produced by a named **executor**, chosen per run and r
 
 - **EVP-8.** Where a run specifies a session model override, the eval runner shall apply the same override to both sides, record the override in the run manifest (`model_versions.session_model`, and `model_versions.session_base_url` when an endpoint is set), shall withhold operator credentials from sessions pointed at an override endpoint (the API key replaced with a dummy, the OAuth token dropped — SEC-1's auth exception covers the operator's own account, never an arbitrary endpoint), and shall refuse ledger publication for overridden runs.
   *Obligation:* manifest validation — an overridden run's manifest carries `session_model` (and the base URL when given); env-construction test — with real credentials in the parent env and a base-URL override, the session env carries the dummy key and no OAuth token; ledger generation from an overridden run is refused with a diagnostic naming the override.
+
+- **EVP-9.** The eval runner shall resolve a run's executor from its built-in table merged with caller-supplied executors (`extraExecutors` — how the CLI injects the native `api` executor without a kernel→agent dependency), refusing at pre-flight when the named executor is unresolved; the `api` executor shall run under the worktree profile, and under a container profile the runner shall refuse rather than degrade (EVP-2 discipline) until the native runtime's file tools route through the container boundary. EVP-7's ledger fence (non-`claude` runs are never published) covers `api` runs until native cost accounting carries a recorded verification-independence cross-check against provider-reported usage (F-031 rule).
+  *Obligation:* e2e — `kelson eval ablate --executor api` on a one-task suite under the worktree profile completes to a verdict and its manifest records `executor: "api"`; the same invocation under a container profile refuses with a diagnostic naming the profile; an unknown executor name refuses at pre-flight; ledger generation from an api-executor run is refused (EVP-7 obligation extended).
 
 ## 3. Sandbox Profiles (SEC-1..3)
 

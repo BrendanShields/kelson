@@ -190,6 +190,7 @@ erDiagram
         string harness_version
         int schema_version
         string status "complete|incomplete|degraded"
+        string runner "cc|native, nullable — pre-0008 rows null (SES-5)"
         string trace_id "OTel correlation (TEL-6)"
         string started_at
         string ended_at
@@ -305,7 +306,7 @@ erDiagram
     }
 ```
 
-Append-only, no UPDATE/DELETE (SES-1); reads order by `rowid`. The current head is derived from the latest `head_moved` event by rowid — there is no mutable head column (SES-3). Forks (Phase 10) are two events sharing a `parent_id`. `SESSION` gains a nullable `runner` column (`cc|native`) in the Phase 7 migration; Phase 6 sessions reuse the existing table via `startSession`.
+Append-only, no UPDATE/DELETE (SES-1); reads order by `rowid`. The current head is derived from the latest `head_moved` event by rowid — there is no mutable head column (SES-3). Forks (Phase 10) are two events sharing a `parent_id`. `SESSION` carries a nullable `runner` column (`cc|native`, migration 0008, SES-5): `startSession` writers stamp their runner; pre-0008 rows read back null.
 
 ## 6. Domain: Eval
 

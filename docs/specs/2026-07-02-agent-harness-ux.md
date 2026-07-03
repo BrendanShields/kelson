@@ -45,7 +45,7 @@
 - `kelson signals inbox|triage` — feedback-stage inbox (PIPE-1).
 - `kelson index rebuild` — regenerate the SQLite index from files (ERD §1).
 - `kelson ui` — serve the local read-only web UI (§8); `kelson` with no arguments — interactive launcher (UX-7).
-- `kelson chat` — interactive native-runtime session, OpenTUI chat surface (UX-14).
+- `kelson chat` — interactive native-runtime session, OpenTUI chat surface (UX-14); `/model` switches the session model (UX-17).
 - `kelson run -p "<task>"` — headless native-runtime session, plain/`--json` output (UX-15).
 - `kelson auth login <provider>` — credential + default-model setup for the native runtime (UX-16, PROV-4).
 
@@ -170,6 +170,8 @@ A single statusline badge (`degraded: telemetry`) and one line at session start.
   *Obligation:* CLI integration with a mock provider — plain mode emits the final text; `--json` output parses with the paired schema; a session ending paused/failed exits non-zero.
 - **UX-16.** When `kelson auth login <provider>` completes, subsequent `kelson chat`/`kelson run` invocations shall start without further setup (PROV-4); the command shall never echo a credential to the terminal or store it outside `~/.kelson/auth.json`.
   *Obligation:* scripted login fixture — post-login chat proceeds past setup; captured stdout/stderr contain no credential substring; no file outside the temp HOME's auth.json gains the credential (recursive grep over the sandbox).
+- **UX-17.** When `/model` is invoked in chat, it shall list the models from the same registry-resolution function the typed CLI uses (UX-8 identity — shipped registry + user overlay), and selecting one shall switch the session's model for subsequent steps only (sessions are model-agnostic; the chain replays under the new model): the switch is recorded as a session event, later StepEvents carry the new model id, and `.kelson/config.json`'s default is untouched.
+  *Obligation:* reducer/unit — the /model listing comes from the exported registry function (identity check); after a scripted switch, the next step's StepEvent.model is the new id, a session event records the switch, and config.json's bytes are unchanged.
 
 ## 7. TUI Legibility Spec
 

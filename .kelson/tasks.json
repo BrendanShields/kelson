@@ -684,6 +684,41 @@
       "state": "completed",
       "clauses": [],
       "completed_at": "2026-07-03T01:04:08Z"
+    },
+    {
+      "id": "P7-1",
+      "title": "Spec: Phase 7 clauses — PROV OAuth, EVP api-executor amendments, session.runner, /model",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T02:02:18Z"
+    },
+    {
+      "id": "P7-2",
+      "title": "Build: async ExecutorFn + extraExecutors injection + apiExecutor",
+      "state": "open",
+      "clauses": [],
+      "completed_at": null
+    },
+    {
+      "id": "P7-3",
+      "title": "Build: subscription OAuth credential source + refresh",
+      "state": "open",
+      "clauses": [],
+      "completed_at": null
+    },
+    {
+      "id": "P7-4",
+      "title": "Build: session.runner migration + /model + registry overlay surfaces",
+      "state": "open",
+      "clauses": [],
+      "completed_at": null
+    },
+    {
+      "id": "P7-5",
+      "title": "Verify: eval ablate --executor api on seed suite, OAuth expiry fixture, audit",
+      "state": "open",
+      "clauses": [],
+      "completed_at": null
     }
   ]
 }

@@ -19,6 +19,12 @@ The **runtime** is `packages/agent`.
   *Obligation:* unit — fixture usage × fixture prices equals exact expected ints (expected values computed by hand in the test, not by calling `costOf`); unknown-price model yields the unknown marker, not 0.
 - **PROV-4.** When `kelson chat` or `kelson run` starts with no configured credential or default model, the runtime shall exit non-zero with instructions to run `kelson auth login` — it shall not probe endpoints or guess a provider. When `kelson auth login <provider>` completes, it shall persist the credential (PROV-2) and the chosen default model to `.kelson/config.json`.
   *Obligation:* CLI integration — unconfigured invocation exits non-zero mentioning `kelson auth login` and makes zero network calls; after a scripted login fixture, the same invocation proceeds past setup.
+- **PROV-5.** When resolving anthropic credentials, the runtime shall accept a Claude subscription bearer token (`claude setup-token` output) as a stored credential (`type: "token"`) or from the `CLAUDE_CODE_OAUTH_TOKEN` env var, and shall send it as `Authorization: Bearer` with the OAuth beta header — never as `x-api-key`. Resolution precedence: stored credential (either kind) > `ANTHROPIC_API_KEY` > `CLAUDE_CODE_OAUTH_TOKEN` (Phase 7 decision: setup-token delegation; an own PKCE flow is deliberately deferred — the design doc's ToS-drift risk).
+  *Obligation:* unit — the precedence table (all three sources populated → stored wins; env-only combinations resolve in order); adapter fixture with a capturing fetch — a token credential's request carries `authorization: Bearer <token>` plus the OAuth beta header and no `x-api-key`.
+- **PROV-6.** While a session runs on a subscription token, step costs shall still be computed from registry list prices (a TPAC yardstick, not spend — EVP §2.1 semantics) and the session shall record `auth_kind: "subscription"` in its session metadata so downstream policy (EVP-7/EVP-9 ledger fence, degradation analysis) can distinguish it; API-key sessions record `auth_kind: "api_key"`, keyless sessions `"none"`.
+  *Obligation:* fixture sessions under each credential kind — session_meta carries the matching auth_kind and a priced model still yields non-null list-price costs under a subscription token.
+- **PROV-7.** If an anthropic request fails with an authentication error (401) on a subscription token, the runtime shall fail the step with an error naming `claude setup-token` (re-mint path) — no silent retry loop and no fallback to another credential mid-session.
+  *Obligation:* mock provider returning 401 under a token credential — the surfaced error names `claude setup-token`; exactly one request was made.
 
 ## 2. Agent loop (`AGT-*`)
 
@@ -45,6 +51,8 @@ The **runtime** is `packages/agent`.
   *Obligation:* unit — after a sequence of appends the derived head is the last appended event; the migration adds no head column to any table (schema introspection).
 - **SES-4.** When `kelson chat --continue <session>` or `kelson run --continue <session>` starts, the runtime shall load the session's head and continue the same event chain; when a new session starts, the runtime shall create a kernel session row (`startSession`) so TEL-5 markers and lockfile pinning apply to native sessions.
   *Obligation:* integration — `kelson run --continue` (the operator surface, F-085) extends the same session: the follow-up user_message's parent is the prior head and no second kernel session row appears; a new session produces a kernel `session` row with runner metadata.
+- **SES-5.** When a session row is created, the creator shall record its runner in the kernel `session.runner` column — `"native"` for agent-runtime sessions, `"cc"` for Claude Code hook sessions; rows created before the column existed read back null. Downstream telemetry math stays runner-blind (AGT-3); only degradation analysis and EVP publishing policy read this column.
+  *Obligation:* migration adds the nullable column additively (pre-existing fixture rows read back null); a native session's row carries `runner = 'native'`; the cc-plugin session-start hook fixture writes `runner = 'cc'`.
 
 ## 4. Permissions (`PERM-*`)
 
