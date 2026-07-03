@@ -288,6 +288,25 @@ erDiagram
 
 Notes: `TASK` is deliberately not owned by `SESSION` — tasks resume across sessions; `STEP_EVENT` carries both FKs, so FPAR joins tasks to configs through sessions' pinned lockfiles. Price snapshots are denormalized onto `STEP_EVENT` so historical cost math never depends on a mutable price table.
 
+### Native runtime session events (Phase 6, SES-*)
+
+```mermaid
+erDiagram
+    SESSION ||--o{ SESSION_EVENT : "native runtime history"
+
+    SESSION_EVENT {
+        string id PK "ULID, append-only (SES-1)"
+        string session_id FK
+        string parent_id FK "nullable; chain forms the session tree (SES-2)"
+        string kind "user_message|assistant_message|tool_call|tool_result|permission_request|permission_decision|compaction|head_moved|session_meta"
+        json payload "kind-specific; assistant_message carries step_event_id ref, usage, model, cost"
+        string at "UTC ISO-8601"
+        int schema_version
+    }
+```
+
+Append-only, no UPDATE/DELETE (SES-1); reads order by `rowid`. The current head is derived from the latest `head_moved` event by rowid — there is no mutable head column (SES-3). Forks (Phase 10) are two events sharing a `parent_id`. `SESSION` gains a nullable `runner` column (`cc|native`) in the Phase 7 migration; Phase 6 sessions reuse the existing table via `startSession`.
+
 ## 6. Domain: Eval
 
 Implements PRD §6.2 (EVAL-*), §10 (EVT-*), §14.1 (SEC-1..3).
@@ -447,8 +466,9 @@ Exporter is OTLP, disabled unless an endpoint is configured; all attributes pass
 - **Runtime:** Bun ≥ 1.3, ESM, TypeScript strict (typecheck via `tsc --noEmit`; ADR-0003). Kernel/schemas code stays runtime-agnostic — `Bun.*` APIs only behind a thin sqlite adapter.
 - **Monorepo (Bun workspaces):**
   - `packages/schemas` — Zod schemas for every entity above + generated JSON Schema (signal contract, OTel conventions). No dependencies on other packages; everything depends on it.
-  - `packages/kernel` — telemetry, eval harness, router, artifact store as internal modules behind one public API; owns SQLite (`bun:sqlite`) and migrations.
-  - `packages/cli` — `kelson` command: eval runner, replay engine, index rebuild, agents/loop/route subcommands. Sandboxing lives here (worktree + container drivers).
+  - `packages/kernel` — telemetry, eval harness, router, artifact store as internal modules behind one public API; owns SQLite (`bun:sqlite`) and migrations. Never imports `agent` — the api executor is injected via `runEval`'s `extraExecutors` (ADR-0004).
+  - `packages/agent` — the native runtime (Phase 6+): AI SDK provider layer (auth, model registry, cost), step loop, core tools, permission engine, session-event store. Depends on kernel + schemas.
+  - `packages/cli` — `kelson` command: eval runner, replay engine, index rebuild, agents/loop/route subcommands, chat/run surfaces. Sandboxing lives here (worktree + container drivers). Composition root: wires `apiExecutor` into `runEval`.
   - `packages/cc-plugin` — the Claude Code plugin (skills, hooks, subagents) — the only Claude Code-coupled package (PRD §5.4 migration criteria depend on this boundary).
 - **Testing:** `bun test`; fast-check for Kelson's own PBT obligations (the PRD's *Obligation* lines compile into this suite); TLA+ models under `specs/tla/` checked in CI (TLC via container).
 - **No ORM:** `bun:sqlite` with hand-written SQL and Zod validation at the boundary; migrations are numbered SQL files applied forward-only (OSS-6).

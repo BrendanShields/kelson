@@ -45,6 +45,9 @@
 - `kelson signals inbox|triage` — feedback-stage inbox (PIPE-1).
 - `kelson index rebuild` — regenerate the SQLite index from files (ERD §1).
 - `kelson ui` — serve the local read-only web UI (§8); `kelson` with no arguments — interactive launcher (UX-7).
+- `kelson chat` — interactive native-runtime session, OpenTUI chat surface (UX-14).
+- `kelson run -p "<task>"` — headless native-runtime session, plain/`--json` output (UX-15).
+- `kelson auth login <provider>` — credential + default-model setup for the native runtime (UX-16, PROV-4).
 
 ## 4. User Journeys
 
@@ -161,6 +164,12 @@ A single statusline badge (`degraded: telemetry`) and one line at session start.
   *Obligation:* empty-store fixture — every route returns 200 with a schema-valid payload carrying `empty_verb`; SPA empty-state render test asserts the verb is displayed.
 - **UX-13.** When `kelson ui` starts without `--db`, it shall use `./.kelson/kelson.db` when that file exists in the working directory, and the user store (`~/.kelson/kelson.db`) otherwise; `--db` shall override both.
   *Obligation:* resolver unit test covering both branches, plus a wiring test — a server created with no `dbPath` in a temp working directory containing a seeded repo store serves that store's rows (fails if the default reverts to the user store).
+- **UX-14.** When `kelson chat` runs in a TTY, it shall present the OpenTUI chat surface driven by a pure reducer (state transitions testable without a terminal); slash commands shall dispatch through the same functions as the typed CLI commands (the F-085 rule — wizards/slash surfaces are argument collectors, never parallel implementations); in a non-TTY it shall exit non-zero directing the user to `kelson run`.
+  *Obligation:* reducer unit tests drive a full exchange headlessly (user input → streaming deltas → tool events → final state); non-TTY invocation exits non-zero naming `kelson run`; a slash command's dispatch target is the exported CLI function (identity check, not a reimplementation).
+- **UX-15.** When `kelson run -p "<task>"` executes, it shall run the same `runTurn` driver as `kelson chat`, stream plain text to stdout (no OpenTUI), and with `--json` emit a final machine-readable result validating against its Zod schema (UX-1 discipline); exit code shall be 0 only if the session reached `done`.
+  *Obligation:* CLI integration with a mock provider — plain mode emits the final text; `--json` output parses with the paired schema; a session ending paused/failed exits non-zero.
+- **UX-16.** When `kelson auth login <provider>` completes, subsequent `kelson chat`/`kelson run` invocations shall start without further setup (PROV-4); the command shall never echo a credential to the terminal or store it outside `~/.kelson/auth.json`.
+  *Obligation:* scripted login fixture — post-login chat proceeds past setup; captured stdout/stderr contain no credential substring; no file outside the temp HOME's auth.json gains the credential (recursive grep over the sandbox).
 
 ## 7. TUI Legibility Spec
 

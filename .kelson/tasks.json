@@ -653,6 +653,34 @@
     {
       "id": "P6-1",
       "title": "Spec: agent-runtime.md — AGT/PERM/SES/PROV clauses via feature-pipeline",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T00:01:37Z"
+    },
+    {
+      "id": "P6-2",
+      "title": "Spec hardening: divergence-test riskiest AGT/SES clauses",
+      "state": "in_progress",
+      "clauses": [],
+      "completed_at": null
+    },
+    {
+      "id": "P6-3",
+      "title": "Build: packages/schemas session-event/permission/registry schemas + packages/agent (llm, loop, tools, permissions, sessions)",
+      "state": "open",
+      "clauses": [],
+      "completed_at": null
+    },
+    {
+      "id": "P6-4",
+      "title": "Build: kelson chat (OpenTUI) + kelson run -p",
+      "state": "open",
+      "clauses": [],
+      "completed_at": null
+    },
+    {
+      "id": "P6-5",
+      "title": "Verify: obligation tests, Ollama smoke e2e, clause-auditor PASS",
       "state": "open",
       "clauses": [],
       "completed_at": null
