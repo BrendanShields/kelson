@@ -1643,6 +1643,21 @@
       "status": "resolved",
       "id": "F-116",
       "fix_commit": null
+    },
+    {
+      "task": "P7-1",
+      "source": "divergence",
+      "severity": "warning",
+      "clauses": [
+        "UX-17",
+        "SES-4"
+      ],
+      "summary": "UX-17 divergence: no material split (both readers converged on all 6 probes) but both committed to semantics the clause left unstated (switch-while-busy timing, call-issue attribution, no-op same-model select, chain-derived model on resume); sibling cross-check exposed that --continue would have re-read the config default instead of the chain-derived model",
+      "root_cause": "spec_gap",
+      "fix": "UX-17 pinned with the readers verbatim attribution rule; SES-4 continue path will derive model from the chain",
+      "status": "resolved",
+      "id": "F-117",
+      "fix_commit": null
     }
   ]
 }
