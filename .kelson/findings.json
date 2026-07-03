@@ -1743,6 +1743,18 @@
       "status": "resolved",
       "id": "F-123",
       "fix_commit": null
+    },
+    {
+      "task": "P8-5",
+      "source": "postmortem",
+      "severity": "warning",
+      "clauses": [],
+      "summary": "macOS cwd/realpath trace-link mismatch: AGT-9-cli seeded trace links under /tmp but the spawned CLI process.cwd() resolved to /private/tmp, so loadSpecContext found no links and the SpecContext was empty — recurring realpath class (also hit tool containment in Phase 6)",
+      "root_cause": "env_skew",
+      "fix": "realpathSync the seed path; CLAUDE.md gotcha added — realpath any path used as a DB key or containment prefix from a symlinked temp dir or subprocess cwd",
+      "status": "resolved",
+      "id": "F-124",
+      "fix_commit": null
     }
   ]
 }
