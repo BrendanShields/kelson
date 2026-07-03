@@ -33,7 +33,10 @@ const stepAttributes = (shared: SharedStepEvent) => [
   attr("kelson.tokens_out", shared.tokens_out),
   attr("kelson.tokens_cache_read", shared.tokens_cache_read),
   attr("kelson.tokens_cache_write", shared.tokens_cache_write),
-  attr("kelson.cost_micro_usd", shared.cost_micro_usd),
+  // Unknown cost (PROV-3 null) is an absent attribute, not a fake zero.
+  ...(shared.cost_micro_usd === null
+    ? []
+    : [attr("kelson.cost_micro_usd", shared.cost_micro_usd)]),
   attr("kelson.budget_tokens", shared.budget_tokens),
   attr("kelson.overrun", shared.overrun),
 ];

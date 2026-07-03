@@ -550,6 +550,14 @@ export const COMMANDS: DispatchTable = {
   loop: loopCommand,
   pack: packCommand,
   ui: uiCommand,
+  auth: async (argv) => (await import("./agent/auth.js")).authCommand(argv),
+  run: async (argv) => (await import("./agent/run.js")).runCommand(argv),
+  // UX-14: chat is TTY-only; non-TTY invocations are directed to `kelson run`.
+  chat: async (argv) => {
+    if (process.stdin.isTTY !== true || process.stdout.isTTY !== true)
+      die('chat needs a terminal — use `kelson run -p "<task>"` instead');
+    await (await import("./chat/app.js")).chatCommand(argv, COMMANDS);
+  },
 };
 
 const help = (): void => {
@@ -563,6 +571,9 @@ const help = (): void => {
         ["loop", "propose | status | review | gate | approve | apply | revert"],
         ["pack", "lint — check a pack's version bump"],
         ["ui", "serve the local read-only web UI"],
+        ["auth", "login <anthropic|ollama> — configure the native runtime"],
+        ["run", 'run -p "<task>" — headless native session (--json)'],
+        ["chat", "interactive native-runtime chat (TTY)"],
         ["", ""],
         ["(no command)", "in a terminal: interactive launcher (UX-7)"],
       ]),

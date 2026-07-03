@@ -1,3 +1,4 @@
+export * from "./agent.ts";
 export * from "./artifacts.ts";
 export * from "./eval.ts";
 export * from "./kelspec.ts";

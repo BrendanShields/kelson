@@ -9,6 +9,7 @@ const REPO = join(import.meta.dir, "..", "..", "..", "..");
 const ALLOWLIST = new Set([
   "packages/cli/src/components/sink.ts", // the component layer's single sink
   "packages/cli/src/output/json.ts", // --json emitter (UX-1)
+  "packages/cli/src/output/stream.ts", // model-delta streamer (UX-15)
   // cc-plugin protocol emitters: stdout is consumed by Claude Code
   "packages/cc-plugin/src/status.ts",
   "packages/cc-plugin/src/statusline.ts",

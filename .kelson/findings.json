@@ -1571,6 +1571,78 @@
       "status": "resolved",
       "id": "F-111",
       "fix_commit": null
+    },
+    {
+      "task": "P6-5",
+      "source": "implementation",
+      "severity": "warning",
+      "clauses": [
+        "AGT-3"
+      ],
+      "summary": "Ollama smoke run recorded all-zero token counts: openai-compatible adapter omits stream_options.include_usage by default, so usage never arrived and zeros were ingested as real values",
+      "root_cause": "silent_divergence",
+      "fix": "includeUsage: true in resolve.ts openai-compatible provider config; verified live (544/89 tokens on re-run)",
+      "status": "resolved",
+      "id": "F-112",
+      "fix_commit": null
+    },
+    {
+      "task": "P6-5",
+      "source": "clause_auditor",
+      "severity": "violation",
+      "clauses": [
+        "AGT-6",
+        "AGT-2"
+      ],
+      "summary": "lifecycle() derived paused from unresolved tool calls while AGT-6 pinned it to permission_request-without-decision; the two disagreed on answered-but-unexecuted asks and step-limit suspensions were unresumable (resume threw on a state the runtime itself reported paused)",
+      "root_cause": "spec_contradiction",
+      "fix": "AGT-6 amended to chain-suspension derivation (last assistant message has tool calls => paused); lifecycle() aligned; discriminating 5-state obligation test",
+      "status": "resolved",
+      "id": "F-113",
+      "fix_commit": null
+    },
+    {
+      "task": "P6-5",
+      "source": "clause_auditor",
+      "severity": "violation",
+      "clauses": [
+        "SES-4"
+      ],
+      "summary": "kelson chat --continue was unimplemented and the SES-4 obligation exercised appendEvent directly instead of the operator surface (F-085 pattern)",
+      "root_cause": "test_blindspot",
+      "fix": "--continue implemented on run and chat via continueSession(); SES-4 obligation relocated to cli as a run --continue e2e; clause text names both surfaces",
+      "status": "resolved",
+      "id": "F-114",
+      "fix_commit": null
+    },
+    {
+      "task": "P6-5",
+      "source": "clause_auditor",
+      "severity": "violation",
+      "clauses": [
+        "PROV-4"
+      ],
+      "summary": "setupAgent guarded missing config but not missing credential: an anthropic model with no key died inside the SDK mid-request without naming kelson auth login",
+      "root_cause": "test_blindspot",
+      "fix": "fail-fast credential check for the anthropic provider in setupAgent + PROV-4 obligation branch",
+      "status": "resolved",
+      "id": "F-115",
+      "fix_commit": null
+    },
+    {
+      "task": "P6-5",
+      "source": "clause_auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-14",
+        "AGT-3"
+      ],
+      "summary": "chat shell never dispatched tool_result/step_cost reducer messages (tool events and cost footer dead in live chat); AGT-3 telemetry hardcodes sdlc_step=build, effort=medium, budget_tokens=1M until Phase 9 wires routing/budgets",
+      "root_cause": "unrecorded_deferral",
+      "fix": "onToolResult/onStepCost callbacks added to StepDeps and wired in chat; budget-field constants recorded here as the Phase 9 replacement list",
+      "status": "resolved",
+      "id": "F-116",
+      "fix_commit": null
     }
   ]
 }

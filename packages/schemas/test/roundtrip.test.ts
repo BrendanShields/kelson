@@ -2,12 +2,20 @@ import { describe, expect, it } from "bun:test";
 import fc from "fast-check";
 import { z } from "zod";
 import {
+  AgentConfig,
   Artifact,
+  AuthFile,
+  Credential,
   DriftEvent,
   InterventionEvent,
   Lockfile,
+  ModelRegistryEntry,
   PackManifest,
+  PermissionRule,
+  RunResult,
   Session,
+  SessionEvent,
+  SessionEventKind,
   SharedSessionEvent,
   SharedStepEvent,
   StepEvent,
@@ -77,7 +85,7 @@ const arbs: Record<string, [z.ZodType, fc.Arbitrary<unknown>]> = {
       tokens_out: count,
       tokens_cache_read: count,
       tokens_cache_write: count,
-      cost_micro_usd: count,
+      cost_micro_usd: fc.option(count, { nil: null }),
       budget_tokens: fc.integer({ min: 1, max: 1_000_000 }),
       overrun: fc.constantFrom("none", "soft", "paused"),
       schema_version: fc.integer({ min: 1, max: 99 }),
@@ -158,7 +166,7 @@ const arbs: Record<string, [z.ZodType, fc.Arbitrary<unknown>]> = {
         fc.double({ min: 0, max: 1000, noNaN: true }),
         { maxKeys: 4 },
       ),
-      cost_micro_usd: count,
+      cost_micro_usd: fc.option(count, { nil: null }),
       budget_tokens: fc.integer({ min: 1, max: 1_000_000 }),
       overrun: fc.constantFrom("none", "soft", "paused"),
       span_id: fc.option(nonEmpty, { nil: null }),
@@ -413,6 +421,110 @@ const arbs: Record<string, [z.ZodType, fc.Arbitrary<unknown>]> = {
         fc.record({ upstream_id: nonEmpty, downstream_id: nonEmpty }),
         { maxLength: 5 },
       ),
+    }),
+  ],
+  PermissionRule: [
+    PermissionRule,
+    fc.record(
+      {
+        tool: nonEmpty,
+        arg: nonEmpty,
+        action: fc.constantFrom("allow", "ask", "deny"),
+      },
+      { requiredKeys: ["tool", "action"] },
+    ),
+  ],
+  SessionEvent: [
+    SessionEvent,
+    fc.record({
+      id: ulid,
+      session_id: ulid,
+      parent_id: fc.option(ulid, { nil: null }),
+      kind: fc.constantFrom(...SessionEventKind.options),
+      // Keys avoid "__proto__" (Zod strips it) and values avoid -0 (JSON
+      // round-trips -0 to 0) — both would fail toEqual without being bugs.
+      payload: fc.dictionary(
+        kebab,
+        fc.oneof(fc.string(), fc.integer(), fc.boolean(), fc.constant(null)),
+        { maxKeys: 4 },
+      ),
+      at: isoUtc,
+      schema_version: fc.constant(1),
+    }),
+  ],
+  ModelRegistryEntry: [
+    ModelRegistryEntry,
+    fc.record(
+      {
+        id: nonEmpty,
+        provider: fc.constantFrom("anthropic", "openai-compatible"),
+        base_url: nonEmpty,
+        context_window: fc.integer({ min: 1, max: 10_000_000 }),
+        max_output: fc.integer({ min: 1, max: 1_000_000 }),
+        prices: fc.option(
+          fc.record({
+            in: count,
+            out: count,
+            cache_read: count,
+            cache_write: count,
+          }),
+          { nil: null },
+        ),
+        tools: fc.boolean(),
+      },
+      {
+        requiredKeys: [
+          "id",
+          "provider",
+          "context_window",
+          "max_output",
+          "prices",
+          "tools",
+        ],
+      },
+    ),
+  ],
+  Credential: [
+    Credential,
+    fc.oneof(
+      fc.record({ type: fc.constant("api_key" as const), key: nonEmpty }),
+      fc.record({
+        type: fc.constant("oauth" as const),
+        access: nonEmpty,
+        refresh: nonEmpty,
+        expires: isoUtc,
+      }),
+    ),
+  ],
+  AuthFile: [
+    AuthFile,
+    fc.dictionary(
+      kebab,
+      fc.oneof(
+        fc.record({ type: fc.constant("api_key" as const), key: nonEmpty }),
+        fc.record({
+          type: fc.constant("oauth" as const),
+          access: nonEmpty,
+          refresh: nonEmpty,
+          expires: isoUtc,
+        }),
+      ),
+      { maxKeys: 3 },
+    ),
+  ],
+  AgentConfig: [
+    AgentConfig,
+    fc.record({ default_model: nonEmpty, schema_version: fc.constant(1) }),
+  ],
+  RunResult: [
+    RunResult,
+    fc.record({
+      session_id: ulid,
+      status: fc.constantFrom("done", "paused"),
+      text: fc.string({ maxLength: 50 }),
+      steps: count,
+      cost_micro_usd: fc.option(count, { nil: null }),
+      schema_version: fc.constant(1),
     }),
   ],
 };

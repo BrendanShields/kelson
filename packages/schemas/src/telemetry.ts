@@ -70,7 +70,8 @@ export const StepEvent = z.object({
     z.string().regex(/^[a-z][a-z0-9_.:-]*$/),
     z.number().nonnegative(),
   ),
-  cost_micro_usd: MicroUsd,
+  // null = price unknown at ingest time (PROV-3: never estimated)
+  cost_micro_usd: MicroUsd.nullable(),
   budget_tokens: z.number().int().positive(),
   overrun: BudgetOverrun,
   span_id: z.string().nullable(),

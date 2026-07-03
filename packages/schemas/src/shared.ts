@@ -18,7 +18,8 @@ export const SharedStepEvent = z.strictObject({
   tokens_out: z.number().int().nonnegative(),
   tokens_cache_read: z.number().int().nonnegative(),
   tokens_cache_write: z.number().int().nonnegative(),
-  cost_micro_usd: MicroUsd,
+  // null = price unknown at ingest (PROV-3); nullability mirrors StepEvent
+  cost_micro_usd: MicroUsd.nullable(),
   budget_tokens: z.number().int().positive(),
   overrun: z.enum(["none", "soft", "paused"]),
   schema_version: SchemaVersion,

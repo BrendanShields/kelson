@@ -96,7 +96,7 @@ the loop to be Kelson's, not the SDK's.
   the SDK's auto-execute. `ToolContext` receives `cwd`/`exec` from the caller, so
   eval runs execute inside `sandbox.ts` workspaces with zero new isolation code.
 - **Permissions:** ordered `{tool glob, arg glob, allow|ask|deny}` rules in
-  `.kelson/permissions.yaml`; most-specific wins; per-agent overrides; "always allow"
+  `.kelson/permissions.json` (JSON, not YAML — no YAML dependency for a rules list); most-specific wins; per-agent overrides; "always allow"
   answers append session-scoped rules as events. Headless: ask→deny unless flagged.
 - **Compaction:** summarize-turn on a cheap routed model, appended as a `compaction`
   event; forks before it retain full history.

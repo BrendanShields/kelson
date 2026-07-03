@@ -667,23 +667,23 @@
     {
       "id": "P6-3",
       "title": "Build: packages/schemas session-event/permission/registry schemas + packages/agent (llm, loop, tools, permissions, sessions)",
-      "state": "in_progress",
+      "state": "completed",
       "clauses": [],
-      "completed_at": null
+      "completed_at": "2026-07-03T00:31:37Z"
     },
     {
       "id": "P6-4",
       "title": "Build: kelson chat (OpenTUI) + kelson run -p",
-      "state": "open",
+      "state": "completed",
       "clauses": [],
-      "completed_at": null
+      "completed_at": "2026-07-03T00:47:26Z"
     },
     {
       "id": "P6-5",
       "title": "Verify: obligation tests, Ollama smoke e2e, clause-auditor PASS",
-      "state": "open",
+      "state": "completed",
       "clauses": [],
-      "completed_at": null
+      "completed_at": "2026-07-03T01:04:08Z"
     }
   ]
 }

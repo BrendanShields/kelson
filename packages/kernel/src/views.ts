@@ -35,7 +35,7 @@ export const telemetryView = (db: Database): UiTelemetryView => {
     .query(
       `SELECT substr(s.started_at, 1, 10) AS day,
               SUM(e.tokens_in + e.tokens_out) AS tokens,
-              SUM(e.cost_micro_usd) AS cost_micro_usd
+              COALESCE(SUM(e.cost_micro_usd), 0) AS cost_micro_usd
        FROM step_event e JOIN session s ON s.id = e.session_id
        GROUP BY day ORDER BY day`,
     )

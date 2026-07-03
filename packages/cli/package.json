@@ -12,7 +12,9 @@
   "dependencies": {
     "@kelson/kernel": "workspace:*",
     "@kelson/schemas": "workspace:*",
-    "@opentui/core": "^0.4.2"
+    "@opentui/core": "^0.4.2",
+    "@kelson/agent": "workspace:*",
+    "zod": "^4.4.3"
   },
   "description": "Self-improving, token-efficient engineering harness: executable specs, evidence-gated config, statistical evals",
   "license": "Apache-2.0",
