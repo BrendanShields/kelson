@@ -765,9 +765,9 @@
     {
       "id": "P9-2",
       "title": "Spec hardening: divergence-test riskiest budget-triage clause",
-      "state": "open",
+      "state": "completed",
       "clauses": [],
-      "completed_at": null
+      "completed_at": "2026-07-03T05:19:51Z"
     },
     {
       "id": "P9-3",

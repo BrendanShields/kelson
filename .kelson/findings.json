@@ -1755,6 +1755,20 @@
       "status": "resolved",
       "id": "F-124",
       "fix_commit": null
+    },
+    {
+      "task": "P9-2",
+      "source": "divergence",
+      "severity": "warning",
+      "clauses": [
+        "AGT-11"
+      ],
+      "summary": "AGT-11 budget-triage divergence: no material split (both readers converged) but both independently pinned unstated load-bearing semantics — monitor seeded ONCE per session at step 1 (cumulative, not per-step; probe 7 the decider), record-before-tools, continue resumes deferred tools without a second model call, escalate re-runs the same step, re_spec interactive-only",
+      "root_cause": "spec_gap",
+      "fix": "folded converged semantics into AGT-11 verbatim",
+      "status": "resolved",
+      "id": "F-125",
+      "fix_commit": null
     }
   ]
 }
