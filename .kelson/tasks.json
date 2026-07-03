@@ -730,9 +730,9 @@
     {
       "id": "P8-2",
       "title": "Spec hardening: divergence-test riskiest AGT-8 done-condition clause",
-      "state": "in_progress",
+      "state": "completed",
       "clauses": [],
-      "completed_at": null
+      "completed_at": "2026-07-03T04:17:32Z"
     },
     {
       "id": "P8-3",

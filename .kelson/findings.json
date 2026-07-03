@@ -1715,6 +1715,20 @@
       "status": "resolved",
       "id": "F-121",
       "fix_commit": null
+    },
+    {
+      "task": "P8-2",
+      "source": "divergence",
+      "severity": "warning",
+      "clauses": [
+        "AGT-7"
+      ],
+      "summary": "AGT-7 divergence: no material split across 8 probes (both readers converged) but both independently assumed unstated load-bearing semantics — done-gate over the session-accumulated touched set (not just this step), evaluated every step; cache key = combined hash of all a clauses governed files; fail clears by content-addressed lookup not eviction; missing obligation = fail; run-before-done-check ordering",
+      "root_cause": "spec_gap",
+      "fix": "folded the converged commitments into AGT-7 verbatim; implementability cross-checked (governed file only changes via a touching tool call, so the gate lookup is always a hit — re-hash, not re-run)",
+      "status": "resolved",
+      "id": "F-122",
+      "fix_commit": null
     }
   ]
 }
