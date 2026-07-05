@@ -899,16 +899,20 @@
     {
       "id": "C1-1",
       "title": "EVP-11 cross-agent bench: spec + kernel bench module",
-      "state": "open",
-      "clauses": [],
-      "completed_at": null
+      "state": "completed",
+      "clauses": [
+        "EVP-11"
+      ],
+      "completed_at": "2026-07-05T12:28:02Z"
     },
     {
       "id": "C1-2",
       "title": "UX-18 kelson bench CLI command + --json",
-      "state": "open",
-      "clauses": [],
-      "completed_at": null
+      "state": "completed",
+      "clauses": [
+        "UX-18"
+      ],
+      "completed_at": "2026-07-05T12:28:02Z"
     },
     {
       "id": "C1-3",

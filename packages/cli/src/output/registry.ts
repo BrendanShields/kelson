@@ -1,4 +1,9 @@
-import { InitResult, PackLintResult, RunResult } from "@kelson/schemas";
+import {
+  BenchReport,
+  InitResult,
+  PackLintResult,
+  RunResult,
+} from "@kelson/schemas";
 import type { ZodType } from "zod";
 
 // UX-1: every COMMANDS entry maps here to its declared --json output schema or a
@@ -11,6 +16,7 @@ export const JSON_OUTPUT: Record<string, JsonOutput> = {
   init: { schema: InitResult },
   pack: { schema: PackLintResult },
   run: { schema: RunResult },
+  bench: { schema: BenchReport },
   eval: {
     skip: "per-subcommand verdict/underpowered JSON, validated by EVP/UX-J3 obligations",
   },

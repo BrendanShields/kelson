@@ -76,7 +76,7 @@ export const taskSeed = (
     16,
   );
 
-interface Lockfileish {
+export interface Lockfileish {
   entries: { name: string; enabled: boolean }[];
 }
 
@@ -109,7 +109,10 @@ const sideEnvFor = (
     : {}),
 });
 
-const materializeClaudeSide = (dir: string, lockfile: Lockfileish): void => {
+export const materializeClaudeSide = (
+  dir: string,
+  lockfile: Lockfileish,
+): void => {
   const enabledPlugins = Object.fromEntries(
     lockfile.entries.map((e) => [
       e.name.includes("@") ? e.name : `${e.name}@${e.name}`,
@@ -167,6 +170,9 @@ export interface EvalRunResult {
   manifestHash: string;
   verdict: Verdict;
   quarantine: QuarantineEvent[];
+  // UX-P5: the effective gate minimum this run was judged against, so an
+  // underpowered rendering states the TRUE deficit (audit 2026-07-05).
+  minSample: number;
 }
 
 export const runEval = async (
@@ -447,6 +453,7 @@ export const runEval = async (
       };
     });
 
+  const minSample = opts.gateOpts?.minSample ?? suite.min_sample ?? 20;
   const outcome = gate(pairs, {
     seed: runSeed,
     ...(suite.min_sample !== undefined ? { minSample: suite.min_sample } : {}),
@@ -481,7 +488,7 @@ export const runEval = async (
     runId,
   );
 
-  return { runId, manifest, manifestHash, verdict, quarantine };
+  return { runId, manifest, manifestHash, verdict, quarantine, minSample };
 };
 
 // EVT-3 / EVP-6 / EVP-7: ledger entries come only from completed claude-

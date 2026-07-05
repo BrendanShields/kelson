@@ -38,7 +38,7 @@ import {
   SandboxProfile,
   type Verdict,
 } from "@kelson/schemas";
-import { kvGrid, panel, table } from "./components/render.js";
+import { kvGrid, panel, renderVerdict, table } from "./components/render.js";
 import { write } from "./components/sink.js";
 import { emitJson } from "./output/json.js";
 import { uiCommand } from "./ui/server.js";
@@ -82,25 +82,7 @@ const loadLockfile = (path: string): Lockfile => {
   }
 };
 
-// UX J3: verdict is never a bare pass/fail — decision + effect sizes + CIs,
-// and underpowered states its deficit (UX-P5).
-const renderVerdict = (v: Verdict, minSample = 20): string => {
-  const delta = (d: Verdict["fpar_delta"], unit: string) =>
-    `${d.mean >= 0 ? "+" : ""}${d.mean.toFixed(3)}${unit} [${d.ci95[0].toFixed(3)}, ${d.ci95[1].toFixed(3)}]`;
-  const lines = [
-    `verdict: ${v.decision}`,
-    `  fpar delta:  ${delta(v.fpar_delta, "")}`,
-    `  cost delta:  ${delta(v.cost_delta_pct, "%")}`,
-    `  n=${v.n} alpha=${v.alpha} B=${v.bootstrap_resamples}`,
-  ];
-  if (v.decision === "underpowered")
-    lines.push(
-      `  underpowered: ${Math.max(0, minSample - v.n)} more paired tasks needed for a powered verdict`,
-    );
-  if (v.quarantined_tasks.length)
-    lines.push(`  quarantined: ${v.quarantined_tasks.join(", ")}`);
-  return lines.join("\n");
-};
+// UX J3 renderVerdict moved to components/render.ts (shared with bench).
 
 const evalCommand = async (argv: string[]): Promise<void> => {
   const sub = argv[0];
@@ -206,7 +188,7 @@ const evalCommand = async (argv: string[]): Promise<void> => {
           write(
             `quarantined ${q.task_id} (window ${q.window.map((w) => (w ? "P" : "F")).join("")})`,
           );
-        write(renderVerdict(result.verdict));
+        write(renderVerdict(result.verdict, result.minSample));
       }
     } finally {
       db.close();
@@ -603,6 +585,8 @@ export const COMMANDS: DispatchTable = {
     (await import("./agent/session.js")).sessionCommand(argv),
   promote: async (argv) =>
     (await import("./agent/session.js")).promoteCommand(argv),
+  bench: async (argv) =>
+    (await import("./commands/bench.js")).benchCommand(argv),
 };
 
 const help = (): void => {
@@ -621,6 +605,7 @@ const help = (): void => {
         ["chat", "interactive native-runtime chat (TTY)"],
         ["session", "fork | compare | compact — tree-session ops"],
         ["promote", "<session> --suite <dir> — session → benchmark task"],
+        ["bench", "--suite <dir> — native vs claude head-to-head (EVP-11)"],
         ["", ""],
         ["(no command)", "in a terminal: interactive launcher (UX-7)"],
       ]),

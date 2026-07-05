@@ -1,5 +1,6 @@
 export * from "./artifacts.ts";
 export * from "./bandit.ts";
+export * from "./bench.ts";
 export * from "./budget.ts";
 export * from "./bundle.ts";
 export * from "./divergence.ts";

@@ -22,7 +22,7 @@ The **artifact index** (hashes, trace links, staleness) is derived from files an
 - **IDs:** ULIDs for event-like rows (sortable, no coordination). Artifacts use a stable logical ID (`repo-relative path + anchor`) plus a current `content_hash` (SHA-256); identity is the logical ID, versions are hashes.
 - **Schema versioning (PRD OSS-6):** one `schema_migrations` table, forward-only migrations shipped with the CLI; every event row carries `schema_version`.
 - **Types:** Zod schemas in `packages/schemas` are the single source of truth. TS types are inferred (`z.infer`), SQLite rows validated at the boundary, and JSON Schema is generated from Zod for the external signal contract (PRD §8.7) and the OTel attribute conventions.
-- **Append-only tables** (`changelog` is a file, but `step_event`, `intervention_event`, `eval_task_result` are append-only in SQLite, enforced by BEFORE UPDATE/DELETE triggers): no UPDATE path in the data layer; corrections are new rows. `drift_event` is the exception — implementation surfaced that its `resolution`/`resolved_at` fields mutate in place as drift is resolved (ERD §3), so it is insert-then-resolve, not append-only.
+- **Append-only tables** (`changelog` is a file, but `step_event`, `intervention_event`, `eval_task_result`, `bench_task_result` are append-only in SQLite, enforced by BEFORE UPDATE/DELETE triggers): no UPDATE path in the data layer; corrections are new rows. `drift_event` is the exception — implementation surfaced that its `resolution`/`resolved_at` fields mutate in place as drift is resolved (ERD §3), so it is insert-then-resolve, not append-only.
 - **Time:** UTC ISO-8601 strings (SQLite TEXT); durations in ms.
 - **Money:** integer micro-USD (no floats in cost math).
 
@@ -379,6 +379,43 @@ erDiagram
 ```
 
 The public **eval ledger** (EVT-3) is a git-tracked file per pack version: `{pack, version, manifest_hash, verdict summary, date}` — reproducible via `EVAL_RUN.manifest_hash`.
+
+### Cross-agent bench (EVP-11)
+
+Bench runs compare agents, not packs, and live in their own tables so a single-config two-agent run can never pollute flakiness windows (keyed per `(task, config)`, EVP-5) and can never reach the ledger (EVP-6/7 read only `eval_run`). Migration 0010 adds both; `bench_task_result` carries the append-only BEFORE UPDATE/DELETE triggers (§2), `bench_run` mirrors `eval_run`'s insert-then-set-`finished_at` shape and carries the verdict inline (no `verdict`-table FK — that table pairs with `eval_run`).
+
+```mermaid
+erDiagram
+    BENCH_RUN ||--o{ BENCH_TASK_RESULT : produces
+
+    BENCH_RUN {
+        string id PK
+        string suite_id "suite id + version measured"
+        string suite_version
+        string executor_candidate "side A agent (EVP-11)"
+        string executor_baseline "side B agent"
+        string config "single lockfile hash (both agents)"
+        int seed
+        int repeats
+        json model_versions "per-agent model ids + auth_kind marks"
+        json sandbox_profile "SEC-3"
+        string manifest_hash "reproduction key"
+        json verdict "decision + deltas/CIs + n + alpha (EVT-1), set at finish"
+        string started_at
+        string finished_at
+    }
+    BENCH_TASK_RESULT {
+        string id PK "append-only (triggers)"
+        string run_id FK
+        string bench_task_id "task id in the measured suite"
+        string agent "candidate|baseline"
+        int repeat_index
+        boolean fpar_pass
+        int cost_micro_usd
+        json check_results
+        string raw_ref "transcript artifact"
+    }
+```
 
 ## 7. Domain: Routing & Signals
 

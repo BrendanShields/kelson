@@ -1826,7 +1826,7 @@
       "fix": "cli SES-4 test extended: empty first turn via mock, --continue exits 0, wire-level assertion (captured request bodies) that no empty-content assistant message reaches the provider",
       "id": "F-129",
       "status": "fixed",
-      "fix_commit": null
+      "fix_commit": "353a9ac"
     },
     {
       "task": "C1-0",
@@ -1840,7 +1840,7 @@
       "fix": "basename(existing) for the tail component; discriminating fixture: write to /x<realCwd>/probe.txt must throw escapes-the-workspace and create nothing",
       "id": "F-130",
       "status": "fixed",
-      "fix_commit": null
+      "fix_commit": "353a9ac"
     },
     {
       "task": "C1-0",
@@ -1854,7 +1854,7 @@
       "fix": "parametrized symlink-refusal test over all four tools asserting the escape error per tool",
       "id": "F-131",
       "status": "fixed",
-      "fix_commit": null
+      "fix_commit": "353a9ac"
     },
     {
       "task": "C1-0",
@@ -1868,7 +1868,7 @@
       "fix": "both arbitraries added to the roundtrip suite",
       "id": "F-132",
       "status": "fixed",
-      "fix_commit": null
+      "fix_commit": "353a9ac"
     },
     {
       "task": "C1-0",
@@ -1880,7 +1880,91 @@
       "fix": "board.mjs: --clauses \"\" now yields []; completed_at preserved on re-mark; both rows repaired through the tool",
       "id": "F-133",
       "status": "fixed",
-      "fix_commit": null
+      "fix_commit": "353a9ac"
+    },
+    {
+      "task": "C1-1",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "EVP-11"
+      ],
+      "summary": "EVP-11 manifest sentence (per-agent model ids + auth_kind marks) was undischargeable as written: modelVersions defaulted to {} with no caller populating it and SessionOutcome has no reporting channel",
+      "root_cause": "spec_gap",
+      "fix": "clause amended to session_model-when-set (PROV-3 never-guessed) with auth_kind provenance delegated to PROV-6 session telemetry; runBench gained the model plumb (ANTHROPIC_MODEL to both agents, manifest records session_model); obligation + tests extended",
+      "id": "F-134",
+      "status": "fixed",
+      "fix_commit": "85b367b"
+    },
+    {
+      "task": "C1-1",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "EVP-11"
+      ],
+      "summary": "dimension upsert ran before the all-quarantined refusal, so a refused run still wrote eval_suite/benchmark_task rows while the clause claimed refusal writes nothing",
+      "root_cause": "silent_divergence",
+      "fix": "quarantine read + empty-set refusal moved above the upsert — the clause is now literally true",
+      "id": "F-135",
+      "status": "fixed",
+      "fix_commit": "85b367b"
+    },
+    {
+      "task": "C1-2",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-18"
+      ],
+      "summary": "renderVerdict computed the underpowered deficit against the hard-coded default minSample=20 while runs gate on suite.min_sample/gateOpts — a min_sample=6 suite at n=4 rendered a 16-task deficit instead of 2 (pre-existing in the eval path, newly wired into bench)",
+      "root_cause": "design_bug",
+      "fix": "effective minSample threaded through BenchRunResult and EvalRunResult into renderVerdict on both surfaces",
+      "id": "F-136",
+      "status": "fixed",
+      "fix_commit": "85b367b"
+    },
+    {
+      "task": "C1-1",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "EVP-11"
+      ],
+      "summary": "sessions received KELSON_BENCH_REPEAT and KELSON_ENABLED_PACKS, neither named in EVP-11, and the obligation fixture keys on the former (de facto contract)",
+      "root_cause": "spec_gap",
+      "fix": "clause amended to name all four env vars and their cross-side identity semantics",
+      "id": "F-137",
+      "status": "fixed",
+      "fix_commit": "85b367b"
+    },
+    {
+      "task": "C1-1",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "EVP-11"
+      ],
+      "summary": "ERD §2 trigger-enforced append-only enumeration not extended with bench_task_result while §6 pointed readers at §2 for that property",
+      "root_cause": "process_gap",
+      "fix": "bench_task_result added to the ERD §2 list",
+      "id": "F-138",
+      "status": "fixed",
+      "fix_commit": "85b367b"
+    },
+    {
+      "task": "C1-2",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-18"
+      ],
+      "summary": "the non-zero-on-refusal commitment rode an uncaught throw (raw stack, untested) out of main()",
+      "root_cause": "test_blindspot",
+      "fix": "benchCommand catches pre-flight refusals into fail() (kelson: diagnostic) and UX-18.test.ts asserts the refusal exit code and stack-free stderr",
+      "id": "F-139",
+      "status": "fixed",
+      "fix_commit": "85b367b"
     }
   ]
 }

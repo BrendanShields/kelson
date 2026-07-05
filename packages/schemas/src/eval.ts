@@ -140,6 +140,28 @@ export const EvalSuite = z.strictObject({
   min_sample: z.number().int().min(6).optional(),
 });
 
+// EVP-11: a bench run compares agents, not packs — ordered [candidate,
+// baseline] executors, one config, dedicated tables (never eval_run).
+export const BenchManifest = z.strictObject({
+  schema_version: SchemaVersion,
+  kind: z.literal("bench"),
+  suite: z.string().min(1),
+  suite_version: z.string().min(1),
+  executor_candidate: Executor,
+  executor_baseline: Executor,
+  config: Sha256,
+  seed: z.number().int().nonnegative(),
+  repeats: z.number().int().positive(),
+  sandbox_profile: SandboxProfile,
+  model_versions: z.record(
+    z.string().regex(/^[a-z][a-z0-9_.:-]*$/),
+    z.string().min(1),
+  ),
+  tasks: z.array(z.strictObject({ id: z.string().min(1), snapshot: Sha256 })),
+  // EVP-11: tasks quarantined at run start — excluded, named in the manifest.
+  excluded_task_ids: z.array(z.string()).default([]),
+});
+
 export type Executor = z.infer<typeof Executor>;
 export type RunKind = z.infer<typeof RunKind>;
 export type EvalRunKind = z.infer<typeof EvalRunKind>;
@@ -156,3 +178,4 @@ export type Delta = z.infer<typeof Delta>;
 export type Verdict = z.infer<typeof Verdict>;
 export type LedgerEntry = z.infer<typeof LedgerEntry>;
 export type EvalSuite = z.infer<typeof EvalSuite>;
+export type BenchManifest = z.infer<typeof BenchManifest>;

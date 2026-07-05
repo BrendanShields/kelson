@@ -1,3 +1,4 @@
+import type { Verdict } from "@kelson/schemas";
 import { paint, type Tone } from "./theme.js";
 
 // UX §7 static component set: pure string renderers. The only stdout writer
@@ -88,3 +89,23 @@ export const sideBySideDiff = (
 
 export const toned = (tone: Tone, symbol: string, text: string): string =>
   paint(tone, `${symbol} ${text}`);
+
+// UX J3/UX-18: verdict is never a bare pass/fail — decision + effect sizes +
+// CIs, and underpowered states its deficit (UX-P5). Shared by eval and bench.
+export const renderVerdict = (v: Verdict, minSample = 20): string => {
+  const delta = (d: Verdict["fpar_delta"], unit: string) =>
+    `${d.mean >= 0 ? "+" : ""}${d.mean.toFixed(3)}${unit} [${d.ci95[0].toFixed(3)}, ${d.ci95[1].toFixed(3)}]`;
+  const lines = [
+    `verdict: ${v.decision}`,
+    `  fpar delta:  ${delta(v.fpar_delta, "")}`,
+    `  cost delta:  ${delta(v.cost_delta_pct, "%")}`,
+    `  n=${v.n} alpha=${v.alpha} B=${v.bootstrap_resamples}`,
+  ];
+  if (v.decision === "underpowered")
+    lines.push(
+      `  underpowered: ${Math.max(0, minSample - v.n)} more paired tasks needed for a powered verdict`,
+    );
+  if (v.quarantined_tasks.length)
+    lines.push(`  quarantined: ${v.quarantined_tasks.join(", ")}`);
+  return lines.join("\n");
+};
