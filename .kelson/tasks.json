@@ -917,16 +917,18 @@
     {
       "id": "C1-3",
       "title": "Context seam: assembleContext + reconstruct-once",
-      "state": "open",
+      "state": "completed",
       "clauses": [],
-      "completed_at": null
+      "completed_at": "2026-07-05T12:32:23Z"
     },
     {
       "id": "C1-4",
       "title": "PROV-8 Anthropic prompt-cache breakpoints",
-      "state": "open",
-      "clauses": [],
-      "completed_at": null
+      "state": "completed",
+      "clauses": [
+        "PROV-8"
+      ],
+      "completed_at": "2026-07-05T12:36:40Z"
     },
     {
       "id": "C1-5",
@@ -973,7 +975,7 @@
     {
       "id": "C1-11",
       "title": "Bench validation: Ollama smoke + subscription baseline",
-      "state": "open",
+      "state": "in_progress",
       "clauses": [],
       "completed_at": null
     }

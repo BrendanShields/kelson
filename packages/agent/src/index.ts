@@ -1,3 +1,4 @@
+export * from "./context.ts";
 export * from "./executor.ts";
 export * from "./llm/auth.ts";
 export * from "./llm/config.ts";

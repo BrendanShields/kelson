@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { openDb } from "@kelson/kernel";
-import { toMessages } from "../../src/loop.ts";
+import { toMessages } from "../../src/context.ts";
 import {
   appendEvent,
   createAgentSession,

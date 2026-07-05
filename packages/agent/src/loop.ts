@@ -19,6 +19,7 @@ import {
   type ToolSet,
   tool,
 } from "ai";
+import { assembleContext } from "./context.ts";
 import { costOf, type Usage } from "./llm/registry.ts";
 import { decide } from "./permissions.ts";
 import {
@@ -148,44 +149,8 @@ export const answerPermission = (
   }
 };
 
-export const toMessages = (chain: SessionEvent[]): ModelMessage[] => {
-  const messages: ModelMessage[] = [];
-  for (const e of chain) {
-    if (e.kind === "user_message") {
-      messages.push({ role: "user", content: String(e.payload.text) });
-    } else if (e.kind === "assistant_message") {
-      const calls = (e.payload.tool_calls ?? []) as ToolCall[];
-      const content = [
-        ...(e.payload.text
-          ? [{ type: "text" as const, text: String(e.payload.text) }]
-          : []),
-        ...calls.map((c) => ({
-          type: "tool-call" as const,
-          toolCallId: c.id,
-          toolName: c.name,
-          input: c.input,
-        })),
-      ];
-      // SES-4: a done turn can carry neither text nor tool calls; providers
-      // reject an empty-content assistant message on --continue, so drop it —
-      // it references no tool results and loses nothing from the chain.
-      if (content.length > 0) messages.push({ role: "assistant", content });
-    } else if (e.kind === "tool_result") {
-      messages.push({
-        role: "tool",
-        content: [
-          {
-            type: "tool-result" as const,
-            toolCallId: String(e.payload.tool_call_id),
-            toolName: String(e.payload.name),
-            output: { type: "text" as const, value: String(e.payload.output) },
-          },
-        ],
-      });
-    }
-  }
-  return messages;
-};
+// toMessages/assembleContext live in context.ts — the sole producer of model
+// input (the seam prompt caching and compaction attach to).
 
 const headOf = (chain: SessionEvent[]): string => {
   const last = chain[chain.length - 1];
@@ -310,7 +275,7 @@ const resolveTools = (deps: StepDeps, chain: SessionEvent[]): StepResult => {
       ? [...deps.spec.clausesByFile.keys()]
       : modifiedPaths;
     if (toCheck.length > 0)
-      head = runObligations(deps, deps.spec, toCheck, head);
+      head = runObligations(deps, deps.spec, toCheck, head, chain);
   }
   return { status: "continue" };
 };
@@ -323,11 +288,13 @@ const runObligations = (
   spec: SpecContext,
   modifiedPaths: string[],
   headId: string,
+  // The caller's reconstructed chain — obligation_check events appended after
+  // it are only this function's own, tracked in `checks` below (reconstruct-
+  // once: no redundant O(n) walk per batch).
+  chain: SessionEvent[],
 ): string => {
   let head = headId;
-  const checks = obligationChecks(
-    reconstruct(listEvents(deps.db, deps.sessionId)),
-  );
+  const checks = obligationChecks(chain);
   for (const clause of touchedClauses(spec, modifiedPaths)) {
     const filesHash = governedFilesHash(spec, clause);
     if (cachedStatus(checks, clause, filesHash) !== null) continue; // cache hit
@@ -455,10 +422,13 @@ export const step = async (deps: StepDeps): Promise<StepResult> => {
       tool({ description: t.description, inputSchema: t.params }),
     ]),
   ) as ToolSet;
+  // PROV-8: the system prompt rides as an instructions SystemModelMessage so
+  // it can carry its cache breakpoint (ai v7's documented caching path).
+  const context = assembleContext(chain);
   const result = streamText({
     model,
-    system: String(meta.payload.system),
-    messages: toMessages(chain),
+    instructions: context.instructions,
+    messages: context.messages,
     tools: aiTools,
     ...(deps.abort ? { abortSignal: deps.abort } : {}),
   });
@@ -592,11 +562,14 @@ export const step = async (deps: StepDeps): Promise<StepResult> => {
     // AGT-7 done-gate: refuse `done` while any accumulated touched clause's
     // obligation is failing at its current governed-file hash. Inject the
     // failures so the next step sees them, and demote done → continue.
-    if (deps.spec && !deps.spec.empty) {
-      const failing = failingClauses(
-        deps.spec,
-        reconstruct(listEvents(deps.db, deps.sessionId)),
-      );
+    // One post-batch reconstruct serves both the gate and the report —
+    // nothing is appended between the two reads.
+    const fresh =
+      deps.spec && !deps.spec.empty
+        ? reconstruct(listEvents(deps.db, deps.sessionId))
+        : null;
+    if (deps.spec && !deps.spec.empty && fresh) {
+      const failing = failingClauses(deps.spec, fresh);
       if (failing.length > 0) {
         // AGT-12: an obligation failure escalates the retry model via the
         // routing ladder rather than silently retrying on the same model.
@@ -630,12 +603,12 @@ export const step = async (deps: StepDeps): Promise<StepResult> => {
       }
     }
     // AGT-9: a spec-native session emits one VerificationReport at end.
-    if (deps.spec && !deps.spec.empty)
+    if (deps.spec && !deps.spec.empty && fresh)
       emitVerificationReport(
         deps.db,
         deps.spec,
         String(meta.payload.task_id),
-        reconstruct(listEvents(deps.db, deps.sessionId)),
+        fresh,
       );
     endSession(deps.db, deps.sessionId);
     return { status: "done", text };
