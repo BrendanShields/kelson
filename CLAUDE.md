@@ -15,6 +15,7 @@ Open-source harness covering feedback → ideation → planning → spec → bui
 | `docs/specs/2026-07-02-routing-policy.md` | Policy/registry formats, feature vector, bandit (`RPOL-*`) |
 | `docs/specs/2026-07-02-signal-contract.md` | External signal schema (`SIG-*`) |
 | `docs/specs/2026-07-03-standalone-harness-design.md` | Native agent runtime design + phases 6–10 (clauses `AGT-*`, `PERM-*`, `SES-*`, `PROV-*` land in `agent-runtime.md` via feature-pipeline) |
+| `docs/specs/2026-07-05-ui-uplift-prd.md` | Interface uplift vision: feature catalog (tiers 1–3), web write path, phases A–D (draft `UX-draft/*` clauses land in the UX spec via feature-pipeline per phase) |
 | `docs/adr/` | Decisions (0001 language/storage, 0002 no graph DB/RAG, 0003 Bun/OpenTUI/tooling) |
 
 **Spec-first rule:** behavior changes start in the spec doc, never in code. Every behavioral requirement carries an `*Obligation:*` line (its executable test). A clause without an obligation is vague by definition and will be rejected by the spec-lint hook.

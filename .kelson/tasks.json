@@ -989,6 +989,13 @@
       "clauses": [],
       "completed_at": "2026-07-05T12:52:28Z",
       "notes": "Ollama A/A smoke green through kelson bench (/bin/zsh). Same-model S1 baseline ready but blocked on operator-minted subscription token: run 'claude setup-token', then 'kelson auth login anthropic --token <tok>', then 'bun packages/cli/src/index.ts bench --suite suites/seed --agents api,claude --model claude-sonnet-5 --repeats 1'. Mixed-model run deliberately skipped (weak evidence, quota spend)."
+    },
+    {
+      "id": "UIX-PRD",
+      "title": "UI uplift PRD: vision, feature catalog, phased rollout (spec-only)",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-05T13:15:23Z"
     }
   ]
 }
