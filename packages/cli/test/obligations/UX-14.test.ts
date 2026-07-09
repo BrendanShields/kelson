@@ -33,7 +33,7 @@ describe("UX-14: chat is a pure reducer behind a thin shell; slash = typed dispa
 
     const paused = update(m, {
       type: "paused",
-      ask: { requestId: "r1", tool: "write", arg: "a.txt" },
+      ask: { requestId: "r1", tool: "write", arg: "a.txt", rule: "default" },
     }).model;
     const answered = update(paused, {
       type: "answer",

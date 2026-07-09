@@ -20,6 +20,13 @@ export interface Workspace {
     command: string,
     opts?: { env?: Record<string, string>; timeoutMs?: number },
   ) => ExecResult;
+  // EVP-12: eval session commands run through the async variant so cells can
+  // genuinely overlap; `exec` stays synchronous because the agent ToolContext
+  // contract is sync (unify when the tool layer goes async).
+  execAsync: (
+    command: string,
+    opts?: { env?: Record<string, string>; timeoutMs?: number },
+  ) => Promise<ExecResult>;
   cleanup: () => void;
 }
 
@@ -58,19 +65,22 @@ export const createWorkspace = (
   mkdirSync(home, { recursive: true });
   restoreSnapshot(opts.snapshot, dir, opts.storeDir);
 
-  const exec: Workspace["exec"] = (command, execOpts = {}) => {
-    const timeoutMs = execOpts.timeoutMs ?? 300_000;
-    let res: ReturnType<typeof spawnSync>;
+  // One command plan for both exec variants — the docker argv must never
+  // drift between them.
+  const spawnPlan = (
+    command: string,
+    env: Record<string, string> | undefined,
+  ): { cmd: string[]; cwd?: string; env?: Record<string, string> } => {
     if (profile.isolation === "container") {
       const runtime = containerRuntime() as string;
       const network = profile.network.policy === "deny" ? "none" : "bridge";
-      const envArgs = Object.entries(execOpts.env ?? {}).flatMap(([k, v]) => [
+      const envArgs = Object.entries(env ?? {}).flatMap(([k, v]) => [
         "-e",
         `${k}=${v}`,
       ]);
-      res = spawnSync(
-        runtime,
-        [
+      return {
+        cmd: [
+          runtime,
           "run",
           "--rm",
           `--network=${network}`,
@@ -84,20 +94,24 @@ export const createWorkspace = (
           "-c",
           command,
         ],
-        { stdio: "pipe", timeout: timeoutMs },
-      );
-    } else {
-      res = spawnSync("sh", ["-c", command], {
-        cwd: dir,
-        stdio: "pipe",
-        timeout: timeoutMs,
-        env: {
-          HOME: home,
-          PATH: process.env.PATH ?? "",
-          ...execOpts.env,
-        },
-      });
+      };
     }
+    return {
+      cmd: ["sh", "-c", command],
+      cwd: dir,
+      env: { HOME: home, PATH: process.env.PATH ?? "", ...env },
+    };
+  };
+
+  const exec: Workspace["exec"] = (command, execOpts = {}) => {
+    const timeoutMs = execOpts.timeoutMs ?? 300_000;
+    const plan = spawnPlan(command, execOpts.env);
+    const res = spawnSync(plan.cmd[0] as string, plan.cmd.slice(1), {
+      stdio: "pipe",
+      timeout: timeoutMs,
+      ...(plan.cwd !== undefined ? { cwd: plan.cwd } : {}),
+      ...(plan.env !== undefined ? { env: plan.env } : {}),
+    });
     return {
       exitCode: res.status ?? -1,
       stdout: res.stdout?.toString() ?? "",
@@ -106,11 +120,36 @@ export const createWorkspace = (
     };
   };
 
+  const execAsync: Workspace["execAsync"] = async (command, execOpts = {}) => {
+    const timeoutMs = execOpts.timeoutMs ?? 300_000;
+    const plan = spawnPlan(command, execOpts.env);
+    const proc = Bun.spawn(plan.cmd, {
+      stdout: "pipe",
+      stderr: "pipe",
+      stdin: "ignore",
+      timeout: timeoutMs,
+      ...(plan.cwd !== undefined ? { cwd: plan.cwd } : {}),
+      ...(plan.env !== undefined ? { env: plan.env } : {}),
+    });
+    const [stdout, stderr] = await Promise.all([
+      new Response(proc.stdout).text(),
+      new Response(proc.stderr).text(),
+    ]);
+    await proc.exited;
+    return {
+      exitCode: proc.exitCode ?? -1,
+      stdout,
+      stderr,
+      timedOut: proc.signalCode === "SIGTERM" && proc.exitCode === null,
+    };
+  };
+
   return {
     dir,
     home,
     profile,
     exec,
+    execAsync,
     cleanup: () => rmSync(root, { recursive: true, force: true }),
   };
 };

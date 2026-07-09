@@ -24,6 +24,9 @@ export const JSON_OUTPUT: Record<string, JsonOutput> = {
   doctor: { schema: DoctorReport },
   divergence: { schema: DivergenceListResult },
   index: { schema: IndexRebuildResult },
+  db: {
+    skip: "per-subcommand shapes: stats emits DbStatsResult, backup emits DbBackupResult; validated by UX-27 obligation",
+  },
   drift: {
     skip: "per-subcommand shapes: list emits DriftListResult, promote mutates; validated by UX-22 obligations",
   },

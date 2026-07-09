@@ -11,11 +11,37 @@ export type ChatEntry =
   | { kind: "tool"; name: string; ok: boolean }
   | { kind: "info"; text: string };
 
+// PERM-4: rule is the matched-rule provenance recorded on the
+// permission_request event, or the literal "default".
+export type AskRule =
+  | { tool: string; arg?: string; action: string }
+  | "default";
+
 export interface PermissionAsk {
   requestId: string;
   tool: string;
   arg: string;
+  rule: AskRule;
 }
+
+// PERM-4: the event payload's provenance is an open-record field; anything
+// not shaped like a rule reads as the default-ask marker.
+export const askRuleOf = (v: unknown): AskRule => {
+  if (v !== null && typeof v === "object" && "tool" in v && "action" in v) {
+    const r = v as { tool: unknown; arg?: unknown; action: unknown };
+    return {
+      tool: String(r.tool),
+      ...(r.arg !== undefined ? { arg: String(r.arg) } : {}),
+      action: String(r.action),
+    };
+  }
+  return "default";
+};
+
+export const askProvenanceLabel = (rule: AskRule): string =>
+  rule === "default"
+    ? "no rule matched — default ask"
+    : `rule: ${rule.tool}${rule.arg !== undefined ? `(${rule.arg})` : ""} → ${rule.action}`;
 
 export interface ChatModel {
   entries: ChatEntry[];
@@ -265,5 +291,9 @@ export const renderChat = (model: ChatModel): string => {
     ? `≥$${(model.costMicroUsd / 1_000_000).toFixed(4)} (some steps unpriced)`
     : `$${(model.costMicroUsd / 1_000_000).toFixed(4)}`;
   const status = model.busy ? "thinking…" : "ready";
-  return `${lines.join("\n")}\n\n[${model.modelId} · ${cost} · ${status}]`;
+  // PERM-4: a pending ask names the tool, its primary arg, and provenance.
+  const ask = model.ask
+    ? `\npermission ask: ${model.ask.tool} ${model.ask.arg}\n  ${askProvenanceLabel(model.ask.rule)}`
+    : "";
+  return `${lines.join("\n")}${ask}\n\n[${model.modelId} · ${cost} · ${status}]`;
 };

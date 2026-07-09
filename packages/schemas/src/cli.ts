@@ -197,3 +197,29 @@ export const IndexRebuildResult = z.object({
   schema_version: SchemaVersion,
 });
 export type IndexRebuildResult = z.infer<typeof IndexRebuildResult>;
+
+// UX-27: one table's row count as `kelson db stats|backup` reports it.
+export const DbTableCount = z.object({
+  name: z.string().min(1),
+  rows: z.number().int().nonnegative(),
+});
+export type DbTableCount = z.infer<typeof DbTableCount>;
+
+// UX-1/UX-27: machine output for `kelson db stats`.
+export const DbStatsResult = z.object({
+  path: z.string().min(1),
+  size_bytes: z.number().int().nonnegative(),
+  tables: z.array(DbTableCount),
+  schema_version: SchemaVersion,
+});
+export type DbStatsResult = z.infer<typeof DbStatsResult>;
+
+// UX-1/UX-27: machine output for `kelson db backup <dest>`.
+export const DbBackupResult = z.object({
+  source: z.string().min(1),
+  dest: z.string().min(1),
+  size_bytes: z.number().int().nonnegative(),
+  tables: z.array(DbTableCount),
+  schema_version: SchemaVersion,
+});
+export type DbBackupResult = z.infer<typeof DbBackupResult>;

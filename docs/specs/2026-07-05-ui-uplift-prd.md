@@ -514,6 +514,10 @@ Every feature in this PRD, without restatement per item:
   TUI, and web (the T3.5/T2.1 identity obligation is the pattern).
 - Event-stream reads order by rowid; costs carry units; effect sizes carry CIs;
   color never the only signal (UX §7).
+- Polled web views surface a failed refresh as a visible stale badge over the last
+  good payload with a last-updated timestamp — never a silent blank; the loading
+  state is the UX-12 empty state, never `null`. (Lands as a numbered clause with
+  the first Phase B web feature.)
 - LLM-touching features (T3.7, T3.1) follow the fixture-based test rule: recorded
   streams, no live endpoints in gates.
 

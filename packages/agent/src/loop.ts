@@ -15,7 +15,7 @@ import type {
 import { type LanguageModel, streamText, type ToolSet, tool } from "ai";
 import { assembleContext } from "./context.ts";
 import { costOf, type Usage } from "./llm/registry.ts";
-import { decide } from "./permissions.ts";
+import { evaluate } from "./permissions.ts";
 import {
   escalateStep,
   newSessionBudget,
@@ -202,7 +202,8 @@ const resolveTools = (deps: StepDeps, chain: SessionEvent[]): StepResult => {
   for (const call of pendingToolCalls(chain)) {
     const toolImpl = deps.tools.find((t) => t.name === call.name);
     const arg = toolImpl ? toolImpl.primaryArg(call.input) : "";
-    let action = decide(rules, call.name, arg);
+    const verdict = evaluate(rules, call.name, arg);
+    let action = verdict.action;
 
     if (action === "ask" && deps.headlessAsk !== undefined)
       action = deps.headlessAsk;
@@ -221,6 +222,17 @@ const resolveTools = (deps: StepDeps, chain: SessionEvent[]): StepResult => {
               tool_call_id: call.id,
               tool: call.name,
               arg,
+              // PERM-4: provenance — the matched rule, or the literal
+              // "default" when the PERM-1 default decided the ask.
+              rule: verdict.rule
+                ? {
+                    tool: verdict.rule.tool,
+                    ...(verdict.rule.arg !== undefined
+                      ? { arg: verdict.rule.arg }
+                      : {}),
+                    action: verdict.rule.action,
+                  }
+                : "default",
               reason: validatePauseReason(`permission:${call.name}`),
             },
           }).id;

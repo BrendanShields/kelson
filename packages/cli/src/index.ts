@@ -137,6 +137,16 @@ const evalCommand = async (argv: string[]): Promise<void> => {
         ...(typeof named.repeats === "string"
           ? { repeats: Number(named.repeats) }
           : {}),
+        // EVP-12: bounded cell concurrency, deterministic verdict either way.
+        ...(typeof named.concurrency === "string"
+          ? {
+              concurrency: /^[1-9]\d*$/.test(named.concurrency)
+                ? Number(named.concurrency)
+                : die(
+                    `--concurrency must be a positive integer, got "${named.concurrency}"`,
+                  ),
+            }
+          : {}),
         ...(typeof named.snapshots === "string"
           ? { snapshotStoreDir: named.snapshots }
           : {}),
@@ -790,6 +800,7 @@ export const COMMANDS: DispatchTable = {
     (await import("./commands/agents.js")).agentsCommand(argv),
   index: async (argv) =>
     (await import("./commands/reindex.js")).indexCommand(argv),
+  db: async (argv) => (await import("./commands/db.js")).dbCommand(argv),
 };
 
 const help = (): void => {
@@ -817,6 +828,7 @@ const help = (): void => {
         ["drift", "list | promote — drift review, clause promotion (SPEC-8)"],
         ["agents", "register <manifest> | list — custom agent onboarding"],
         ["index", "rebuild — reconcile the artifact index from files"],
+        ["db", "stats | backup <dest> — store size, row counts, snapshot"],
         ["", ""],
         ["(no command)", "in a terminal: interactive launcher (UX-7)"],
       ]),

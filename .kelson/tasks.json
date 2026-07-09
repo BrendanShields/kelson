@@ -1087,6 +1087,60 @@
         "UX-26"
       ],
       "completed_at": "2026-07-05T21:32:18Z"
+    },
+    {
+      "id": "SAK-1",
+      "title": "SEC-7 UI static server realpath containment (Sakana S1/A4)",
+      "state": "completed",
+      "clauses": [
+        "SEC-7"
+      ],
+      "completed_at": "2026-07-09T06:25:43Z"
+    },
+    {
+      "id": "SAK-2",
+      "title": "SES-9 storeSnapshot temp bundle cleanup (Sakana P5)",
+      "state": "completed",
+      "clauses": [
+        "SES-9"
+      ],
+      "completed_at": "2026-07-09T06:25:43Z"
+    },
+    {
+      "id": "SAK-3",
+      "title": "EVP-12 bounded eval concurrency, deterministic pairing (Sakana P1)",
+      "state": "completed",
+      "clauses": [
+        "EVP-12"
+      ],
+      "completed_at": "2026-07-09T06:25:43Z"
+    },
+    {
+      "id": "SAK-4",
+      "title": "PERM-4 ask-prompt provenance (tool, arg, matched rule) (Sakana S3)",
+      "state": "completed",
+      "clauses": [
+        "PERM-4"
+      ],
+      "completed_at": "2026-07-09T06:32:06Z"
+    },
+    {
+      "id": "SAK-5",
+      "title": "PROV-10 credential withholding on switch/routed override paths (Sakana S5)",
+      "state": "completed",
+      "clauses": [
+        "PROV-10"
+      ],
+      "completed_at": "2026-07-09T06:27:41Z"
+    },
+    {
+      "id": "SAK-6",
+      "title": "UX-27 kelson db stats|backup (Sakana D4)",
+      "state": "completed",
+      "clauses": [
+        "UX-27"
+      ],
+      "completed_at": "2026-07-09T06:32:06Z"
     }
   ]
 }

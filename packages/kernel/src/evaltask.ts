@@ -19,8 +19,8 @@ export interface ExecContext {
   sideEnv: Record<string, string>;
 }
 
-// Async union: the native api executor streams (EVP-9); the built-ins stay
-// synchronous.
+// Async union: session executors are async (EVP-12 overlap; the api executor
+// streams, EVP-9); check runners stay on the sync exec.
 export type ExecutorFn = (
   ctx: ExecContext,
 ) => SessionOutcome | Promise<SessionOutcome>;
@@ -40,7 +40,7 @@ const readCostFile = (
   };
 };
 
-export const commandExecutor: ExecutorFn = (ctx) => {
+export const commandExecutor: ExecutorFn = async (ctx) => {
   if (ctx.task.session_command === null)
     throw new Error(
       `executor "command" requires session_command; missing in task ${ctx.task.id}`,
@@ -52,7 +52,8 @@ export const commandExecutor: ExecutorFn = (ctx) => {
     ctx.workspace.profile.isolation === "container"
       ? "/workspace/.kelson-cost"
       : costFileHost;
-  const res = ctx.workspace.exec(ctx.task.session_command, {
+  // EVP-12: sessions run async so concurrent cells genuinely overlap.
+  const res = await ctx.workspace.execAsync(ctx.task.session_command, {
     timeoutMs: ctx.timeoutMs,
     env: { KELSON_COST_FILE: costFileEnv, ...ctx.sideEnv },
   });
@@ -110,12 +111,13 @@ export const buildClaudeEnv = (
   return { ...passthrough, ...sideEnv };
 };
 
-export const claudeExecutor: ExecutorFn = (ctx) => {
+export const claudeExecutor: ExecutorFn = async (ctx) => {
   if (ctx.workspace.profile.isolation === "container")
     throw new Error(
       "claude executor under the container profile is not implemented yet — container runs use the command executor",
     );
-  const res = ctx.workspace.exec(
+  // EVP-12: sessions run async so concurrent cells genuinely overlap.
+  const res = await ctx.workspace.execAsync(
     // Disposable detached workspace + temp HOME: skipping permission prompts
     // is the sandbox's point — a headless session cannot answer them. The
     // statement travels as an env var so the shell never parses its content.

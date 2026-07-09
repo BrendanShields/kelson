@@ -149,6 +149,10 @@ export interface EvalRunOptions {
   profile: SandboxProfile;
   seed?: number;
   repeats?: number;
+  // EVP-12: bounded cell concurrency; results are persisted and consumed in
+  // suite-task -> side -> repeat order regardless, so any value yields the
+  // sequential run's verdict for a fixed seed. Default 1.
+  concurrency?: number;
   snapshotStoreDir?: string;
   // EVP-8: same override on both sides; recorded in the manifest; bars ledger.
   sessionModel?: { model: string; baseUrl?: string };
@@ -173,6 +177,14 @@ export interface EvalRunResult {
   // underpowered rendering states the TRUE deficit (audit 2026-07-05).
   minSample: number;
 }
+
+// EVP-12: container image acquisition is not single-flight yet, so container
+// runs clamp to sequential — the manifest records the clamped value.
+export const effectiveConcurrency = (
+  profile: SandboxProfile,
+  requested?: number,
+): number =>
+  profile.isolation === "container" ? 1 : Math.max(1, requested ?? 1);
 
 export const runEval = async (
   db: Database,
@@ -203,6 +215,7 @@ export const runEval = async (
       'executor "api" under the container profile is refused — the native runtime\'s file tools do not cross the container boundary yet (EVP-9)',
     );
   const repeats = opts.repeats ?? 3;
+  const concurrency = effectiveConcurrency(opts.profile, opts.concurrency);
   const runSeed = opts.seed ?? 0;
   const runId = ulid();
   const configA = hashLockfile(opts.lockfileA);
@@ -233,6 +246,7 @@ export const runEval = async (
     config_b: configB,
     seed: runSeed,
     repeats,
+    concurrency,
     executor: opts.executor,
     sandbox_profile: opts.profile,
     model_versions: {
@@ -305,114 +319,139 @@ export const runEval = async (
     }
   >();
 
-  for (const task of tasks) {
-    const acc = { A: [], B: [] } as NonNullable<ReturnType<typeof byTask.get>>;
-    byTask.set(task.id, acc);
-    for (const { side, lockfile } of sides) {
-      for (let i = 0; i < repeats; i++) {
-        const ws = createWorkspace(opts.profile, {
-          snapshot: task.snapshot,
-          storeDir: opts.snapshotStoreDir ?? DEFAULT_SNAPSHOT_DIR,
-        });
-        try {
-          if (opts.executor === "claude")
-            materializeClaudeSide(ws.dir, lockfile);
-          const stepId = `${runId}:${task.id}:${side}:${i}`;
-          let routedEnv: Record<string, string> = {};
-          let monitor: BudgetMonitor | null = null;
-          if (routing) {
-            const enabled = lockfile.entries.some(
-              (e) => e.name === opts.routing?.pack && e.enabled,
+  // EVP-12: cells may run concurrently, but rows are inserted and aggregated
+  // strictly in cell order (suite task -> side -> repeat) after all cells
+  // finish, so rowid-ordered consumers (flakiness windows, pairing, the gate)
+  // see the sequential runner's order whatever the completion order.
+  const cells = tasks.flatMap((task) =>
+    sides.flatMap(({ side, lockfile }) =>
+      Array.from({ length: repeats }, (_, i) => ({ task, side, lockfile, i })),
+    ),
+  );
+  const runCell = async (cell: (typeof cells)[number]) => {
+    const { task, side, lockfile, i } = cell;
+    const ws = createWorkspace(opts.profile, {
+      snapshot: task.snapshot,
+      storeDir: opts.snapshotStoreDir ?? DEFAULT_SNAPSHOT_DIR,
+    });
+    try {
+      if (opts.executor === "claude") materializeClaudeSide(ws.dir, lockfile);
+      const stepId = `${runId}:${task.id}:${side}:${i}`;
+      let routedEnv: Record<string, string> = {};
+      let monitor: BudgetMonitor | null = null;
+      if (routing) {
+        const enabled = lockfile.entries.some(
+          (e) => e.name === opts.routing?.pack && e.enabled,
+        );
+        if (enabled) {
+          // Benchmark tasks carry no plan yet, so every feature falls
+          // back per the RPOL-2 table (lang honestly "unknown") — per-task
+          // extraction lands with the Phase 4 pipeline (F-062).
+          const vector = extractFeatures({
+            step: "build",
+            repo: suite.id,
+          });
+          const decision = route(db, {
+            policy: routing.policy,
+            registry: routing.registry,
+            vector,
+            taskId: task.id,
+            stepId,
+          });
+          const entry = routing.registry.find((e) => e.id === decision.target);
+          if (!entry)
+            throw new Error(
+              `routed target not in registry: ${decision.target}`,
             );
-            if (enabled) {
-              // Benchmark tasks carry no plan yet, so every feature falls
-              // back per the RPOL-2 table (lang honestly "unknown") — per-task
-              // extraction lands with the Phase 4 pipeline (F-062).
-              const vector = extractFeatures({
-                step: "build",
-                repo: suite.id,
-              });
-              const decision = route(db, {
-                policy: routing.policy,
-                registry: routing.registry,
-                vector,
-                taskId: task.id,
-                stepId,
-              });
-              const entry = routing.registry.find(
-                (e) => e.id === decision.target,
-              );
-              if (!entry)
-                throw new Error(
-                  `routed target not in registry: ${decision.target}`,
-                );
-              routedEnv = { ANTHROPIC_MODEL: entry.endpoint.ref };
-              monitor = new BudgetMonitor(db, {
-                taskId: task.id,
-                stepId,
-                attempt: 0,
-                ruleId: `rule:${decision.rule_index}`,
-                policyHash: routing.hash,
-                modelId: entry.endpoint.ref,
-                escalationDepth: 0,
-                budgetTokens: decision.budget_tokens,
-              });
-            } else {
-              routedEnv = { ANTHROPIC_MODEL: routing.baseline.endpoint.ref };
-            }
-          }
-          const outcome = await runTask(task, ws, executor, {
-            ...sideEnvFor(
-              side,
-              lockfile,
-              taskSeed(runSeed, task.id, side, i),
-              opts.sessionModel,
-            ),
-            ...routedEnv,
+          routedEnv = { ANTHROPIC_MODEL: entry.endpoint.ref };
+          monitor = new BudgetMonitor(db, {
+            taskId: task.id,
+            stepId,
+            attempt: 0,
+            ruleId: `rule:${decision.rule_index}`,
+            policyHash: routing.hash,
+            modelId: entry.endpoint.ref,
+            escalationDepth: 0,
+            budgetTokens: decision.budget_tokens,
           });
-          if (monitor && outcome.raw_ref) {
-            try {
-              const usage = (
-                JSON.parse(outcome.raw_ref) as {
-                  usage?: { input_tokens?: number; output_tokens?: number };
-                }
-              ).usage;
-              const tokens =
-                (usage?.input_tokens ?? 0) + (usage?.output_tokens ?? 0);
-              // Single post-session accounting point. A 2x pause stays OPEN:
-              // the session already finished, so any resolution event would
-              // be fiction — the durable pause is the honest record (F-063).
-              monitor.record(tokens);
-            } catch (e) {
-              console.error(
-                `budget accounting skipped for ${stepId}: unparseable session usage (${(e as Error).message})`,
-              );
-            }
-          }
-          db.query(
-            `INSERT INTO eval_task_result (id, run_id, bench_task_id, side, repeat_index, fpar_pass, cost_micro_usd, check_results, raw_ref, schema_version)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-          ).run(
-            ulid(),
-            runId,
-            task.id,
-            side,
-            i,
-            outcome.fpar_pass ? 1 : 0,
-            outcome.cost_micro_usd,
-            JSON.stringify(outcome.check_results),
-            outcome.raw_ref,
-          );
-          acc[side].push({
-            fpar: outcome.fpar_pass,
-            cost: outcome.cost_micro_usd,
-          });
-        } finally {
-          ws.cleanup();
+        } else {
+          routedEnv = { ANTHROPIC_MODEL: routing.baseline.endpoint.ref };
         }
       }
+      const outcome = await runTask(task, ws, executor, {
+        ...sideEnvFor(
+          side,
+          lockfile,
+          taskSeed(runSeed, task.id, side, i),
+          opts.sessionModel,
+        ),
+        ...routedEnv,
+      });
+      if (monitor && outcome.raw_ref) {
+        try {
+          const usage = (
+            JSON.parse(outcome.raw_ref) as {
+              usage?: { input_tokens?: number; output_tokens?: number };
+            }
+          ).usage;
+          const tokens =
+            (usage?.input_tokens ?? 0) + (usage?.output_tokens ?? 0);
+          // Single post-session accounting point. A 2x pause stays OPEN:
+          // the session already finished, so any resolution event would
+          // be fiction — the durable pause is the honest record (F-063).
+          monitor.record(tokens);
+        } catch (e) {
+          console.error(
+            `budget accounting skipped for ${stepId}: unparseable session usage (${(e as Error).message})`,
+          );
+        }
+      }
+      return outcome;
+    } finally {
+      ws.cleanup();
     }
-  }
+  };
+  const outcomes = new Array<Awaited<ReturnType<typeof runTask>>>(cells.length);
+  let cursor = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, cells.length) }, async () => {
+      // the cursor bump is synchronous, so no two workers share a cell
+      for (;;) {
+        const idx = cursor++;
+        const cell = cells[idx];
+        if (cell === undefined) return;
+        outcomes[idx] = await runCell(cell);
+      }
+    }),
+  );
+  cells.forEach(({ task, side, i }, idx) => {
+    const outcome = outcomes[idx];
+    if (outcome === undefined)
+      throw new Error(`cell ${task.id}:${side}:${i} produced no outcome`);
+    let acc = byTask.get(task.id);
+    if (!acc) {
+      acc = { A: [], B: [] };
+      byTask.set(task.id, acc);
+    }
+    db.query(
+      `INSERT INTO eval_task_result (id, run_id, bench_task_id, side, repeat_index, fpar_pass, cost_micro_usd, check_results, raw_ref, schema_version)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+    ).run(
+      ulid(),
+      runId,
+      task.id,
+      side,
+      i,
+      outcome.fpar_pass ? 1 : 0,
+      outcome.cost_micro_usd,
+      JSON.stringify(outcome.check_results),
+      outcome.raw_ref,
+    );
+    acc[side].push({
+      fpar: outcome.fpar_pass,
+      cost: outcome.cost_micro_usd,
+    });
+  });
 
   // EVAL-3/EVP-5: quarantine moves happen before gate math; newly quarantined
   // tasks are excluded from this run's gate.

@@ -503,7 +503,7 @@ Ponytail-class rules — terse output, act-don't-narrate, no speculative abstrac
 
 ## 14. Security & Isolation
 
-Two attack surfaces the rest of the PRD creates and must therefore close: **execution** (benchmarks, divergence tests, and replays run arbitrary code — including snapshots of the operator's real repos) and **packs** (packs are prompts, so a community pack is a prompt-injection vector; the eval gate measures helpfulness, not malice).
+Three attack surfaces the rest of the PRD creates and must therefore close: **execution** (benchmarks, divergence tests, and replays run arbitrary code — including snapshots of the operator's real repos), **packs** (packs are prompts, so a community pack is a prompt-injection vector; the eval gate measures helpfulness, not malice), and **local surfaces** (the read-only web UI serves files from the operator's machine, §14.3).
 
 ### 14.1 Execution Isolation
 
@@ -523,6 +523,11 @@ Two attack surfaces the rest of the PRD creates and must therefore close: **exec
 - **SEC-6.** No pack shall have write access to other packs, the lockfile, or kernel configuration; all pack changes flow through the proposal path (§9) or human edits.
   *Obligation:* permission test — a pack whose content directs writes to another pack produces no such write in a full pipeline run; the attempt is audited.
 
+### 14.3 Local Surface Hardening
+
+- **SEC-7.** When the local web UI (`kelson ui`) serves a static asset, the server shall resolve both the requested path and the static root via realpath and serve the file only when the resolved path sits inside the resolved root by segment boundary (`path.relative` yields no `..` component and no absolute path) — never a string-prefix comparison; a request resolving outside the root (dot-dot traversal, a sibling directory sharing the root's name as a prefix such as `dist2`, or a symlink inside the root pointing out) shall return 404 without reading the target file.
+  *Obligation:* integration against a running UI server — encoded-slash traversal forms (`..%2f`, `%2e%2e%2f` — the only traversal spellings that reach the handler; the runtime clamps a raw literal `/../` to an in-root path before the fetch handler runs, so it never resolves outside and falls to the SPA fallback, asserted by content-absence over a raw socket), a request that a prefix comparison would match into a sibling `dist2` directory, and a symlink placed inside the asset root targeting an outside file each return 404 with the target's content absent from the response body; a legitimate asset still serves 200.
+
 ## 15. Failure Modes & Mitigations
 
 | Failure mode | Risk | Mitigation |
@@ -539,6 +544,7 @@ Two attack surfaces the rest of the PRD creates and must therefore close: **exec
 | **Kernel bug in the gate itself** | Everything downstream unsound | Kernel is T2 on its own ladder: state machine model-checked, gate statistics unit-tested against known distributions, EVAL-4 reproducibility for post-hoc audit |
 | **Malicious or injected pack** — passes ablation while exfiltrating or weakening behavior | Compromised harness | SEC-4 capability declarations enforced at load; SEC-5 static scan + signing; SEC-6 no cross-pack writes; SEC-1/2 sandboxed evaluation with network deny |
 | **Eval sandbox escape** — benchmark/replay code reaches live repos or credentials | Data loss, credential theft | SEC-1 workspace isolation with escape tests in CI; SEC-3 auditable sandbox profiles per run |
+| **Local UI path escape** — static asset route serves files outside the built assets | Local file disclosure | SEC-7 realpath + segment-boundary containment on every static asset request |
 
 ## 16. Phased Delivery & Open Questions
 

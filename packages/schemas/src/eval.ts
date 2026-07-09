@@ -71,6 +71,9 @@ export const RunManifest = z.strictObject({
   config_b: Sha256,
   seed: z.number().int().nonnegative(),
   repeats: z.number().int().positive(),
+  // EVP-12: effective execution concurrency; never affects results, recorded
+  // for reproduction context only.
+  concurrency: z.number().int().positive().default(1),
   executor: Executor,
   sandbox_profile: SandboxProfile,
   model_versions: z.record(

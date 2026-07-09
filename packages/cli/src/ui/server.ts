@@ -1,5 +1,5 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, realpathSync } from "node:fs";
+import { isAbsolute, join, relative, sep } from "node:path";
 import {
   benchView,
   DEFAULT_DB_PATH,
@@ -64,6 +64,32 @@ export const resolveUiDbPath = (cwd = process.cwd()): string => {
   return existsSync(repoDb) ? repoDb : DEFAULT_DB_PATH;
 };
 
+// SEC-7: containment is by realpath + segment boundary, never string prefix —
+// a prefix comparison admits siblings (`dist2`) and symlinks pointing out.
+// The lexical check runs first so an escaping path is refused without any
+// filesystem access; realpath then catches symlink escapes on existing paths.
+type Containment =
+  | { kind: "serve"; path: string }
+  | { kind: "outside" }
+  | { kind: "missing" };
+
+const escapes = (rel: string): boolean =>
+  rel === "" || isAbsolute(rel) || rel.split(sep).includes("..");
+
+const containStatic = (root: string, asset: string): Containment => {
+  if (escapes(relative(root, asset))) return { kind: "outside" };
+  let realRoot: string;
+  let realAsset: string;
+  try {
+    realRoot = realpathSync(root);
+    realAsset = realpathSync(asset);
+  } catch {
+    return { kind: "missing" };
+  }
+  if (escapes(relative(realRoot, realAsset))) return { kind: "outside" };
+  return { kind: "serve", path: realAsset };
+};
+
 export const createUiServer = (opts: UiServerOptions = {}) => {
   const dbPath = opts.dbPath ?? resolveUiDbPath();
   const changelogPath =
@@ -108,14 +134,23 @@ export const createUiServer = (opts: UiServerOptions = {}) => {
       if (path.startsWith("/api/"))
         return Response.json({ error: "not_found" }, { status: 404 });
 
-      // static SPA: exact asset if present, else index.html (client routing)
-      const asset = join(
-        staticDir,
-        path === "/" ? "index.html" : path.slice(1),
-      );
-      // traversal guard on the RESOLVED path — join() collapses ".." first
-      if (asset.startsWith(staticDir) && existsSync(asset))
-        return new Response(Bun.file(asset));
+      // static SPA: exact asset if present, else index.html (client routing).
+      // Assets are addressed by the DECODED segment — %2e%2e-style traversal
+      // arrives undecoded (the runtime only strips literal dot segments), so
+      // SEC-7 containment must be judged post-decode.
+      let segment = path === "/" ? "index.html" : path.slice(1);
+      if (path !== "/") {
+        try {
+          segment = decodeURIComponent(segment);
+        } catch {
+          // malformed percent-encoding: fall through with the literal segment
+        }
+      }
+      const contained = containStatic(staticDir, join(staticDir, segment));
+      if (contained.kind === "outside")
+        return Response.json({ error: "not_found" }, { status: 404 });
+      if (contained.kind === "serve")
+        return new Response(Bun.file(contained.path));
       const index = join(staticDir, "index.html");
       if (existsSync(index)) return new Response(Bun.file(index));
       return new Response(

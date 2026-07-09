@@ -33,25 +33,26 @@ describe("PROV-5: subscription token precedence and Bearer wiring", () => {
   });
 
   it("a token credential's request carries Bearer + the OAuth beta header and no x-api-key", async () => {
-    // Local capture server standing in for the anthropic endpoint.
+    // Capturing fetch on the official (no base_url) endpoint — PROV-10 makes
+    // any base_url an override endpoint that withholds credentials, so the
+    // credentialed request is observed via the injected-fetch seam instead.
     let headers: Record<string, string> | null = null;
-    const server = Bun.serve({
-      port: 0,
-      fetch: (req) => {
-        headers = Object.fromEntries(req.headers.entries());
-        return new Response(
-          JSON.stringify({
-            type: "error",
-            error: { type: "invalid_request_error", message: "capture only" },
-          }),
-          { status: 400, headers: { "content-type": "application/json" } },
-        );
-      },
-    });
+    const capturingFetch = async (
+      _input: URL | RequestInfo,
+      init?: RequestInit,
+    ): Promise<Response> => {
+      headers = Object.fromEntries(new Headers(init?.headers).entries());
+      return new Response(
+        JSON.stringify({
+          type: "error",
+          error: { type: "invalid_request_error", message: "capture only" },
+        }),
+        { status: 400, headers: { "content-type": "application/json" } },
+      );
+    };
     const entry: ModelRegistryEntry = {
       id: "claude-opus-4-8",
       provider: "anthropic",
-      base_url: `http://127.0.0.1:${server.port}`,
       context_window: 1_000_000,
       max_output: 64_000,
       prices: null,
@@ -61,12 +62,15 @@ describe("PROV-5: subscription token precedence and Bearer wiring", () => {
     const deps = {
       ...f.deps,
       entry,
-      model: instantiate(entry, { type: "token", token: "tok-sub" }),
+      model: instantiate(
+        entry,
+        { type: "token", token: "tok-sub" },
+        { fetch: capturingFetch },
+      ),
       tools: CORE_TOOLS,
       ctx: { cwd: f.dir, exec: localExec(f.dir) },
     };
     await runTurn(deps).catch(() => {});
-    server.stop(true);
     expect(headers).not.toBeNull();
     const h = headers as unknown as Record<string, string>;
     expect(h.authorization).toBe("Bearer tok-sub");

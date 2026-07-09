@@ -2215,6 +2215,119 @@
       "status": "fixed",
       "id": "F-157",
       "fix_commit": "850eaaa"
+    },
+    {
+      "task": "SAK",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "EVP-12"
+      ],
+      "summary": "EVP-12 delay-reversal fixture was vacuous: Workspace.exec was spawnSync, so cells serialized on the event loop and completion order always equaled submission order; the concurrency clause delivered zero overlap for built-in executors",
+      "root_cause": "test_blindspot",
+      "fix": "Workspace gained execAsync (Bun.spawn); command/claude session executors run async; obligation test now records actual completion order via an injected async executor and asserts it differs from persisted order",
+      "status": "fixed",
+      "id": "F-158",
+      "fix_commit": null
+    },
+    {
+      "task": "SAK",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "EVP-12"
+      ],
+      "summary": "Image-pull single-flight sentence had no implementation and no obligation coverage; unviolatable only while execution was accidentally serial",
+      "root_cause": "unrecorded_deferral",
+      "fix": "Clause amended: container profile clamps effective concurrency to 1 via exported effectiveConcurrency (runEval consults it); single-flight acquisition deferred until container concurrency lands",
+      "status": "fixed",
+      "id": "F-159",
+      "fix_commit": null
+    },
+    {
+      "task": "SAK",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "PROV-10"
+      ],
+      "summary": "Override-endpoint definition (any base_url on an anthropic entry) lived only in a code comment; clause said credential-own-provider without defining detection",
+      "root_cause": "spec_gap",
+      "fix": "Pinned into PROV-10 clause text: any base_url reads as override, official endpoint spelled by omitting base_url",
+      "status": "fixed",
+      "id": "F-160",
+      "fix_commit": null
+    },
+    {
+      "task": "SAK",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "SEC-7"
+      ],
+      "summary": "SEC-7 obligation overclaimed: raw literal /../ is clamped by the runtime pre-handler and serves the SPA fallback, never 404; only encoded-slash forms reach containment",
+      "root_cause": "spec_contradiction",
+      "fix": "Obligation reworded to name encoded-slash forms as the 404 cases and content-absence for raw literals",
+      "status": "fixed",
+      "id": "F-161",
+      "fix_commit": null
+    },
+    {
+      "task": "SAK",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "PERM-4"
+      ],
+      "summary": "askRuleOf (payload-to-render bridge) was module-local in the OpenTUI shell and untested; payload shape drift would silently render default for every matched rule",
+      "root_cause": "test_blindspot",
+      "fix": "Moved to chat/model.ts (pure) and tested against the exact payload shape loop.ts writes",
+      "status": "fixed",
+      "id": "F-162",
+      "fix_commit": null
+    },
+    {
+      "task": "SAK",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "SEC-7"
+      ],
+      "summary": "PRD §14 intro still enumerated two attack surfaces after §14.3 added a third",
+      "root_cause": "process_gap",
+      "fix": "Intro updated to three surfaces including local surfaces",
+      "status": "fixed",
+      "id": "F-163",
+      "fix_commit": null
+    },
+    {
+      "task": "SAK",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "EVP-12"
+      ],
+      "summary": "--concurrency abc parsed to NaN, yielding zero workers and an internal cell-produced-no-outcome throw instead of a usage error",
+      "root_cause": "design_bug",
+      "fix": "CLI validates positive-integer concurrency and dies with usage message",
+      "status": "fixed",
+      "id": "F-164",
+      "fix_commit": null
+    },
+    {
+      "task": "SAK",
+      "source": "implementation",
+      "severity": "warning",
+      "clauses": [
+        "PROV-5",
+        "PROV-10"
+      ],
+      "summary": "Pre-existing PROV-5 test second case pointed a real token at a base_url capture server — it asserted the F-119 leak class as expected behavior",
+      "root_cause": "test_blindspot",
+      "fix": "Reworked to capture via injected fetch on a no-base_url entry, matching PROV-5 obligation wording; PROV-10 test covers the withheld case",
+      "status": "fixed",
+      "id": "F-165",
+      "fix_commit": null
     }
   ]
 }

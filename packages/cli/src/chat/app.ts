@@ -21,6 +21,8 @@ import {
 import { setupAgent, systemPromptFor } from "../agent/common.js";
 import type { DispatchTable } from "../wizards.js";
 import {
+  askProvenanceLabel,
+  askRuleOf,
   type ChatEffect,
   type ChatModel,
   type ChatMsg,
@@ -99,7 +101,8 @@ export const chatCommand = async (
       options: [
         {
           name: `allow ${ask.tool} once`,
-          description: ask.arg,
+          // PERM-4: the prompt carries the ask's provenance, not just the arg.
+          description: `${ask.arg} · ${askProvenanceLabel(ask.rule)}`,
           value: "allow",
         },
         {
@@ -159,6 +162,7 @@ export const chatCommand = async (
             requestId: request.id,
             tool: String(request.payload.tool),
             arg: String(request.payload.arg),
+            rule: askRuleOf(request.payload.rule),
           },
         });
         showAsk();

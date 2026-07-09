@@ -8,6 +8,8 @@ import {
   AuthFile,
   BenchReport,
   Credential,
+  DbBackupResult,
+  DbStatsResult,
   DivergenceListResult,
   DoctorReport,
   DriftEvent,
@@ -23,6 +25,7 @@ import {
   PackNewResult,
   PermissionRule,
   ReplayResult,
+  RunManifest,
   RunResult,
   SdlcStep,
   Session,
@@ -277,6 +280,33 @@ const arbs: Record<string, [z.ZodType, fc.Arbitrary<unknown>]> = {
       resolved_by: fc.option(nonEmpty, { nil: null }),
       resolution_reason: fc.option(nonEmpty, { nil: null }),
       schema_version: fc.integer({ min: 1, max: 99 }),
+    }),
+  ],
+  RunManifest: [
+    RunManifest,
+    fc.record({
+      schema_version: fc.integer({ min: 1, max: 99 }),
+      kind: fc.constantFrom("ablate", "compare"),
+      suite: nonEmpty,
+      suite_version: nonEmpty,
+      config_a: sha256,
+      config_b: sha256,
+      seed: fc.nat(1_000_000),
+      repeats: fc.integer({ min: 1, max: 20 }),
+      // always present: .default(1) would re-add an omitted field on parse
+      // and break serialize/parse equality
+      concurrency: fc.integer({ min: 1, max: 32 }),
+      executor: fc.constantFrom("claude", "command", "api"),
+      sandbox_profile: fc.constantFrom(
+        { isolation: "worktree", network: { policy: "inherit" } },
+        { isolation: "container", network: { policy: "deny", allowlist: [] } },
+      ),
+      model_versions: fc.dictionary(from("abcdefgh", 5), nonEmpty, {
+        maxKeys: 3,
+      }),
+      tasks: fc.array(fc.record({ id: nonEmpty, snapshot: sha256 }), {
+        maxLength: 4,
+      }),
     }),
   ],
   PackManifest: [
@@ -824,6 +854,29 @@ const arbs: Record<string, [z.ZodType, fc.Arbitrary<unknown>]> = {
       ingested: count,
       changed: count,
       discrepancies: count,
+      schema_version: fc.constant(1),
+    }),
+  ],
+  DbStatsResult: [
+    DbStatsResult,
+    fc.record({
+      path: nonEmpty,
+      size_bytes: count,
+      tables: fc.array(fc.record({ name: nonEmpty, rows: count }), {
+        maxLength: 4,
+      }),
+      schema_version: fc.constant(1),
+    }),
+  ],
+  DbBackupResult: [
+    DbBackupResult,
+    fc.record({
+      source: nonEmpty,
+      dest: nonEmpty,
+      size_bytes: count,
+      tables: fc.array(fc.record({ name: nonEmpty, rows: count }), {
+        maxLength: 4,
+      }),
       schema_version: fc.constant(1),
     }),
   ],

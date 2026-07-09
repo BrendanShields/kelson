@@ -1,5 +1,11 @@
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { hashContent } from "./artifacts.ts";
@@ -25,10 +31,17 @@ export const storeSnapshot = (
     tmpdir(),
     `kelson-bundle-${process.pid}-${Date.now()}.bundle`,
   );
-  git(["bundle", "create", tmp, "--all"], sourceRepoDir);
-  const hash = hashContent(readFileSync(tmp));
-  copyFileSync(tmp, join(storeDir, `${hash.replace("sha256:", "")}.bundle`));
-  return hash;
+  try {
+    git(["bundle", "create", tmp, "--all"], sourceRepoDir);
+    const hash = hashContent(readFileSync(tmp));
+    copyFileSync(tmp, join(storeDir, `${hash.replace("sha256:", "")}.bundle`));
+    return hash;
+  } finally {
+    // SES-9: a cleanup failure must not fail an otherwise successful snapshot.
+    try {
+      rmSync(tmp, { force: true });
+    } catch {}
+  }
 };
 
 // EVP §4 validity rule 1: the bundle must restore bit-identically — verified

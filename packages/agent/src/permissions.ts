@@ -27,20 +27,28 @@ const matches = (glob: string, value: string): boolean =>
 const literalChars = (glob: string | undefined): number =>
   glob === undefined ? 0 : glob.replace(/[*?]/g, "").length;
 
+// PERM-4: the winning rule rides along as provenance; null means the PERM-1
+// default decided.
+export interface PermissionVerdict {
+  action: PermissionAction;
+  rule: PermissionRule | null;
+}
+
 // PERM-1 (divergence ruling 2026-07-03): deny trumps regardless of
 // specificity; among the rest, lexicographic (literalChars(tool),
 // literalChars(arg)) with tool dominant; exact ties resolve ask > allow;
 // list order never decides between different actions.
-export const decide = (
+export const evaluate = (
   rules: PermissionRule[],
   tool: string,
   arg: string,
-): PermissionAction => {
+): PermissionVerdict => {
   const matching = rules.filter(
     (r) =>
       matches(r.tool, tool) && (r.arg === undefined || matches(r.arg, arg)),
   );
-  if (matching.some((r) => r.action === "deny")) return "deny";
+  const deny = matching.find((r) => r.action === "deny");
+  if (deny) return { action: "deny", rule: deny };
 
   let best: PermissionRule | undefined;
   for (const r of matching) {
@@ -54,6 +62,12 @@ export const decide = (
     if (cmp > 0 || (cmp === 0 && r.action === "ask" && best.action === "allow"))
       best = r;
   }
-  if (best) return best.action;
-  return READ_ONLY.has(tool) ? "allow" : "ask";
+  if (best) return { action: best.action, rule: best };
+  return { action: READ_ONLY.has(tool) ? "allow" : "ask", rule: null };
 };
+
+export const decide = (
+  rules: PermissionRule[],
+  tool: string,
+  arg: string,
+): PermissionAction => evaluate(rules, tool, arg).action;
