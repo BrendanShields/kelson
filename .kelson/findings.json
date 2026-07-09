@@ -2342,7 +2342,7 @@
       "fix": "execAsync now uses node:child_process execFile with timeout/killSignal/maxBuffer; timedOut derives from err.signal",
       "status": "fixed",
       "id": "F-166",
-      "fix_commit": null
+      "fix_commit": "bc2d5fdd63f148ad597311cffff0fa06c2047749"
     },
     {
       "task": "CI",
@@ -2356,7 +2356,7 @@
       "fix": "boundary test now runs on the fallback branch (present on every runner) with the fixture sized to 200 total matches; mutation-checked against a >= off-by-one",
       "status": "fixed",
       "id": "F-167",
-      "fix_commit": null
+      "fix_commit": "bc2d5fdd63f148ad597311cffff0fa06c2047749"
     }
   ]
 }
