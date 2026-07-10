@@ -189,7 +189,7 @@
       "fix": "reset F-096 fix_commit to null; stamp-head now stamps only status=fixed rows",
       "id": "F-169",
       "status": "fixed",
-      "fix_commit": null
+      "fix_commit": "ab98b3f5bc4f8bc71797d8f8f4b0e25bce009d30"
     }
   ]
 }
