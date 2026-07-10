@@ -5,11 +5,13 @@
 //
 //   bun scripts/board.mjs task <id> <open|in_progress|completed> [--note "..."] [--clauses TEL-1,ART-2]
 //   bun scripts/board.mjs finding '<json>'     # id/status/fix_commit optional; id auto-numbers
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 
 const TASKS = ".kelson/tasks.json";
 const FINDINGS = ".kelson/findings.json";
+const TASKS_ARCHIVE = ".kelson/archive/tasks.json";
+const FINDINGS_ARCHIVE = ".kelson/archive/findings.json";
 const TASK_STATES = ["open", "in_progress", "completed"];
 const FINDING_KEYS = [
   "id",
@@ -39,8 +41,22 @@ if (mode === "task") {
     die(`state must be one of ${TASK_STATES.join("|")}`);
   const d = load(TASKS);
   let task = d.tasks.find((t) => t.id === id);
+  // create-collision guard (2026-07-10: an archived-era completed C1-11 got
+  // silently revived by a create attempt): --title means "new task", so an
+  // existing id — active OR archived — is an error, and the archive must be
+  // consulted since ids are hand-assigned against the full history.
+  const titleIdx = rest.indexOf("--title");
+  if (titleIdx !== -1) {
+    const archivedTask =
+      !task && existsSync(TASKS_ARCHIVE)
+        ? load(TASKS_ARCHIVE).tasks.find((t) => t.id === id)
+        : null;
+    if (task || archivedTask)
+      die(
+        `task ${id} already exists${archivedTask ? " (archived)" : ""}: "${(task ?? archivedTask).title}" — pick a free id or drop --title to update it`,
+      );
+  }
   if (!task) {
-    const titleIdx = rest.indexOf("--title");
     if (titleIdx === -1)
       die(`unknown task ${id} (have: ${d.tasks.map((t) => t.id).join(", ")}); pass --title to create`);
     task = { id, title: rest[titleIdx + 1], state, clauses: [], completed_at: null };
@@ -85,8 +101,15 @@ if (mode === "task") {
     die(`root_cause must be one of: ${taxonomy.join(", ")}`);
   if (!["violation", "warning"].includes(row.severity))
     die("severity must be violation|warning");
+  // numbering spans active + archive — archiving must never recycle an id
+  const archived = existsSync(FINDINGS_ARCHIVE)
+    ? load(FINDINGS_ARCHIVE).findings
+    : [];
   const next =
-    Math.max(...d.findings.map((f) => Number(f.id.slice(2)) || 0)) + 1;
+    Math.max(
+      0,
+      ...[...d.findings, ...archived].map((f) => Number(f.id.slice(2)) || 0),
+    ) + 1;
   row.id ??= `F-${String(next).padStart(3, "0")}`;
   row.status ??= "fixed";
   row.clauses ??= [];
@@ -132,6 +155,42 @@ if (mode === "task") {
   console.log(
     `stamped ${stamped.map((f) => f.id).join(", ")} -> ${sha} (findings.json modified; include in next commit)`,
   );
+} else if (mode === "archive") {
+  // Closed rows dominate the active files (98% at 2026-07-10: ~30k tokens per
+  // full read) — move them under .kelson/archive/. fixed-but-unstamped
+  // findings stay active (stamp/stamp-head only see the active file);
+  // open/deferred stay by definition. Miners read both files.
+  mkdirSync(".kelson/archive", { recursive: true });
+  const loadOr = (p, empty) => (existsSync(p) ? load(p) : empty);
+
+  const t = load(TASKS);
+  const ta = loadOr(TASKS_ARCHIVE, {
+    schema_version: t.schema_version,
+    tasks: [],
+  });
+  const doneTasks = t.tasks.filter((x) => x.state === "completed");
+  ta.tasks.push(...doneTasks);
+  t.tasks = t.tasks.filter((x) => x.state !== "completed");
+  save(TASKS_ARCHIVE, ta);
+  save(TASKS, t);
+
+  const f = load(FINDINGS);
+  const fa = loadOr(FINDINGS_ARCHIVE, {
+    schema_version: f.schema_version,
+    findings: [],
+  });
+  const closed = f.findings.filter(
+    (x) =>
+      x.status === "resolved" ||
+      (x.status === "fixed" && x.fix_commit !== null),
+  );
+  fa.findings.push(...closed);
+  f.findings = f.findings.filter((x) => !closed.includes(x));
+  save(FINDINGS_ARCHIVE, fa);
+  save(FINDINGS, f);
+  console.log(
+    `archived ${doneTasks.length} tasks, ${closed.length} findings -> .kelson/archive/`,
+  );
 } else {
-  die("usage: board.mjs task <id> <state> [--note ...] [--clauses a,b] | board.mjs finding '<json>' | board.mjs stamp <sha> <F-ID...> | board.mjs stamp-head");
+  die("usage: board.mjs task <id> <state> [--note ...] [--clauses a,b] | board.mjs finding '<json>' | board.mjs stamp <sha> <F-ID...> | board.mjs stamp-head | board.mjs archive");
 }

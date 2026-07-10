@@ -9,7 +9,7 @@ Kelson's loop mines transcripts → proposes pack diffs → gates on evals. Unti
 
 ## Procedure
 
-1. **Mine this session**, `.kelson/telemetry/events.jsonl`, and `.kelson/findings.json` (audit findings with root-cause taxonomy — look for repeating root_cause values across tasks) for friction, in these classes:
+1. **Mine this session**, `.kelson/telemetry/events.jsonl`, and `.kelson/findings.json` plus `.kelson/archive/findings.json` (closed findings live in the archive — mine both; root-cause taxonomy is in the active file — look for repeating root_cause values across tasks) for friction, in these classes:
    - **Corrections:** the user redirected or amended something you did — quote the exchange.
    - **Retries:** a tool call or approach failed and was re-attempted — what made the first attempt fail?
    - **Rule misses:** an existing rule/skill/hook should have fired or helped and didn't (or fired wrongly).

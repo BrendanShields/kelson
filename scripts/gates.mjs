@@ -17,6 +17,7 @@ gate('kelspec-lint', () => {
   for (const f of files)
     run(`echo '{"tool_input":{"file_path":"${f}"}}' | node .claude/hooks/kelspec-lint.mjs`)
 })
+gate('schema-consistency', () => run('node scripts/schema-consistency.mjs'))
 gate('typecheck', () => run('bunx tsc --noEmit'))
 gate('biome', () => run('bunx biome check .'))
 gate('test', () => {

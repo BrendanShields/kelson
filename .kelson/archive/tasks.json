@@ -1,0 +1,1130 @@
+{
+  "schema_version": 1,
+  "tasks": [
+    {
+      "id": "P0-1",
+      "title": "Workspace scaffold (Bun workspaces, tsconfig, CI, bun test + fast-check)",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-02T00:55:42Z"
+    },
+    {
+      "id": "P0-2",
+      "title": "packages/schemas — Zod schemas for Phase 0 entities + JSON Schema export",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-02T03:05:05Z"
+    },
+    {
+      "id": "P0-3",
+      "title": "Kernel storage — bun:sqlite bootstrap, forward-only migrations",
+      "state": "completed",
+      "clauses": [
+        "OSS-6"
+      ],
+      "completed_at": "2026-07-02T03:24:11Z"
+    },
+    {
+      "id": "P0-4",
+      "title": "Artifact store — hashing, trace links, staleness, index rebuild",
+      "state": "completed",
+      "clauses": [
+        "ART-1",
+        "ART-2"
+      ],
+      "completed_at": "2026-07-02T04:59:09Z",
+      "notes": "full rebuild-from-files deferred to Phase 1 (needs DSL-6 manifest); rehashFromDisk ships now — recorded in plan doc"
+    },
+    {
+      "id": "P0-5",
+      "title": "Telemetry capture — ingestion, local-only, fault tolerance, task lifecycle",
+      "state": "completed",
+      "clauses": [
+        "TEL-1",
+        "TEL-2",
+        "TEL-5",
+        "TEL-7"
+      ],
+      "completed_at": "2026-07-02T06:18:29Z",
+      "notes": "transcript parsing + emit-on-session-end and merge_clean window land with P0-7/cc-plugin (recorded as todos in TEL-1/TEL-2 tests and code)"
+    },
+    {
+      "id": "P0-6",
+      "title": "Pack format + lockfile loader",
+      "state": "completed",
+      "clauses": [
+        "SEC-4",
+        "PACK-1",
+        "PACK-4"
+      ],
+      "completed_at": "2026-07-02T06:58:40Z",
+      "notes": "PACK-2 signature verification + --unsigned telemetry flag deferred to Phase 5 (it.todo in PACK-2.test.ts); F-007 discharged"
+    },
+    {
+      "id": "P0-7",
+      "title": "cc-plugin shell — hooks, /kelson:status, statusline stub",
+      "state": "completed",
+      "clauses": [
+        "TEL-1",
+        "TEL-2",
+        "TEL-5",
+        "ART-2",
+        "KERN-1"
+      ],
+      "completed_at": "2026-07-02T07:16:12Z",
+      "notes": "Phase 0 exit criterion verified against this session's real transcript (327 steps, 4 token classes exact vs independent dedup-by-id truth). Stubs deferred to Phase 3 recorded in F-034; KERN-1 fault matrix in F-033."
+    },
+    {
+      "id": "P1-1",
+      "title": "schemas — kelspec block grammar (component/domain/clause/invariant), manifest, verification report",
+      "state": "completed",
+      "clauses": [
+        "DSL-1",
+        "PIPE-8"
+      ],
+      "completed_at": "2026-07-02T08:31:33Z"
+    },
+    {
+      "id": "P1-2",
+      "title": "kernel — kelspec parser: markdown fences -> validated blocks, per-block hashing",
+      "state": "completed",
+      "clauses": [
+        "DSL-1"
+      ],
+      "completed_at": "2026-07-02T08:31:33Z"
+    },
+    {
+      "id": "P1-3",
+      "title": "kernel — domain -> fast-check generator derivation",
+      "state": "completed",
+      "clauses": [
+        "DSL-2",
+        "SPEC-2"
+      ],
+      "completed_at": "2026-07-02T08:31:33Z"
+    },
+    {
+      "id": "P1-4",
+      "title": "kernel — clause compiler: scope check, property wrapping, vague rejection, unverifiable ratio",
+      "state": "completed",
+      "clauses": [
+        "DSL-3",
+        "DSL-4",
+        "SPEC-1",
+        "SPEC-3"
+      ],
+      "completed_at": "2026-07-02T08:31:33Z",
+      "notes": "invariant checks are not scope-analyzed in v1 (DSL-3 governs clause checks only); pre/post compile as guard/assertion with harness-supplied state/state_prime"
+    },
+    {
+      "id": "P1-5",
+      "title": "kernel — invariants: model-file requirement (structural), probe registry",
+      "state": "completed",
+      "clauses": [
+        "DSL-5"
+      ],
+      "completed_at": "2026-07-02T08:31:33Z",
+      "notes": "structural half only: model file must exist + probe registry; TLC-in-CI deferred to Phase 4 (it.todo in DSL-5.test.ts)"
+    },
+    {
+      "id": "P1-6",
+      "title": "kernel — manifest emission + clause-level artifact ingestion",
+      "state": "completed",
+      "clauses": [
+        "DSL-6"
+      ],
+      "completed_at": "2026-07-02T08:31:33Z"
+    },
+    {
+      "id": "P1-7",
+      "title": "kernel — drift both directions + build gate; migration 0002",
+      "state": "completed",
+      "clauses": [
+        "ART-3",
+        "ART-4"
+      ],
+      "completed_at": "2026-07-02T08:31:33Z",
+      "notes": "ART-5 added via divergence (F-040): baselines frozen per-link (downstream_hash_at_link, migration 0002); pre-0002 links cannot report code_under_spec until re-registered"
+    },
+    {
+      "id": "P1-8",
+      "title": "kernel — verify runner: obligations + repo tests + drift + report (budget check deferred to Phase 3)",
+      "state": "completed",
+      "clauses": [
+        "PIPE-8"
+      ],
+      "completed_at": "2026-07-02T08:38:52Z",
+      "notes": "budget check class emits skipped until Phase 3 routing; runTests injectable; PIPE-9 failure_class stays null; obligation selection is caller-supplied — manifest-driven discovery of touched clauses deferred until pipeline stages exist (F-044)"
+    },
+    {
+      "id": "P1-9",
+      "title": "rate-limiter normative fixture + Phase 1 exit criterion verification",
+      "state": "completed",
+      "clauses": [
+        "DSL-1",
+        "SPEC-1"
+      ],
+      "completed_at": "2026-07-02T08:31:33Z",
+      "notes": "exit criterion verified independently: vague-clause counts by regex over fixtures matched compiler diagnostics 3/3; invariant violation hand-computed (12>10 fails, 9<=10 passes)"
+    },
+    {
+      "id": "P2-1",
+      "title": "schemas — eval domain (task format, run manifest, results, verdict, ledger) + migration 0003",
+      "state": "completed",
+      "clauses": [
+        "EVAL-4",
+        "SEC-3",
+        "EVT-1",
+        "EVP-7"
+      ],
+      "completed_at": "2026-07-02T09:16:30Z",
+      "notes": "roundtrip arbitraries for eval schemas deferred — obligation tests validate them directly; add on first field change per CLAUDE.md pairing rule"
+    },
+    {
+      "id": "P2-2",
+      "title": "kernel — statistical gate: paired bootstrap, decision table",
+      "state": "completed",
+      "clauses": [
+        "EVAL-2",
+        "EVP-4",
+        "EVT-1"
+      ],
+      "completed_at": "2026-07-02T09:23:22Z"
+    },
+    {
+      "id": "P2-3",
+      "title": "kernel — flakiness quarantine",
+      "state": "completed",
+      "clauses": [
+        "EVAL-3",
+        "EVP-5"
+      ],
+      "completed_at": "2026-07-02T09:23:22Z"
+    },
+    {
+      "id": "P2-4",
+      "title": "kernel — sandbox profiles: worktree (detached clone + temp HOME), container (deny-net + allowlist), refuse-not-degrade",
+      "state": "completed",
+      "clauses": [
+        "SEC-1",
+        "SEC-2",
+        "SEC-3",
+        "EVP-2"
+      ],
+      "completed_at": "2026-07-02T09:23:22Z",
+      "notes": "container network allowlist unimplemented (deny-all only) — refuses with diagnostic; claude executor under container unimplemented (refuses); recorded per SEC-2 v1"
+    },
+    {
+      "id": "P2-5",
+      "title": "kernel — task runner: snapshot restore, checks, budget/timeout + command/claude executors",
+      "state": "completed",
+      "clauses": [
+        "EVP-1",
+        "EVP-7"
+      ],
+      "completed_at": "2026-07-02T09:23:22Z"
+    },
+    {
+      "id": "P2-6",
+      "title": "kernel — ablate/compare orchestration, run manifest, verdict",
+      "state": "completed",
+      "clauses": [
+        "EVAL-1",
+        "EVAL-4",
+        "EVT-1"
+      ],
+      "completed_at": "2026-07-02T09:23:22Z"
+    },
+    {
+      "id": "P2-7",
+      "title": "cli — kelson eval ablate|compare|suite promote (--json)",
+      "state": "completed",
+      "clauses": [
+        "EVT-1"
+      ],
+      "completed_at": "2026-07-02T09:23:22Z"
+    },
+    {
+      "id": "P2-8",
+      "title": "seed suite ~6 tasks + snapshot store; EVT-2 pack-type matrix",
+      "state": "completed",
+      "clauses": [
+        "EVT-2"
+      ],
+      "completed_at": "2026-07-02T09:34:01Z",
+      "notes": "6 seed tasks, committed bundles under suites/seed/snapshots; ~14 more tasks to reach powered n>=20 (LOOP-6 growth)"
+    },
+    {
+      "id": "P2-9",
+      "title": "ledger generation (registry CI half deferred to Phase 5)",
+      "state": "completed",
+      "clauses": [
+        "EVT-3",
+        "EVP-6"
+      ],
+      "completed_at": "2026-07-02T09:34:01Z",
+      "notes": "generation+verification halves shipped; registry-CI enforcement deferred to Phase 5 (OSS-4)"
+    },
+    {
+      "id": "P2-10",
+      "title": "exit criterion — bounded real ablate of ponytail from isolated run",
+      "state": "completed",
+      "clauses": [
+        "EVT-1",
+        "SEC-1"
+      ],
+      "completed_at": "2026-07-02T10:36:57Z",
+      "notes": "real ablate: 12 claude sessions via subscription quota (~$10 API-rate token equivalent, $0 real spend), verdict underpowered n=6 with fpar +0.167 [0,0.5], cost +15.8% [5.3,31.8]; deltas hand-verified; ledger/ponytail/4.7.0.json published"
+    },
+    {
+      "id": "P2-11",
+      "title": "session model override via Ollama (EVP-8) — free local eval runs",
+      "state": "completed",
+      "clauses": [
+        "EVP-8",
+        "EVP-7",
+        "EVAL-4"
+      ],
+      "completed_at": "2026-07-02T10:28:26Z",
+      "notes": "validated live: gemma4:e4b via Ollama 0.30.6 solved greenfield-slugify through the full runner (fpar true, proxy cost 287k musd, real spend $0); overridden runs bar the ledger and scrub operator credentials"
+    },
+    {
+      "id": "P3-1",
+      "title": "schemas + migration 0004 — routing decision/weight, registry entry, policy, bundle manifest",
+      "state": "completed",
+      "clauses": [
+        "RTR-1",
+        "RPOL-1",
+        "CTX-1"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z",
+      "notes": "roundtrip arbitraries for routing schemas deferred (same P2-1 rationale)"
+    },
+    {
+      "id": "P3-2",
+      "title": "kernel — policy loader + feature vector + first-match resolution",
+      "state": "completed",
+      "clauses": [
+        "RPOL-1",
+        "RPOL-2"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-3",
+      "title": "kernel — registry loader + capability matching",
+      "state": "completed",
+      "clauses": [
+        "RTR-4",
+        "RPOL-5"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-4",
+      "title": "kernel — router: decide/record, escalation ladder + cap, exploration guard",
+      "state": "completed",
+      "clauses": [
+        "RTR-1",
+        "RTR-2",
+        "RTR-3",
+        "RPOL-3"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-5",
+      "title": "kernel — budgets: attach, overrun events, 2x triage pause",
+      "state": "completed",
+      "clauses": [
+        "CTX-4"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-6",
+      "title": "kernel — context compiler v1: bundle + manifest + token accounting + miss recording",
+      "state": "completed",
+      "clauses": [
+        "CTX-1"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-7",
+      "title": "default routing pack (policy.yaml + agent registry entries, real model ids)",
+      "state": "completed",
+      "clauses": [
+        "RPOL-1",
+        "RPOL-5"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-8",
+      "title": "cli kelson route explain + eval executor integration (routed session model)",
+      "state": "completed",
+      "clauses": [
+        "RTR-1",
+        "RTR-4"
+      ],
+      "completed_at": "2026-07-02T10:55:15Z"
+    },
+    {
+      "id": "P3-9",
+      "title": "exit criterion — measured TPAC drop: eval compare routed vs frontier on seed suite",
+      "state": "completed",
+      "clauses": [
+        "RTR-1",
+        "CTX-4"
+      ],
+      "completed_at": "2026-07-02T11:13:42Z",
+      "notes": "measured TPAC drop: routed (sonnet via build/T0 rule) vs frontier baseline on seed suite — cost -26.4% [-37.6,-16.2], CI excludes zero at n=6; fpar delta 0 (5/6 both sides); hand-verified A=1667381 vs B=2266135 musd; 6 routing decisions recorded, 0 overruns; subscription quota"
+    },
+    {
+      "id": "P4-1",
+      "title": "schemas + migration 0005 — proposal, replay_record, changelog entry, evidence links",
+      "state": "completed",
+      "clauses": [
+        "LOOP-1",
+        "LOOP-2"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z"
+    },
+    {
+      "id": "P4-2",
+      "title": "kernel loop.ts — state machine, LOOP-4 write ACL, apply/revert lockfile children, append-only changelog",
+      "state": "completed",
+      "clauses": [
+        "LOOP-2",
+        "LOOP-4",
+        "LOOP-7"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z"
+    },
+    {
+      "id": "P4-3",
+      "title": "TLA+ model + conformance tests + TLC in CI (discharges DSL-5 deferral)",
+      "state": "completed",
+      "clauses": [
+        "LOOP-5",
+        "DSL-5"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z",
+      "notes": "TLC runs in CI (temurin 21 + tla2tools 1.8.0) — no local java; conformance test transcribes the model relation independently; discharges the Phase-1 DSL-5 TLC deferral"
+    },
+    {
+      "id": "P4-4",
+      "title": "LOOP-3 monitoring — unpaired bootstrap, auto-revert, quarantine, multi-diff attribution",
+      "state": "completed",
+      "clauses": [
+        "LOOP-3"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z"
+    },
+    {
+      "id": "P4-5",
+      "title": "replay engine — EVP-3 validity, EVAL-5 decision rule, session snapshot capture",
+      "state": "completed",
+      "clauses": [
+        "EVAL-5",
+        "EVP-3",
+        "LOOP-7"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z",
+      "notes": "session snapshots captured going forward (cc-plugin session-start, committed state only — working-tree diff capture is a recorded gap); replay driver over live sessions awaits accumulated snapshots"
+    },
+    {
+      "id": "P4-6",
+      "title": "postmortem compiler — mine findings/telemetry/eval verdicts into evidence-linked proposals",
+      "state": "completed",
+      "clauses": [
+        "LOOP-1"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z"
+    },
+    {
+      "id": "P4-7",
+      "title": "LOOP-6 staging suite for loop-proposed benchmark tasks",
+      "state": "completed",
+      "clauses": [
+        "LOOP-6"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z",
+      "notes": "LOOP-6 enforced structurally in evaluateGate by suite role; staging suite dir created on first loop-proposed task"
+    },
+    {
+      "id": "P4-8",
+      "title": "cli — kelson loop status|review|release|revert",
+      "state": "completed",
+      "clauses": [
+        "LOOP-2",
+        "LOOP-3"
+      ],
+      "completed_at": "2026-07-02T11:48:27Z"
+    },
+    {
+      "id": "P4-9",
+      "title": "exit S4 — real self-proposal through gate, applied, monitoring open",
+      "state": "completed",
+      "clauses": [
+        "LOOP-1",
+        "LOOP-2",
+        "LOOP-3"
+      ],
+      "completed_at": "2026-07-02T12:09:31Z",
+      "notes": "S4 machinery demonstrated end-to-end on real evidence: compiler mined the fresh hurts ledger entry -> evidence-linked proposal 01KWHB8V.. -> pre-gate re-check -> candidate-side gate returned no_effect + replay veto -> auto-approval structurally refused -> human-confirmed rejection recorded. TLC model-checked locally (114k states, 0 violations). S4-the-metric (applied change surviving 30d) correctly awaits evidence that passes the gate"
+    },
+    {
+      "id": "P5-1",
+      "title": "bandit routing — epsilon-greedy updater, weight-only write surface",
+      "state": "completed",
+      "clauses": [
+        "RTR-5",
+        "RPOL-4"
+      ],
+      "completed_at": "2026-07-02T12:39:14Z"
+    },
+    {
+      "id": "P5-2",
+      "title": "TEL-3 content stripping + shared-telemetry schema (OSS-2)",
+      "state": "completed",
+      "clauses": [
+        "TEL-3",
+        "OSS-2"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-3",
+      "title": "TEL-6 OTel exporter (opt-in, content-stripped, OTLP fixture test)",
+      "state": "completed",
+      "clauses": [
+        "TEL-6"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-4",
+      "title": "SEC-4 capability enforcement at pack load",
+      "state": "completed",
+      "clauses": [
+        "SEC-4"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-5",
+      "title": "PACK-2 Ed25519 signing + SEC-5 injection scanner + PACK-3 version-bump lint",
+      "state": "completed",
+      "clauses": [
+        "PACK-2",
+        "PACK-3",
+        "SEC-5"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-6",
+      "title": "SEC-6 pack write-isolation permission test + audit",
+      "state": "completed",
+      "clauses": [
+        "SEC-6"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-7",
+      "title": "OSS-3/OSS-6 versioning + migration/upgrade-path tests + cross-version refusal",
+      "state": "completed",
+      "clauses": [
+        "OSS-3",
+        "OSS-6"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-8",
+      "title": "OSS-1 kelson init packaging (non-destructive, npm pack dry-run only — NO publish)",
+      "state": "completed",
+      "clauses": [
+        "OSS-1"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-9",
+      "title": "OSS-2 PRIVACY.md + OSS-5 docs (quickstart/pack-author/safety) + docs CI",
+      "state": "completed",
+      "clauses": [
+        "OSS-2",
+        "OSS-5"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-10",
+      "title": "OSS-4 contribution gate CI (pack PRs need ledger + manifest)",
+      "state": "completed",
+      "clauses": [
+        "OSS-4"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-11",
+      "title": "SPEC-4/5 divergence GA — two-agent tester + build block",
+      "state": "completed",
+      "clauses": [
+        "SPEC-4",
+        "SPEC-5"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "P5-12",
+      "title": "SPEC-7/8 excavation — inferred clauses + promotion queue",
+      "state": "completed",
+      "clauses": [
+        "SPEC-7",
+        "SPEC-8"
+      ],
+      "completed_at": "2026-07-02T12:53:44Z"
+    },
+    {
+      "id": "UI-1",
+      "title": "Spec: UX clauses for TUI launcher/wizards + web UI (promote UX §8)",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-02T14:25:19Z"
+    },
+    {
+      "id": "UI-2",
+      "title": "Divergence-test riskiest interface clauses",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-02T14:27:50Z",
+      "notes": "UX-9 scan-set divergence found+pinned; UX-11 no divergence on 6 probes, UI-only schema rule folded in"
+    },
+    {
+      "id": "UI-3",
+      "title": "Build: §7 component layer + launcher + wizards (packages/cli)",
+      "state": "completed",
+      "clauses": [
+        "UX-4",
+        "UX-7",
+        "UX-8",
+        "UX-9"
+      ],
+      "completed_at": "2026-07-02T14:39:13Z"
+    },
+    {
+      "id": "UI-4",
+      "title": "Build: kelson ui server + read-only JSON API",
+      "state": "completed",
+      "clauses": [
+        "UX-10",
+        "UX-11",
+        "UX-12"
+      ],
+      "completed_at": "2026-07-02T14:47:05Z"
+    },
+    {
+      "id": "UI-5",
+      "title": "Build: packages/ui SPA — 4 views, terminal-dark theme",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-02T14:54:18Z"
+    },
+    {
+      "id": "UI-6",
+      "title": "Verify: obligation tests green, clause-auditor PASS, commit",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-02T15:05:31Z"
+    },
+    {
+      "id": "P6-0",
+      "title": "Design: standalone harness — native agent runtime (brainstorm output committed)",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-02T23:47:21Z"
+    },
+    {
+      "id": "P6-1",
+      "title": "Spec: agent-runtime.md — AGT/PERM/SES/PROV clauses via feature-pipeline",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T00:01:37Z"
+    },
+    {
+      "id": "P6-2",
+      "title": "Spec hardening: divergence-test riskiest AGT/SES clauses",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T00:06:58Z"
+    },
+    {
+      "id": "P6-3",
+      "title": "Build: packages/schemas session-event/permission/registry schemas + packages/agent (llm, loop, tools, permissions, sessions)",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T00:31:37Z"
+    },
+    {
+      "id": "P6-4",
+      "title": "Build: kelson chat (OpenTUI) + kelson run -p",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T00:47:26Z"
+    },
+    {
+      "id": "P6-5",
+      "title": "Verify: obligation tests, Ollama smoke e2e, clause-auditor PASS",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T01:04:08Z"
+    },
+    {
+      "id": "P7-1",
+      "title": "Spec: Phase 7 clauses — PROV OAuth, EVP api-executor amendments, session.runner, /model",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T02:02:18Z"
+    },
+    {
+      "id": "P7-2",
+      "title": "Build: async ExecutorFn + extraExecutors injection + apiExecutor",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T02:23:24Z"
+    },
+    {
+      "id": "P7-3",
+      "title": "Build: subscription OAuth credential source + refresh",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T02:23:24Z"
+    },
+    {
+      "id": "P7-4",
+      "title": "Build: session.runner migration + /model + registry overlay surfaces",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T02:23:24Z"
+    },
+    {
+      "id": "P7-5",
+      "title": "Verify: eval ablate --executor api on seed suite, OAuth expiry fixture, audit",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T02:45:22Z"
+    },
+    {
+      "id": "P8-1",
+      "title": "Spec: Phase 8 clauses — AGT spec-loop, obligation done-condition, clause-auditor gate, ART-4 runtime block",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T04:13:59Z"
+    },
+    {
+      "id": "P8-2",
+      "title": "Spec hardening: divergence-test riskiest AGT-8 done-condition clause",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T04:17:32Z"
+    },
+    {
+      "id": "P8-3",
+      "title": "Build: SpecContext + in-loop obligation runner (touched-clause, hash-cached)",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T04:31:21Z"
+    },
+    {
+      "id": "P8-4",
+      "title": "Build: clause-auditor gate agent + ART-4 runtime block",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T04:31:21Z"
+    },
+    {
+      "id": "P8-5",
+      "title": "Verify: planted-violation blocks done, spec-less T1 blocked, Ollama smoke, audit",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T04:38:39Z"
+    },
+    {
+      "id": "P9-1",
+      "title": "Spec: Phase 9 clauses — per-step routing, in-loop budget triage, T0 bandit",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T05:14:16Z"
+    },
+    {
+      "id": "P9-2",
+      "title": "Spec hardening: divergence-test riskiest budget-triage clause",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T05:19:51Z"
+    },
+    {
+      "id": "P9-3",
+      "title": "Build: per-step route/escalate + BudgetMonitor in-loop + triage",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T05:37:54Z"
+    },
+    {
+      "id": "P9-4",
+      "title": "Verify: mechanical steps route cheap, runaway pauses at 2x, bandit, audit",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T05:52:15Z"
+    },
+    {
+      "id": "P10-1",
+      "title": "Spec: Phase 10 clauses — /fork tree, compaction, /promote session→eval, branch compare, resumeFrom replay",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T05:57:05Z"
+    },
+    {
+      "id": "P10-2",
+      "title": "Spec hardening: divergence-test fork/resumeFrom semantics",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T06:07:41Z"
+    },
+    {
+      "id": "P10-3",
+      "title": "Build: fork/compare/compact + promote + resumeFrom replay",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T06:07:41Z"
+    },
+    {
+      "id": "P10-4",
+      "title": "Verify: fork+compare, promote+replay to verdict, audit",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T06:14:42Z"
+    },
+    {
+      "id": "REV-1",
+      "title": "Symlink workspace escape: realpath containment",
+      "state": "completed",
+      "clauses": [
+        "AGT-4"
+      ],
+      "completed_at": "2026-07-03T07:41:11Z"
+    },
+    {
+      "id": "REV-2",
+      "title": "SPEC-6 mechanical tier escalation + reject-lowering",
+      "state": "completed",
+      "clauses": [
+        "SPEC-6"
+      ],
+      "completed_at": "2026-07-03T07:41:11Z"
+    },
+    {
+      "id": "REV-3",
+      "title": "UX-1 --json matrix + init/pack --json",
+      "state": "completed",
+      "clauses": [
+        "UX-1"
+      ],
+      "completed_at": "2026-07-03T07:41:11Z"
+    },
+    {
+      "id": "REV-4",
+      "title": "TEL-4 intervention storage obligation test",
+      "state": "completed",
+      "clauses": [
+        "TEL-4"
+      ],
+      "completed_at": "2026-07-03T07:41:11Z"
+    },
+    {
+      "id": "REV-5",
+      "title": "flaky window order by rowid (determinism)",
+      "state": "completed",
+      "clauses": [
+        "EVP-5"
+      ],
+      "completed_at": "2026-07-03T07:41:11Z"
+    },
+    {
+      "id": "REV-6",
+      "title": "monitor sweep order by rowid (determinism)",
+      "state": "completed",
+      "clauses": [
+        "LOOP-9"
+      ],
+      "completed_at": "2026-07-03T07:41:11Z"
+    },
+    {
+      "id": "REV-7",
+      "title": "toMessages drop empty assistant msg (continue)",
+      "state": "completed",
+      "clauses": [
+        "SES-4"
+      ],
+      "completed_at": "2026-07-03T07:41:11Z"
+    },
+    {
+      "id": "REV-8",
+      "title": "Credential token roundtrip arbitrary",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T07:41:11Z"
+    },
+    {
+      "id": "REV-9",
+      "title": "RunKind vs eval_run.kind reconcile + ERD storage doc",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-03T07:41:11Z"
+    },
+    {
+      "id": "C1-0",
+      "title": "Gates green + commit REV WIP baseline",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-05T12:00:52Z",
+      "notes": "REV baseline + 5 audit findings fixed (F-129..F-133)"
+    },
+    {
+      "id": "C1-1",
+      "title": "EVP-11 cross-agent bench: spec + kernel bench module",
+      "state": "completed",
+      "clauses": [
+        "EVP-11"
+      ],
+      "completed_at": "2026-07-05T12:28:02Z"
+    },
+    {
+      "id": "C1-2",
+      "title": "UX-18 kelson bench CLI command + --json",
+      "state": "completed",
+      "clauses": [
+        "UX-18"
+      ],
+      "completed_at": "2026-07-05T12:28:02Z"
+    },
+    {
+      "id": "C1-3",
+      "title": "Context seam: assembleContext + reconstruct-once",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-05T12:32:23Z"
+    },
+    {
+      "id": "C1-4",
+      "title": "PROV-8 Anthropic prompt-cache breakpoints",
+      "state": "completed",
+      "clauses": [
+        "PROV-8"
+      ],
+      "completed_at": "2026-07-05T12:36:40Z"
+    },
+    {
+      "id": "C1-5",
+      "title": "PROV-9 retry/backoff on transient stream errors",
+      "state": "completed",
+      "clauses": [
+        "PROV-9"
+      ],
+      "completed_at": "2026-07-05T12:41:25Z"
+    },
+    {
+      "id": "C1-6",
+      "title": "Robust edit: tolerant match + near-miss diff error",
+      "state": "completed",
+      "clauses": [
+        "AGT-13"
+      ],
+      "completed_at": "2026-07-05T12:44:43Z"
+    },
+    {
+      "id": "C1-7",
+      "title": "Ripgrep search: gitignore-aware, capped, fallback",
+      "state": "completed",
+      "clauses": [
+        "AGT-14"
+      ],
+      "completed_at": "2026-07-05T12:46:44Z"
+    },
+    {
+      "id": "C1-8",
+      "title": "System prompt builder: env block + conventions",
+      "state": "completed",
+      "clauses": [
+        "AGT-15"
+      ],
+      "completed_at": "2026-07-05T12:50:26Z"
+    },
+    {
+      "id": "UIX-PRD",
+      "title": "UI uplift PRD: vision, feature catalog, phased rollout (spec-only)",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-05T13:15:23Z"
+    },
+    {
+      "id": "UIA-SPEC",
+      "title": "Phase A: land UX-* clauses for Tier-1 surfaces (PRD 2026-07-05)",
+      "state": "completed",
+      "clauses": [
+        "UX-19",
+        "UX-20",
+        "UX-21",
+        "UX-22",
+        "UX-23",
+        "UX-24",
+        "UX-25",
+        "UX-26"
+      ],
+      "completed_at": "2026-07-05T21:05:54Z"
+    },
+    {
+      "id": "UIA-DOCTOR",
+      "title": "T1.5 kelson doctor",
+      "state": "completed",
+      "clauses": [
+        "UX-19"
+      ],
+      "completed_at": "2026-07-05T21:32:18Z"
+    },
+    {
+      "id": "UIA-DIVERGENCE",
+      "title": "T1.7 kelson divergence list|show",
+      "state": "completed",
+      "clauses": [
+        "UX-20"
+      ],
+      "completed_at": "2026-07-05T21:32:18Z"
+    },
+    {
+      "id": "UIA-PACKNEW",
+      "title": "T1.9 kelson pack new",
+      "state": "completed",
+      "clauses": [
+        "UX-21"
+      ],
+      "completed_at": "2026-07-05T21:32:18Z"
+    },
+    {
+      "id": "UIA-DRIFT",
+      "title": "T1.1 kelson drift list|promote",
+      "state": "completed",
+      "clauses": [
+        "UX-22",
+        "SPEC-8"
+      ],
+      "completed_at": "2026-07-05T21:32:18Z"
+    },
+    {
+      "id": "UIA-REPLAY",
+      "title": "T1.6 kelson eval replay|report",
+      "state": "completed",
+      "clauses": [
+        "UX-23",
+        "EVP-3"
+      ],
+      "completed_at": "2026-07-05T21:32:18Z"
+    },
+    {
+      "id": "UIA-AGENTS",
+      "title": "T1.3 kelson agents register|list",
+      "state": "completed",
+      "clauses": [
+        "UX-24"
+      ],
+      "completed_at": "2026-07-05T21:32:18Z"
+    },
+    {
+      "id": "UIA-BENCHWEB",
+      "title": "T1.8 bench tab in web eval explorer",
+      "state": "completed",
+      "clauses": [
+        "UX-25",
+        "UX-11"
+      ],
+      "completed_at": "2026-07-05T21:32:18Z"
+    },
+    {
+      "id": "UIA-INDEX",
+      "title": "T1.4 kelson index rebuild",
+      "state": "completed",
+      "clauses": [
+        "UX-26"
+      ],
+      "completed_at": "2026-07-05T21:32:18Z"
+    },
+    {
+      "id": "SAK-1",
+      "title": "SEC-7 UI static server realpath containment (Sakana S1/A4)",
+      "state": "completed",
+      "clauses": [
+        "SEC-7"
+      ],
+      "completed_at": "2026-07-09T06:25:43Z"
+    },
+    {
+      "id": "SAK-2",
+      "title": "SES-9 storeSnapshot temp bundle cleanup (Sakana P5)",
+      "state": "completed",
+      "clauses": [
+        "SES-9"
+      ],
+      "completed_at": "2026-07-09T06:25:43Z"
+    },
+    {
+      "id": "SAK-3",
+      "title": "EVP-12 bounded eval concurrency, deterministic pairing (Sakana P1)",
+      "state": "completed",
+      "clauses": [
+        "EVP-12"
+      ],
+      "completed_at": "2026-07-09T06:25:43Z"
+    },
+    {
+      "id": "SAK-4",
+      "title": "PERM-4 ask-prompt provenance (tool, arg, matched rule) (Sakana S3)",
+      "state": "completed",
+      "clauses": [
+        "PERM-4"
+      ],
+      "completed_at": "2026-07-09T06:32:06Z"
+    },
+    {
+      "id": "SAK-5",
+      "title": "PROV-10 credential withholding on switch/routed override paths (Sakana S5)",
+      "state": "completed",
+      "clauses": [
+        "PROV-10"
+      ],
+      "completed_at": "2026-07-09T06:27:41Z"
+    },
+    {
+      "id": "SAK-6",
+      "title": "UX-27 kelson db stats|backup (Sakana D4)",
+      "state": "completed",
+      "clauses": [
+        "UX-27"
+      ],
+      "completed_at": "2026-07-09T06:32:06Z"
+    },
+    {
+      "id": "C1-11",
+      "title": "Bench validation: Ollama smoke + subscription baseline",
+      "state": "completed",
+      "clauses": [],
+      "completed_at": "2026-07-05T12:52:28Z",
+      "notes": "Ollama A/A smoke green through kelson bench (/bin/zsh). Same-model S1 baseline ready but blocked on operator-minted subscription token: run 'claude setup-token', then 'kelson auth login anthropic --token <tok>', then 'bun packages/cli/src/index.ts bench --suite suites/seed --agents api,claude --model claude-sonnet-5 --repeats 1'. Mixed-model run deliberately skipped (weak evidence, quota spend)."
+    }
+  ]
+}
