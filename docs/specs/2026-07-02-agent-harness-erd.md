@@ -125,7 +125,7 @@ erDiagram
     }
     PROPOSAL {
         string id PK "insert-then-transition (state machine §9.2)"
-        string target_pack FK "never kernel/eval-suite/loop-spec (LOOP-4)"
+        string target_pack FK "never kernel/eval-suite/loop-spec/edit-budget (LOOP-4)"
         json diff "v1: inline lockfile ops (enable|disable); content diffs later"
         string diff_hash "canonical hash — quarantine blocks re-proposal by content (LOOP-9)"
         json evidence "ev: links (LOOP-1/LOOP-8)"
@@ -133,6 +133,7 @@ erDiagram
         string state "proposed|gated|approved|rejected|applied|monitoring|stable|reverted|quarantined"
         string created_by "loop|human"
         string quarantine_reason
+        string rejections_seen_through "LOOP-11 snapshot watermark: ULID of the newest rejection shown at emission; NULL = empty history (pre-clause rows read NULL)"
         string created_at
         string updated_at
         int schema_version

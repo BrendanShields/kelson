@@ -24,6 +24,7 @@ describe("LOOP-1: proposals carry machine-checkable evidence links; unresolvable
         rationale: "r",
         createdBy: "loop",
         repoRoot: ctx.repoRoot,
+        rejectionsSeenThrough: null,
       }),
     ).toThrow(/01ARZ3NDEKTSV4RRFFQ69G5FZZ.*LOOP-1/s);
     // Rejection is audited even though no proposal row exists.
@@ -45,6 +46,7 @@ describe("LOOP-1: proposals carry machine-checkable evidence links; unresolvable
         rationale: "r",
         createdBy: "loop",
         repoRoot: ctx.repoRoot,
+        rejectionsSeenThrough: null,
       }),
     ).toThrow();
     db.close();

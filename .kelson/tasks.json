@@ -37,6 +37,28 @@
       "state": "completed",
       "clauses": [],
       "completed_at": "2026-07-10T12:45:50Z"
+    },
+    {
+      "id": "C1-15",
+      "title": "postmortem skill: SkillOpt edit-budget + rejected-buffer discipline (propose-only emulation)",
+      "state": "completed",
+      "clauses": [
+        "LOOP-10",
+        "LOOP-11"
+      ],
+      "completed_at": "2026-07-10T13:39:39Z"
+    },
+    {
+      "id": "C1-16",
+      "title": "spec: LOOP edit-budget + rejected-proposal-buffer clauses (SkillOpt, arXiv:2605.23904)",
+      "state": "completed",
+      "clauses": [
+        "LOOP-10",
+        "LOOP-11",
+        "LOOP-4"
+      ],
+      "completed_at": "2026-07-10T13:39:39Z",
+      "notes": "edit-budget PROTECTED_TARGETS entry is a reserved sentinel: any future persisted budget surface must join the ACL and the LOOP-4/EVAL-6 matrix (auditor WARN, deferred)"
     }
   ]
 }

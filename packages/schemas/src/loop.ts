@@ -63,6 +63,9 @@ export const Proposal = z.strictObject({
   created_by: z.enum(["loop", "human"]),
   state: ProposalState,
   quarantine_reason: z.string().nullable(),
+  // LOOP-11: watermark of the rejection history shown at emission — required
+  // key, nullable value (null = history was empty; missing = schema error).
+  rejections_seen_through: Ulid.nullable(),
   created_at: IsoUtc,
   updated_at: IsoUtc,
   schema_version: SchemaVersion,

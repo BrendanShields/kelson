@@ -1,9 +1,9 @@
 ---
 name: postmortem
-description: Mine the current session for friction and propose improvements to this repo's Claude Code config (CLAUDE.md, skills, agents, hooks) — the manual emulation of Kelson's self-improvement loop (LOOP-1), with the human as the eval gate. Use at the end of a substantial working session, when the user says "postmortem", "what should we improve", "mine this session", or after any session with repeated corrections, retries, or permission friction.
+description: Mine the current session for friction and propose improvements to this repo's Claude Code config (CLAUDE.md, skills, agents, hooks) — the manual emulation of Kelson's self-improvement loop (LOOP-1..2, LOOP-10..11), with the human as the eval gate. Use at the end of a substantial working session, when the user says "postmortem", "what should we improve", "mine this session", or after any session with repeated corrections, retries, or permission friction.
 ---
 
-# Session Postmortem (manual emulation of LOOP-1..2)
+# Session Postmortem (manual emulation of LOOP-1..2, LOOP-10..11)
 
 Kelson's loop mines transcripts → proposes pack diffs → gates on evals. Until the eval harness exists (Phase 2), this skill runs the same pipeline with the human as the gate: **propose-only, never auto-apply**.
 
@@ -17,7 +17,8 @@ Kelson's loop mines transcripts → proposes pack diffs → gates on evals. Unti
    - **Hook blocks:** spec-lint/kelspec-lint/typecheck rejections — were they correct (working as intended) or noise?
 2. **Compile lessons:** one line each — `evidence → inference`. Discard anything without a quotable trace (LOOP-1's rule: no evidence link, no proposal).
 3. **Propose diffs**, each tied to its lesson: a concrete edit to CLAUDE.md, a skill, an agent, a hook, or a new small script. State the expected effect in Kelson's terms (fewer corrections / fewer retries / fewer tokens) so the claim is checkable later. Never propose weakening a lint/gate to stop it from firing — that's the Goodhart move LOOP-4 exists to prevent.
-4. **Gate = the human.** Present proposals as a numbered list with evidence; apply only what's approved. Record applied ones in the commit message (`postmortem: <lesson>`), which serves as the changelog until Phase 4.
+   **Edit budget (LOOP-10 emulation):** rank proposals by expected effect and present at most **4 per cycle** — clip the rest (their evidence stays minable next session; SkillOpt ablations show unbounded rewrites degrade held-out performance, arXiv:2605.23904). **Rejected buffer (LOOP-11 emulation):** before proposing, read `.kelson/rejections.jsonl` (if present) and don't re-propose a rejected diff without new evidence — say which rejections you checked.
+4. **Gate = the human.** Present proposals as a numbered list with evidence; apply only what's approved. Record applied ones in the commit message (`postmortem: <lesson>`), which serves as the changelog until Phase 4. Append each **rejected** proposal as one line to `.kelson/rejections.jsonl` (committed): `{"ts": "<UTC ISO-8601>", "target": "<file>", "summary": "<one line>", "reason": "<human's why>"}` — that file is the next cycle's rejected-edit buffer.
 
 ## Output format
 

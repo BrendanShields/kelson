@@ -46,7 +46,17 @@ export const PROTECTED_TARGETS = new Set([
   "kernel",
   "loop-spec",
   "eval-thresholds",
+  "edit-budget",
 ]);
+
+// LOOP-10: per-cycle textual learning rate. The default is SkillOpt's
+// ablation-backed L=4 (arXiv:2605.23904); the floor is the hard schema floor.
+// No persisted budget config exists yet — the "edit-budget" PROTECTED_TARGETS
+// entry reserves the name; any future persisted budget surface must join
+// PROTECTED_TARGETS and the LOOP-4/EVAL-6 obligation matrix.
+export const EDIT_BUDGET_DEFAULT = 4;
+export const EDIT_BUDGET_FLOOR = 1;
+export const REJECTION_WINDOW = 20;
 
 export const loopEvent = (
   db: Database,
@@ -134,6 +144,11 @@ export interface CreateProposalArgs {
   createdBy: "loop" | "human";
   repoRoot: string;
   gatingSuiteIds?: string[];
+  // LOOP-11: the cycle's snapshot watermark — REQUIRED so the typechecker
+  // enumerates every emitter; createProposal never derives it itself (a
+  // per-insert query would let a mid-cycle rejection split one cycle's
+  // watermarks, the exact drift the snapshot semantics forbid).
+  rejectionsSeenThrough: string | null;
 }
 
 export const createProposal = (
@@ -185,13 +200,14 @@ export const createProposal = (
     created_by: args.createdBy,
     state: "proposed",
     quarantine_reason: null,
+    rejections_seen_through: args.rejectionsSeenThrough,
     created_at: now,
     updated_at: now,
     schema_version: 1,
   });
   db.query(
-    `INSERT INTO proposal (id, target_pack, diff, diff_hash, evidence, rationale, created_by, state, quarantine_reason, created_at, updated_at, schema_version)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO proposal (id, target_pack, diff, diff_hash, evidence, rationale, created_by, state, quarantine_reason, rejections_seen_through, created_at, updated_at, schema_version)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   ).run(
     proposal.id,
     proposal.target_pack,
@@ -202,6 +218,7 @@ export const createProposal = (
     proposal.created_by,
     proposal.state,
     null,
+    proposal.rejections_seen_through,
     now,
     now,
     1,
@@ -216,6 +233,91 @@ export const createProposal = (
     ...check,
   });
   return proposal;
+};
+
+// LOOP-11 rejection history: one entry per proposal currently rejected or
+// quarantined, recency by the proposal row's rowid (NOT the rejecting
+// transition's time), newest first, window exactly REJECTION_WINDOW. The
+// basis is the reason recorded by the transition that entered the current
+// state (quarantine_reason is that column — transition() writes every
+// reason there, not only quarantine's).
+export interface RejectionEntry {
+  id: string;
+  target_pack: string;
+  summary: string;
+  basis: string | null;
+  state: "rejected" | "quarantined";
+}
+
+export interface RejectionHistory {
+  entries: RejectionEntry[];
+  // ULID id (not integer rowid) of the newest entry; null when empty.
+  seenThrough: string | null;
+}
+
+export const assembleRejectionHistory = (db: Database): RejectionHistory => {
+  const entries = db
+    .query(
+      `SELECT id, target_pack, rationale AS summary, quarantine_reason AS basis, state
+       FROM proposal WHERE state IN ('rejected', 'quarantined')
+       ORDER BY rowid DESC LIMIT ${REJECTION_WINDOW}`,
+    )
+    .all() as RejectionEntry[];
+  return { entries, seenThrough: entries[0]?.id ?? null };
+};
+
+export interface CycleDraft {
+  targetPack: string;
+  diff: ProposalDiff;
+  evidence: EvidenceLink[];
+  rationale: string;
+  // LOOP-10 rank key — |FPAR delta| for v1 ledger drafts; higher emits first.
+  expected_effect: number;
+}
+
+// LOOP-10 + LOOP-11: one compiler emission cycle. Ranks by expected effect,
+// clips to the edit budget (clipped candidates get no row and no state —
+// their evidence stays minable), snapshots the rejection history ONCE, and
+// stamps every emitted proposal with the identical watermark. `history` is
+// injectable so tests can prove the snapshot semantics (a mid-cycle
+// rejection must not split a cycle's watermarks).
+export const emitProposalCycle = (
+  db: Database,
+  args: {
+    drafts: CycleDraft[];
+    createdBy: "loop" | "human";
+    repoRoot: string;
+    gatingSuiteIds?: string[];
+    editBudget?: number;
+    history?: RejectionHistory;
+  },
+): { proposals: Proposal[]; clipped: number; history: RejectionHistory } => {
+  const budget = args.editBudget ?? EDIT_BUDGET_DEFAULT;
+  if (!Number.isInteger(budget) || budget < EDIT_BUDGET_FLOOR)
+    throw new Error(
+      `edit budget must be an integer >= ${EDIT_BUDGET_FLOOR}, got ${budget} (LOOP-10)`,
+    );
+  const history = args.history ?? assembleRejectionHistory(db);
+  const ranked = [...args.drafts].sort(
+    (a, b) => b.expected_effect - a.expected_effect,
+  );
+  const emitted = ranked.slice(0, budget).map((draft) =>
+    createProposal(db, {
+      targetPack: draft.targetPack,
+      diff: draft.diff,
+      evidence: draft.evidence,
+      rationale: draft.rationale,
+      createdBy: args.createdBy,
+      repoRoot: args.repoRoot,
+      ...(args.gatingSuiteIds ? { gatingSuiteIds: args.gatingSuiteIds } : {}),
+      rejectionsSeenThrough: history.seenThrough,
+    }),
+  );
+  return {
+    proposals: emitted,
+    clipped: Math.max(0, ranked.length - budget),
+    history,
+  };
 };
 
 export const transition = (
@@ -257,8 +359,15 @@ export const transition = (
       );
   }
   const now = new Date().toISOString();
+  // LOOP-11: entering a rejection-family state OVERWRITES the stored reason
+  // (null when the entering transition carries none) — COALESCE here would
+  // surface a stale earlier reason (e.g. an approval override) as the basis.
+  const entersRejection =
+    to === "rejected" || to === "reverted" || to === "quarantined";
   db.query(
-    "UPDATE proposal SET state = ?, updated_at = ?, quarantine_reason = COALESCE(?, quarantine_reason) WHERE id = ?",
+    entersRejection
+      ? "UPDATE proposal SET state = ?, updated_at = ?, quarantine_reason = ? WHERE id = ?"
+      : "UPDATE proposal SET state = ?, updated_at = ?, quarantine_reason = COALESCE(?, quarantine_reason) WHERE id = ?",
   ).run(to, now, (meta.reason as string) ?? null, id);
   loopEvent(db, "state_transition", id, {
     from: proposal.state,

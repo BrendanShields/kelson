@@ -5,8 +5,8 @@ import {
   applyProposal,
   bumpSatisfies,
   compileProposals,
-  createProposal,
   DEFAULT_DB_PATH,
+  emitProposalCycle,
   enterGate,
   evalReport,
   evaluateGate,
@@ -454,18 +454,18 @@ const loopCommand = (argv: string[]): void => {
         write("no conclusive evidence — nothing to propose");
         return;
       }
-      for (const draft of drafts) {
-        const proposal = createProposal(db, {
-          targetPack: draft.targetPack,
-          diff: draft.diff,
-          evidence: draft.evidence,
-          rationale: draft.rationale,
-          createdBy: "loop",
-          repoRoot,
-          gatingSuiteIds: ["seed"],
-        });
-        write(`proposed ${proposal.id}: ${draft.rationale}`);
-      }
+      const cycle = emitProposalCycle(db, {
+        drafts,
+        createdBy: "loop",
+        repoRoot,
+        gatingSuiteIds: ["seed"],
+      });
+      for (const proposal of cycle.proposals)
+        write(`proposed ${proposal.id}: ${proposal.rationale}`);
+      if (cycle.clipped > 0)
+        write(
+          `clipped ${cycle.clipped} candidate(s) over the edit budget (LOOP-10) — evidence stays minable for later cycles`,
+        );
       return;
     }
     if (sub === "status") {

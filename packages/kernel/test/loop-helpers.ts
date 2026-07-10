@@ -1,8 +1,8 @@
 import type { Database } from "bun:sqlite";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { EvidenceLink, ProposalDiff } from "@kelson/schemas";
-import { type ApplyContext, createProposal } from "../src/loop.ts";
+import type { EvidenceLink, Proposal, ProposalDiff } from "@kelson/schemas";
+import { type ApplyContext, createProposal, transition } from "../src/loop.ts";
 import { ulid } from "../src/ulid.ts";
 import { seedClaudeRun, tmpDir } from "./eval-helpers.ts";
 
@@ -77,7 +77,46 @@ export const draftProposal = (
     createdBy: "loop",
     repoRoot: ctx.repoRoot,
     ...over,
+    rejectionsSeenThrough: over.rejectionsSeenThrough ?? null,
   });
+
+// Drives a fresh proposal to rejected (or quarantined via the full legal
+// path) so LOOP-11 history fixtures have real state-machine residents. The
+// approved step's override reason is deliberately different from `reason` —
+// a history basis equal to `reason` proves the entering transition's reason
+// won, not an earlier one (COALESCE semantics).
+export const seedRejected = (
+  db: Database,
+  ctx: LoopCtx,
+  args: {
+    rationale: string;
+    reason: string;
+    quarantine?: boolean;
+    diff?: ProposalDiff;
+  },
+): Proposal => {
+  const p = draftProposal(db, ctx, {
+    rationale: args.rationale,
+    ...(args.diff ? { diff: args.diff } : {}),
+  });
+  transition(db, p.id, "gated", { actor: "auto" });
+  if (!args.quarantine)
+    return transition(db, p.id, "rejected", {
+      actor: "human",
+      reason: args.reason,
+    });
+  transition(db, p.id, "approved", {
+    actor: "human",
+    reason: "fixture override — must not surface as basis",
+  });
+  transition(db, p.id, "applied", { actor: "auto" });
+  transition(db, p.id, "monitoring", { actor: "auto" });
+  transition(db, p.id, "reverted", { actor: "auto", reason: args.reason });
+  return transition(db, p.id, "quarantined", {
+    actor: "auto",
+    reason: args.reason,
+  });
+};
 
 let sessionCounter = 0;
 export const seedSession = (

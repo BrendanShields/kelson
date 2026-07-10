@@ -12,7 +12,15 @@ describe("LOOP-4: the loop has no write path to protected surfaces — rejected 
     const db = openDb(":memory:");
     const ctx = loopCtx();
     const evidence = seedVerdictEvidence(db);
-    for (const target of ["kernel", "loop-spec", "eval-thresholds", "seed"]) {
+    // "edit-budget" joins the matrix per LOOP-10: the loop has no write path
+    // to its own textual learning rate.
+    for (const target of [
+      "kernel",
+      "loop-spec",
+      "eval-thresholds",
+      "edit-budget",
+      "seed",
+    ]) {
       expect(() =>
         createProposal(db, {
           targetPack: target,
@@ -22,6 +30,7 @@ describe("LOOP-4: the loop has no write path to protected surfaces — rejected 
           createdBy: "loop",
           repoRoot: ctx.repoRoot,
           gatingSuiteIds: ["seed"],
+          rejectionsSeenThrough: null,
         }),
       ).toThrow(/LOOP-4/);
     }
@@ -30,12 +39,18 @@ describe("LOOP-4: the loop has no write path to protected surfaces — rejected 
         "SELECT payload FROM loop_event WHERE kind = 'acl_rejected' ORDER BY rowid",
       )
       .all() as { payload: string }[];
-    expect(audits).toHaveLength(4);
+    expect(audits).toHaveLength(5);
     expect(
       audits.map(
         (a) => (JSON.parse(a.payload) as { target_pack: string }).target_pack,
       ),
-    ).toEqual(["kernel", "loop-spec", "eval-thresholds", "seed"]);
+    ).toEqual([
+      "kernel",
+      "loop-spec",
+      "eval-thresholds",
+      "edit-budget",
+      "seed",
+    ]);
     db.close();
   });
 
@@ -49,6 +64,7 @@ describe("LOOP-4: the loop has no write path to protected surfaces — rejected 
       rationale: "human-authored",
       createdBy: "human",
       repoRoot: ctx.repoRoot,
+      rejectionsSeenThrough: null,
     });
     expect(proposal.state).toBe("proposed");
     db.close();

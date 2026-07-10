@@ -190,6 +190,34 @@
       "id": "F-169",
       "status": "fixed",
       "fix_commit": "ab98b3f5bc4f8bc71797d8f8f4b0e25bce009d30"
+    },
+    {
+      "task": "C1-16",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "LOOP-4"
+      ],
+      "summary": "LOOP-4 protected enumeration gained the edit budget in spec while PROTECTED_TARGETS and the LOOP-4 obligation matrix were unchanged — spec edit shipped without its paired code/test on a false unbuilt-Phase-4 premise",
+      "root_cause": "unverified_claim",
+      "fix": "PROTECTED_TARGETS gained edit-budget; LOOP-4 matrix extended to 5 targets in the same change",
+      "status": "fixed",
+      "id": "F-170",
+      "fix_commit": null
+    },
+    {
+      "task": "C1-16",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "LOOP-11"
+      ],
+      "summary": "LOOP-11 mandated a required rejections_seen_through field while the shipped strict Proposal schema had no such field — every proposal the live implementation emitted would be spec-non-conformant; no obligation test, no ERD ripple",
+      "root_cause": "unverified_claim",
+      "fix": "schema field + migration 0011 + createProposal required arg + assembleRejectionHistory/emitProposalCycle + LOOP-10/LOOP-11 obligation tests + ERD field note in the same change",
+      "status": "fixed",
+      "id": "F-171",
+      "fix_commit": null
     }
   ]
 }

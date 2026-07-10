@@ -4,12 +4,11 @@ import { join } from "node:path";
 import type { EvidenceLink, Lockfile, ProposalDiff } from "@kelson/schemas";
 import { LedgerEntry } from "@kelson/schemas";
 
-export interface ProposalDraft {
-  targetPack: string;
-  diff: ProposalDiff;
-  evidence: EvidenceLink[];
-  rationale: string;
-}
+import type { CycleDraft } from "./loop.ts";
+
+// The compiler's draft IS a cycle draft — expected_effect (|FPAR delta|) is
+// the LOOP-10 rank key emitProposalCycle clips on.
+export type ProposalDraft = CycleDraft;
 
 // LOOP-1 postmortem compiler v1: mines pack-attributed eval evidence (the
 // ledger + its verdict/run rows) into lockfile-level proposals. Only
@@ -53,6 +52,7 @@ export const compileProposals = (
           },
           evidence,
           rationale: `ablation ${entry.suite} verdict "hurts": fpar ${entry.fpar_delta.mean.toFixed(3)} [${entry.fpar_delta.ci95.join(", ")}], cost ${entry.cost_delta_pct.mean.toFixed(1)}% [${entry.cost_delta_pct.ci95.map((x) => x.toFixed(1)).join(", ")}], n=${entry.n} — pack is enabled and measurably harmful`,
+          expected_effect: Math.abs(entry.fpar_delta.mean),
         });
       if (entry.verdict === "helps" && !lockEntry.enabled)
         drafts.push({
@@ -60,6 +60,7 @@ export const compileProposals = (
           diff: { kind: "lockfile", ops: [{ op: "enable", pack: entry.pack }] },
           evidence,
           rationale: `ablation ${entry.suite} verdict "helps": fpar ${entry.fpar_delta.mean.toFixed(3)}, cost ${entry.cost_delta_pct.mean.toFixed(1)}%, n=${entry.n} — pack is disabled and measurably helpful`,
+          expected_effect: Math.abs(entry.fpar_delta.mean),
         });
     }
   }
