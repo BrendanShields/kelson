@@ -498,6 +498,90 @@
       "status": "fixed",
       "id": "F-190",
       "fix_commit": "c6c9593b807029df33305a8ad404239a77c64ec5"
+    },
+    {
+      "task": "anthropic-model-detection",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "PROV-12"
+      ],
+      "summary": "detection ran on every anthropic login, so pre-existing CLI tests (UX-16, PROV-4) fired live GET api.anthropic.com/v1/models with fake keys on every bun test/CI run",
+      "root_cause": "test_blindspot",
+      "fix": "makeTestRepo defaults OBLIGATO_TEST_ANTHROPIC_ROOT to a refusing loopback root (127.0.0.1:9); PROV-12 fixtures override per-server",
+      "status": "fixed",
+      "id": "F-191",
+      "fix_commit": null
+    },
+    {
+      "task": "anthropic-model-detection",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "PROV-12"
+      ],
+      "summary": "unconditional env-seam read shipped in production: bun auto-loads .env, so an untrusted repo could redirect the detection probe carrying the REAL credential to an attacker root (F-119 leak class)",
+      "root_cause": "design_bug",
+      "fix": "loopback-only guard: seam honored only for 127.0.0.1/::1/localhost, any other host disables detection with a distinct notice; pinned in PROV-12 with obligation case (f)",
+      "status": "fixed",
+      "id": "F-192",
+      "fix_commit": null
+    },
+    {
+      "task": "anthropic-model-detection",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "PROV-12"
+      ],
+      "summary": "divergence sound-skip claim falsified on one predicate: has_more:true page without last_id silently broke the loop and WROTE accumulated entries; malformed-page reading equally defensible",
+      "root_cause": "spec_gap",
+      "fix": "pinned as malformed page in clause text: stops detection with notice, overlay untouched; impl + obligation case (h)",
+      "status": "fixed",
+      "id": "F-193",
+      "fix_commit": null
+    },
+    {
+      "task": "anthropic-model-detection",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "PROV-12"
+      ],
+      "summary": "obligation under-covered any-page failure: all failure cases hit page 1, a mutant writing page-1 entries before a page-2 failure passed all tests",
+      "root_cause": "test_blindspot",
+      "fix": "obligation case (g): two-page walk, second page 500, overlay asserted absent",
+      "status": "fixed",
+      "id": "F-194",
+      "fix_commit": null
+    },
+    {
+      "task": "anthropic-model-detection",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "PROV-12"
+      ],
+      "summary": "upsert silently drops a hand-set base_url on a pre-existing entry, flipping that model from override endpoint (credential withheld) to official",
+      "root_cause": "unrecorded_deferral",
+      "fix": "pinned deliberately in clause text: detected entries always spell the official endpoint; operator re-pins after re-login",
+      "status": "fixed",
+      "id": "F-195",
+      "fix_commit": null
+    },
+    {
+      "task": "anthropic-model-detection",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "PROV-12"
+      ],
+      "summary": "board row landed with clauses: [] though it implements PROV-12",
+      "root_cause": "process_gap",
+      "fix": "board.mjs task --clauses PROV-12",
+      "status": "fixed",
+      "id": "F-196",
+      "fix_commit": null
     }
   ]
 }

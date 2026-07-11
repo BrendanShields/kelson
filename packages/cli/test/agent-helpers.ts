@@ -151,6 +151,10 @@ export const makeTestRepo = (opts: {
     if (v !== undefined && k !== "ANTHROPIC_API_KEY" && k !== "OPENAI_API_KEY")
       env[k] = v;
   env.HOME = home;
+  // Refusing loopback root: any test that runs an anthropic login must not
+  // fire a live GET /v1/models (LLM-layer rule) — detection degrades to its
+  // skip notice. PROV-12 fixtures override this with their own server root.
+  env.OBLIGATO_TEST_ANTHROPIC_ROOT = "http://127.0.0.1:9";
   return { repo, home, env };
 };
 
