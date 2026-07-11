@@ -2,24 +2,131 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { SHIPPED_MODELS, saveConfig, saveCredential } from "@obligato/agent";
-import { ModelRegistryEntry } from "@obligato/schemas";
+import { type Credential, ModelRegistryEntry } from "@obligato/schemas";
 import { z } from "zod";
 import { write } from "../components/sink.js";
 import { fail } from "./common.js";
 
 const OLLAMA_DEFAULT = "http://127.0.0.1:11434";
 
+const overlayPath = () => join(homedir(), ".obligato", "models.json");
+
+const readOverlay = (): ModelRegistryEntry[] =>
+  existsSync(overlayPath())
+    ? z
+        .array(ModelRegistryEntry)
+        .parse(JSON.parse(readFileSync(overlayPath(), "utf8")))
+    : [];
+
 const writeOverlay = (entries: ModelRegistryEntry[]): void => {
-  const path = join(homedir(), ".obligato", "models.json");
   // A fresh HOME has no ~/.obligato yet (saveCredential mkdirs its own path;
   // this write must too — E2E caught the ENOENT on a never-configured machine).
   mkdirSync(join(homedir(), ".obligato"), { recursive: true });
-  const existing = existsSync(path)
-    ? z.array(ModelRegistryEntry).parse(JSON.parse(readFileSync(path, "utf8")))
-    : [];
-  const byId = new Map(existing.map((m) => [m.id, m]));
+  const byId = new Map(readOverlay().map((m) => [m.id, m]));
   for (const e of entries) byId.set(e.id, e);
-  writeFileSync(path, JSON.stringify([...byId.values()], null, 2));
+  writeFileSync(overlayPath(), JSON.stringify([...byId.values()], null, 2));
+};
+
+// PROV-12: best-effort detection, strictly after credential/config persistence
+// — never fails the login. The root env seam is test-only, honored for
+// loopback hosts only — a non-loopback seam disables detection rather than
+// falling through, so the real credential can never be redirected (F-119
+// class); PROV-10 stays the sole endpoint-override surface.
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "::1", "[::1]", "localhost"]);
+
+const detectAnthropicModels = async (credential: Credential): Promise<void> => {
+  const skip = (why: string) =>
+    write(`obligato: model detection skipped (${why}) — using shipped models`);
+  let root = "https://api.anthropic.com";
+  const seam = process.env.OBLIGATO_TEST_ANTHROPIC_ROOT;
+  if (seam) {
+    let host: string;
+    try {
+      host = new URL(seam).hostname;
+    } catch {
+      return skip("non-loopback test root ignored");
+    }
+    if (!LOOPBACK_HOSTS.has(host))
+      return skip("non-loopback test root ignored");
+    root = seam.replace(/\/$/, "");
+  }
+  const headers: Record<string, string> = {
+    "anthropic-version": "2023-06-01",
+  };
+  if (credential.type === "token") {
+    // PROV-5 header discipline: bearer + OAuth beta header, never x-api-key.
+    headers.authorization = `Bearer ${credential.token}`;
+    headers["anthropic-beta"] = "oauth-2025-04-20";
+  } else if (credential.type === "api_key") {
+    headers["x-api-key"] = credential.key;
+  }
+  const found: {
+    id: string;
+    max_input_tokens: number;
+    max_tokens: number;
+  }[] = [];
+  let after: string | null = null;
+  for (;;) {
+    const url = new URL(`${root}/v1/models`);
+    url.searchParams.set("limit", "100");
+    if (after) url.searchParams.set("after_id", after);
+    const res = await fetch(url, {
+      headers,
+      signal: AbortSignal.timeout(10_000),
+    }).catch(() => null);
+    // 200-only partition: a rejected credential (401 — e.g. a subscription
+    // token the endpoint refuses) degrades to no detection, never a failure.
+    if (res?.status !== 200)
+      return skip(
+        res ? `endpoint answered ${res.status}` : "endpoint unreachable",
+      );
+    const body = (await res.json().catch(() => null)) as {
+      data?: {
+        id?: unknown;
+        max_input_tokens?: unknown;
+        max_tokens?: unknown;
+      }[];
+      has_more?: boolean;
+      last_id?: string;
+    } | null;
+    if (!Array.isArray(body?.data)) return skip("no model list in response");
+    for (const m of body.data)
+      if (
+        typeof m.id === "string" &&
+        Number.isInteger(m.max_input_tokens) &&
+        Number.isInteger(m.max_tokens)
+      )
+        found.push({
+          id: m.id,
+          max_input_tokens: m.max_input_tokens as number,
+          max_tokens: m.max_tokens as number,
+        });
+    if (body.has_more !== true) break;
+    // Auditor-surfaced two-reading edge, pinned as malformed: a has_more page
+    // without a cursor stops detection — accumulated entries are discarded.
+    if (typeof body.last_id !== "string") return skip("malformed page");
+    after = body.last_id;
+  }
+
+  const shipped = new Set(SHIPPED_MODELS.map((m) => m.id));
+  const existing = new Map(readOverlay().map((m) => [m.id, m]));
+  const entries = found
+    .filter((m) => !shipped.has(m.id))
+    .map((m) =>
+      ModelRegistryEntry.parse({
+        id: m.id,
+        provider: "anthropic",
+        context_window: m.max_input_tokens,
+        max_output: m.max_tokens,
+        // Bulk detection never clobbers hand-maintained prices (PROV-3:
+        // unknown is never estimated, known is never discarded).
+        prices: existing.get(m.id)?.prices ?? null,
+        tools: true,
+      }),
+    );
+  if (entries.length === 0) return;
+  writeOverlay(entries);
+  write(`obligato: detected ${entries.length} additional model(s)`);
 };
 
 // UX-16/PROV-4: flags-based so scripted logins work; never echoes the key.
@@ -48,16 +155,23 @@ export const authCommand = async (argv: string[]): Promise<void> => {
       return fail("pass --key or --token, not both");
     const token = named.token ?? process.env.CLAUDE_CODE_OAUTH_TOKEN;
     const key = named.key ?? process.env.ANTHROPIC_API_KEY;
+    let cred: Credential;
     if (named.token || (!key && token))
-      saveCredential("anthropic", { type: "token", token: token as string });
-    else if (key) saveCredential("anthropic", { type: "api_key", key });
+      cred = { type: "token", token: token as string };
+    else if (key) cred = { type: "api_key", key };
     else
       return fail(
         "pass --key <api-key> or --token <setup-token> (or set ANTHROPIC_API_KEY / CLAUDE_CODE_OAUTH_TOKEN)",
       );
+    saveCredential("anthropic", cred);
     const model = named.model ?? SHIPPED_MODELS[0]?.id;
     if (!model) return fail("no shipped models — pass --model");
     saveConfig(root, { default_model: model, schema_version: 1 });
+    // PROV-12: after both persists; a throw (e.g. corrupt overlay) degrades
+    // to the same skipped-detection notice, never a failed login.
+    await detectAnthropicModels(cred).catch(() =>
+      write("obligato: model detection skipped (error) — using shipped models"),
+    );
     write(`obligato: anthropic configured, default model ${model}`);
     return;
   }

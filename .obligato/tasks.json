@@ -112,6 +112,15 @@
         "AGT-18"
       ],
       "completed_at": null
+    },
+    {
+      "id": "anthropic-model-detection",
+      "title": "Feature: anthropic model detection via GET /v1/models at auth login",
+      "state": "completed",
+      "clauses": [
+        "PROV-12"
+      ],
+      "completed_at": "2026-07-11T11:09:27Z"
     }
   ]
 }
