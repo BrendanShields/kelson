@@ -4,11 +4,11 @@
     {
       "id": "C1-9",
       "title": "PERM-5 granular headless permission allows (--allow tool[:argGlob])",
-      "state": "in_progress",
+      "state": "completed",
       "clauses": [
         "PERM-5"
       ],
-      "completed_at": null
+      "completed_at": "2026-07-11T01:57:05Z"
     },
     {
       "id": "C1-10",

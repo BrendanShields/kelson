@@ -337,7 +337,7 @@
       "root_cause": "process_gap",
       "fix": "C1-9 retitled with clauses [PERM-5]; board.mjs retitle gap folded into C1-21 scope",
       "status": "fixed",
-      "fix_commit": null
+      "fix_commit": "6535a69f1b766d0b51b678297b236b4a4002b9b3"
     },
     {
       "id": "F-180",
@@ -351,7 +351,7 @@
       "root_cause": "spec_gap",
       "fix": "clause parenthetical pins present-but-empty arg glob = matches only an empty primary argument, never glob-absent",
       "status": "fixed",
-      "fix_commit": null
+      "fix_commit": "6535a69f1b766d0b51b678297b236b4a4002b9b3"
     },
     {
       "id": "F-181",
@@ -366,7 +366,7 @@
       "root_cause": "test_blindspot",
       "fix": "arm (a) now asserts the stored tool_result pair [ok, is_error] from the session db",
       "status": "fixed",
-      "fix_commit": null
+      "fix_commit": "6535a69f1b766d0b51b678297b236b4a4002b9b3"
     }
   ]
 }
