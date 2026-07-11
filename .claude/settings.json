@@ -1,4 +1,7 @@
 {
+  "env": {
+    "_ZO_DOCTOR": "0"
+  },
   "hooks": {
     "SessionStart": [
       {
