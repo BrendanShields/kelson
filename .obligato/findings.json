@@ -291,7 +291,7 @@
       "fix": "fetch-depth: 0 on the checks job checkout; surfaced and verified by PR #1, the repo first PR",
       "status": "fixed",
       "id": "F-176",
-      "fix_commit": null
+      "fix_commit": "ba16c4e0e51ad33fbf0b711bfab1225e2f5bcde0"
     }
   ]
 }
