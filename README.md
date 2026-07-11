@@ -34,7 +34,27 @@ bun packages/cli/src/index.ts loop propose
 bun packages/cli/src/index.ts loop status
 ```
 
-From there: write a obspec (`docs/obspec/<component>.spec.md`) and the compiler turns every clause into an executable obligation, every domain into a property-based generator, and every T1+ invariant into a runtime probe plus a TLA+ CI obligation.
+From there: write an obspec (`docs/obspec/<component>.spec.md`) and the compiler turns every clause into an executable obligation, every domain into a property-based generator, and every T1+ invariant into a runtime probe plus a TLA+ CI obligation.
+
+### Run the native agent
+
+The built-in runtime (`obligato chat` / `obligato run`) works with Anthropic, local Ollama, or any OpenAI-compatible endpoint (OpenRouter, Groq, vLLM, LM Studio, …):
+
+```bash
+# Anthropic (API key, or a Claude subscription token from `claude setup-token`)
+obligato auth login anthropic --key sk-ant-…        # or --token <setup-token>
+
+# Local Ollama (discovers your pulled models, $0)
+obligato auth login ollama
+
+# Any OpenAI-compatible endpoint — pass its /v1 root; --key optional for keyless servers
+obligato auth login openai-compatible --base-url https://openrouter.ai/api/v1 \
+  --model qwen/qwen3-coder --key sk-or-…
+
+obligato run -p "explain this repo's test layout"
+```
+
+Endpoint keys are stored per model id in `~/.obligato/auth.json` (0600) and are never sent anywhere except the endpoint you named — there is no ambient `OPENAI_API_KEY` fallback at request time (PROV-10/PROV-11).
 
 ## The distinctive mechanic: evidence over taste
 

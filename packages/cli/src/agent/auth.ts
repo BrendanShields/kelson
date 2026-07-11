@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { SHIPPED_MODELS, saveConfig, saveCredential } from "@obligato/agent";
@@ -11,6 +11,9 @@ const OLLAMA_DEFAULT = "http://127.0.0.1:11434";
 
 const writeOverlay = (entries: ModelRegistryEntry[]): void => {
   const path = join(homedir(), ".obligato", "models.json");
+  // A fresh HOME has no ~/.obligato yet (saveCredential mkdirs its own path;
+  // this write must too — E2E caught the ENOENT on a never-configured machine).
+  mkdirSync(join(homedir(), ".obligato"), { recursive: true });
   const existing = existsSync(path)
     ? z.array(ModelRegistryEntry).parse(JSON.parse(readFileSync(path, "utf8")))
     : [];
@@ -24,7 +27,7 @@ export const authCommand = async (argv: string[]): Promise<void> => {
   const [sub, provider] = argv;
   if (sub !== "login" || !provider)
     return fail(
-      "usage: obligato auth login <anthropic|ollama> [--key <api-key> | --token <setup-token>] [--model --base-url]",
+      "usage: obligato auth login <anthropic|ollama|openai-compatible> [--key <api-key> | --token <setup-token>] [--model --base-url --context --max-output]",
     );
   const named: Record<string, string> = {};
   for (let i = 2; i < argv.length; i++) {
@@ -92,5 +95,77 @@ export const authCommand = async (argv: string[]): Promise<void> => {
     return;
   }
 
-  return fail(`unknown provider: ${provider} (have: anthropic, ollama)`);
+  if (provider === "openai-compatible") {
+    // PROV-11: verbatim root minus a single trailing slash; never defaulted.
+    const base = named["base-url"]?.replace(/\/$/, "");
+    if (!base)
+      return fail(
+        "--base-url required: the endpoint's OpenAI-compatible root (e.g. https://openrouter.ai/api/v1)",
+      );
+    const model = named.model;
+    if (!model) return fail("--model required: the model id to register");
+    // PROV-11: value-based key resolution at login time only — an empty value
+    // reads as absent, and the runtime never falls back to OPENAI_API_KEY
+    // when resolving stored credentials (PROV-10 leak class).
+    const key = named.key || process.env.OPENAI_API_KEY || null;
+    const res = await fetch(`${base}/models`, {
+      headers: key ? { authorization: `Bearer ${key}` } : {},
+      signal: AbortSignal.timeout(10_000),
+    }).catch(() => null);
+    if (!res)
+      return fail(
+        `cannot reach ${base}/models — check the URL (it should be the /v1 root)`,
+      );
+    // PROV-11: status before body — a 401 with a valid-looking list still fails.
+    if (res.status === 401 || res.status === 403)
+      return fail(`${base}/models rejected the credential (${res.status})`);
+    // PROV-11: exactly 200 — a 2xx-not-200 falls to the fail-closed branch.
+    if (res.status === 200) {
+      const body = (await res.json().catch(() => null)) as {
+        data?: { id?: unknown }[];
+      } | null;
+      const ids =
+        Array.isArray(body?.data) &&
+        body.data.every((m) => typeof m?.id === "string")
+          ? body.data.map((m) => m.id as string)
+          : null;
+      if (ids === null)
+        write(
+          `obligato: ${base}/models did not return a model list — skipping model check`,
+        );
+      else if (!ids.includes(model))
+        return fail(
+          `model ${model} not in ${base}/models list: ${ids.slice(0, 20).join(", ")}`,
+        );
+    } else if (res.status === 404 || res.status === 405 || res.status === 501) {
+      write(
+        `obligato: ${base} does not implement /models (${res.status}) — skipping model check`,
+      );
+    } else {
+      // PROV-11: fail closed on any status the clause doesn't allowlist.
+      return fail(`${base}/models answered ${res.status} — not configuring`);
+    }
+    // Zod gate before any persist: a non-numeric --context/--max-output must
+    // fail here, not corrupt the overlay.
+    const entry = ModelRegistryEntry.parse({
+      id: model,
+      provider: "openai-compatible",
+      base_url: base,
+      context_window: Number(named.context ?? 128_000),
+      max_output: Number(named["max-output"] ?? 16_384),
+      prices: null,
+      tools: true,
+    });
+    writeOverlay([entry]);
+    if (key) saveCredential(model, { type: "api_key", key });
+    saveConfig(root, { default_model: model, schema_version: 1 });
+    write(
+      `obligato: openai-compatible endpoint configured, default model ${model}`,
+    );
+    return;
+  }
+
+  return fail(
+    `unknown provider: ${provider} (have: anthropic, ollama, openai-compatible)`,
+  );
 };

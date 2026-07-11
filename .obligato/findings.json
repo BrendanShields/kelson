@@ -95,7 +95,7 @@
       "fix": "UX-22 pins strict all-or-nothing; promoteInferred gains validate-then-throw (no mutation on a bad batch); collapsed module counts pinned authority-split (reader B)",
       "status": "fixed",
       "id": "F-150",
-      "fix_commit": null
+      "fix_commit": "402fb5df9044aaa1d811263f595d0cc6699903c8"
     },
     {
       "task": "UIA-INDEX",
@@ -109,7 +109,7 @@
       "fix": "UX-26 re-pinned: filesystem scan (no git), deletion confined to provably spec-derived rows (logical_id naming a *.spec.md source), full count semantics pinned",
       "status": "fixed",
       "id": "F-151",
-      "fix_commit": null
+      "fix_commit": "402fb5df9044aaa1d811263f595d0cc6699903c8"
     },
     {
       "task": "UIA-DOCTOR",
@@ -123,7 +123,7 @@
       "fix": "UX-19 pinned read-only probing (missing store fails naming kelson init, never created); existsSync guard + missing-store fixture",
       "status": "fixed",
       "id": "F-152",
-      "fix_commit": null
+      "fix_commit": "402fb5df9044aaa1d811263f595d0cc6699903c8"
     },
     {
       "task": "UIA-DRIFT",
@@ -137,7 +137,7 @@
       "fix": "UX-22 obligation gains the duplicate-id case (test added); clause pins list threshold 0 with --min-sessions filter",
       "status": "fixed",
       "id": "F-153",
-      "fix_commit": null
+      "fix_commit": "402fb5df9044aaa1d811263f595d0cc6699903c8"
     },
     {
       "task": "UIA-REPLAY",
@@ -151,7 +151,7 @@
       "fix": "UX-23 pins finished_at stamping on failure; runReplay stamps in finally; missing-snapshot fixture added",
       "status": "fixed",
       "id": "F-154",
-      "fix_commit": null
+      "fix_commit": "402fb5df9044aaa1d811263f595d0cc6699903c8"
     },
     {
       "task": "UIA-DRIFT",
@@ -165,7 +165,7 @@
       "fix": "guide line updated to name kelson drift list/promote",
       "status": "fixed",
       "id": "F-155",
-      "fix_commit": null
+      "fix_commit": "402fb5df9044aaa1d811263f595d0cc6699903c8"
     },
     {
       "task": "C1-14",
@@ -233,6 +233,49 @@
       "fix": "both snapshots regenerated (clone, git mv docs/kelspec->docs/obspec, fence+title+prose rewrite with per-step count asserts, re-bundle, re-hash, restore-verify), task.yaml snapshot refs + statements updated, old bundles removed",
       "status": "fixed",
       "id": "F-172",
+      "fix_commit": "00c2c62e5a6248d208d4679d74ef0cc5f47207f1"
+    },
+    {
+      "task": "C1-19",
+      "source": "verify",
+      "severity": "warning",
+      "clauses": [
+        "PROV-11",
+        "PROV-1"
+      ],
+      "summary": "writeOverlay assumed ~/.obligato exists and threw ENOENT on a never-configured HOME — both the new openai-compatible login and the existing ollama login crashed on a fresh machine; obligation tests never saw it because makeTestRepo pre-creates home/.obligato",
+      "root_cause": "test_blindspot",
+      "fix": "mkdirSync(recursive) in writeOverlay (single choke point for both providers); PROV-11 test case (a) now rmSyncs the pre-created dir so a revert fails the suite; caught by the operator-surface E2E, not the fixture suite",
+      "status": "fixed",
+      "id": "F-173",
+      "fix_commit": null
+    },
+    {
+      "task": "C1-19",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "LOOP-1"
+      ],
+      "summary": "pre-commit stamp-head mis-stamped F-150..F-155 with the rename commit sha: the .kelson->.obligato path rename made its added-line heuristic read every existing row as new — F-169 diff-shape class recurring on the renamed board file, corrupting fix_commit provenance the postmortem/LOOP-6 miners read",
+      "root_cause": "design_bug",
+      "fix": "six rows restamped to their true fix commit 402fb5d via board.mjs stamp; stamp-head rename-robustness queued as its own task (C1-20)",
+      "status": "fixed",
+      "id": "F-174",
+      "fix_commit": null
+    },
+    {
+      "task": "C1-19",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "LOOP-1"
+      ],
+      "summary": "the F-174 restamp silently never landed: board.mjs stamp only wrote rows whose fix_commit was null, so correcting a mis-stamp no-opd on all six rows while printing the success line — the staged diff then carried a false fix claim (F-174 text said restamped; the same file disproved it). The repo gotcha class exactly: a scripted mutation must verify its own effect",
+      "root_cause": "design_bug",
+      "fix": "stamp now treats explicitly named ids as authoritative: overwrites, reports each old->new correction, and re-loads to assert every named row carries the sha (dies otherwise); restamp re-run and verified in worktree and index",
+      "status": "fixed",
+      "id": "F-175",
       "fix_commit": null
     }
   ]

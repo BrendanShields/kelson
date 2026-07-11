@@ -122,14 +122,27 @@ if (mode === "task") {
   save(FINDINGS, d);
   console.log(row.id);
 } else if (mode === "stamp") {
+  // Explicitly named ids are operator intent: overwrite (that is how a
+  // mis-stamp gets corrected — F-175: the old null-guard silently kept six
+  // wrong shas while printing success). Report old -> new per correction,
+  // then verify the write landed (scripted edits assert their own effect).
   const [sha, ...ids] = rest;
   if (!sha || ids.length === 0) die("usage: board.mjs stamp <sha> <F-ID...>");
   const d = load(FINDINGS);
   const missing = ids.filter((id) => !d.findings.some((f) => f.id === id));
   if (missing.length) die(`unknown finding ids: ${missing.join(", ")}`);
   for (const f of d.findings)
-    if (ids.includes(f.id) && f.fix_commit === null) f.fix_commit = sha;
+    if (ids.includes(f.id)) {
+      if (f.fix_commit !== null && f.fix_commit !== sha)
+        console.log(`${f.id}: correcting ${f.fix_commit} -> ${sha}`);
+      f.fix_commit = sha;
+    }
   save(FINDINGS, d);
+  const check = load(FINDINGS).findings.filter(
+    (f) => ids.includes(f.id) && f.fix_commit !== sha,
+  );
+  if (check.length)
+    die(`stamp did not land for: ${check.map((f) => f.id).join(", ")}`);
   console.log(`stamped ${ids.join(", ")} -> ${sha}`);
 } else if (mode === "stamp-head") {
   // Post-commit auto-stamp (postmortem 2026-07-09: 25 rows shipped fix_commit

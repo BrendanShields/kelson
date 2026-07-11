@@ -70,14 +70,21 @@
     {
       "id": "C1-18",
       "title": "rename: Kelson -> Obligato, kelspec -> obspec — full technical rename (packages, CLI, env vars, data dir, spec clause pins) via spec-sync",
-      "state": "in_progress",
+      "state": "completed",
       "clauses": [],
-      "completed_at": null
+      "completed_at": "2026-07-11T00:01:08Z"
     },
     {
       "id": "C1-19",
       "title": "feat: generic openai-compatible endpoint login (PROV-11) — auth login openai-compatible, /v1/models probe, overlay entry + per-entry credential",
       "state": "in_progress",
+      "clauses": [],
+      "completed_at": null
+    },
+    {
+      "id": "C1-20",
+      "title": "stamp-head rename/rewrite robustness: added-line heuristic must ignore pure-rename/rewrite diffs of findings.json (F-169/F-174 class) — e.g. detect rename via git diff --find-renames or diff row ids, not lines",
+      "state": "open",
       "clauses": [],
       "completed_at": null
     }

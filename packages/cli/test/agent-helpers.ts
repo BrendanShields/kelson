@@ -148,7 +148,8 @@ export const makeTestRepo = (opts: {
   }
   const env: Record<string, string> = {};
   for (const [k, v] of Object.entries(process.env))
-    if (v !== undefined && k !== "ANTHROPIC_API_KEY") env[k] = v;
+    if (v !== undefined && k !== "ANTHROPIC_API_KEY" && k !== "OPENAI_API_KEY")
+      env[k] = v;
   env.HOME = home;
   return { repo, home, env };
 };
