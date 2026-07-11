@@ -248,7 +248,7 @@
       "fix": "mkdirSync(recursive) in writeOverlay (single choke point for both providers); PROV-11 test case (a) now rmSyncs the pre-created dir so a revert fails the suite; caught by the operator-surface E2E, not the fixture suite",
       "status": "fixed",
       "id": "F-173",
-      "fix_commit": null
+      "fix_commit": "77059cba1832e1a7fc912a1ec6c8add4459826a2"
     },
     {
       "task": "C1-19",
@@ -262,7 +262,7 @@
       "fix": "six rows restamped to their true fix commit 402fb5d via board.mjs stamp; stamp-head rename-robustness queued as its own task (C1-20)",
       "status": "fixed",
       "id": "F-174",
-      "fix_commit": null
+      "fix_commit": "77059cba1832e1a7fc912a1ec6c8add4459826a2"
     },
     {
       "task": "C1-19",
@@ -276,7 +276,7 @@
       "fix": "stamp now treats explicitly named ids as authoritative: overwrites, reports each old->new correction, and re-loads to assert every named row carries the sha (dies otherwise); restamp re-run and verified in worktree and index",
       "status": "fixed",
       "id": "F-175",
-      "fix_commit": null
+      "fix_commit": "77059cba1832e1a7fc912a1ec6c8add4459826a2"
     }
   ]
 }
