@@ -12,7 +12,7 @@
     {
       "id": "C1-10",
       "title": "AGT auto-compaction trigger in loop",
-      "state": "open",
+      "state": "in_progress",
       "clauses": [],
       "completed_at": null,
       "notes": "AGT-16 auto-compaction — next session (seam + summarizer injection points ready)"
@@ -84,6 +84,20 @@
     {
       "id": "C1-20",
       "title": "stamp-head rename/rewrite robustness: added-line heuristic must ignore pure-rename/rewrite diffs of findings.json (F-169/F-174 class) — e.g. detect rename via git diff --find-renames or diff row ids, not lines",
+      "state": "open",
+      "clauses": [],
+      "completed_at": null
+    },
+    {
+      "id": "C1-21",
+      "title": "board.mjs: branch-aware finding numbering — parallel branches double-allocate ids (F-177 collided with PR #1 F-173); reserve via git branch scan or explicit id discipline for branch work",
+      "state": "open",
+      "clauses": [],
+      "completed_at": null
+    },
+    {
+      "id": "C1-22",
+      "title": "EVP-10/SES-7 aggregates vs compaction: promote statement + cost ceiling and branch-compare cost sum read the RECONSTRUCTED chain — post-compaction they see digest text / under-count cost; decide raw-store vs reconstruction semantics (auditor WARN, AGT-16 batch)",
       "state": "open",
       "clauses": [],
       "completed_at": null

@@ -84,9 +84,12 @@ export const currentHead = (events: SessionEvent[]): string | null => {
 // SES-2/6: walk the parent chain from a GIVEN head -> root, reversed. Used for
 // arbitrary branch heads (SES-7 compare) as well as the current head. head_moved
 // events are off-chain by construction (their ids are never a parent_id).
-// SES-8: if the walked chain carries a compaction marker, the covered prefix is
-// replaced by a single synthetic summary user_message (the covered originals
-// stay in the store; only the reconstructed context substitutes).
+// SES-8: if the walked chain carries a compaction marker, the covered
+// message-bearing events are replaced by one synthetic summary user_message —
+// the root survives in front (F-177) and covered session_meta bookkeeping
+// events (obligation_check, markers) survive in order (F-178: they produce no
+// model messages, and chain-derived state must outlive compaction). The
+// covered originals stay in the store; only reconstruction substitutes.
 export const reconstructFrom = (
   events: SessionEvent[],
   headId: string | null,
@@ -121,7 +124,20 @@ export const reconstructFrom = (
     at: comp.at,
     schema_version: 1,
   });
-  return [summaryEvent, ...chain.slice(toIdx + 1)];
+  // SES-8/F-177: the session_meta root survives every substitution — dropping
+  // it made assembleContext throw on any post-compaction step. The latest
+  // summary stands in for the covered message-bearing events (an older
+  // compaction's summary was input to this one's summarizer, so it subsumes);
+  // covered session_meta events survive between summary and tail (F-178).
+  const preserved = chain
+    .slice(1, toIdx + 1)
+    .filter((e) => e.kind === "session_meta");
+  return [
+    chain[0] as SessionEvent,
+    summaryEvent,
+    ...preserved,
+    ...chain.slice(toIdx + 1),
+  ];
 };
 
 export const reconstruct = (events: SessionEvent[]): SessionEvent[] =>
@@ -360,8 +376,12 @@ export const compareBranches = (
 
 // SES-8: compact the reconstructed chain to head — summarize (caller supplies
 // the summarizer, a cheap routed model in production) and append one compaction
-// marker covering [root, head]. The covered originals are never deleted; only
-// reconstruction substitutes the summary (reconstructFrom).
+// marker covering [first-real-after-root, head] (never the root — F-177). On a
+// re-compaction that first real event is a preserved covered session_meta when
+// one exists, else the prior compaction marker (the synthetic summary is not a
+// stored id); either way the prior summary was input to this summarizer, so
+// the originals it covered are subsumed transitively. Covered originals are
+// never deleted; only reconstruction substitutes (reconstructFrom).
 export const compactSession = (
   db: Database,
   sessionId: string,
@@ -372,11 +392,14 @@ export const compactSession = (
   if (head === null)
     throw new Error(`no session ${sessionId} in the store (SES-8)`);
   const chain = reconstructFrom(events, head);
-  // Resolve `from` to the first REAL covered event — on a re-compact chain[0]
-  // is the prior compaction's synthetic (in-memory) summary, not a stored id.
+  // SES-8/F-177: the covered span never includes the session_meta root, so
+  // `from` is the first REAL event after it (skipping a prior compaction's
+  // synthetic in-memory summary, which is not a stored id). A chain with
+  // nothing real after the root has nothing to compact.
   const realIds = new Set(events.map((e) => e.id));
-  const from = chain.find((e) => realIds.has(e.id)) ?? chain[0];
-  if (!from) throw new Error(`session ${sessionId} has no events (SES-8)`);
+  const from = chain.slice(1).find((e) => realIds.has(e.id));
+  if (!from)
+    throw new Error(`session ${sessionId}: nothing to compact (SES-8)`);
   const summary = summarize(chain);
   appendEvent(db, {
     session_id: sessionId,
@@ -387,6 +410,55 @@ export const compactSession = (
     },
   });
   return { from_event: from.id, to_event: head };
+};
+
+// AGT-16: integer tie comparison — footprint × 5 ≥ window × 4 (divergence
+// pin 2026-07-11: no float threshold; exact at the 80% boundary).
+export const autoCompactDue = (
+  usage: {
+    tokens_in: number;
+    tokens_cache_read: number;
+    tokens_cache_write: number;
+  },
+  contextWindow: number,
+): boolean =>
+  (usage.tokens_in + usage.tokens_cache_read + usage.tokens_cache_write) * 5 >=
+  contextWindow * 4;
+
+// AGT-16: the built-in summarizer — pure formatter over the reconstructed
+// chain, byte-identical for identical chains, zero model calls. Four fixed
+// lines; excerpts head-capped at 200 UTF-16 code units.
+export const deterministicDigest = (chain: SessionEvent[]): string => {
+  // Single-line excerpts (a prior digest embeds newlines — the four-line
+  // frame must survive re-compaction), head-capped at 200 code units.
+  const excerpt = (s: string): string => {
+    const flat = s.replace(/\n/g, " ");
+    return flat.length > 200 ? `${flat.slice(0, 200)}…` : flat;
+  };
+  const firstUser = chain.find((e) => e.kind === "user_message");
+  const lastAssistant = [...chain]
+    .reverse()
+    .find((e) => e.kind === "assistant_message");
+  const tools = [
+    ...new Set(
+      chain
+        .filter((e) => e.kind === "assistant_message")
+        .flatMap((e) => (e.payload.tool_calls ?? []) as { name?: unknown }[])
+        .map((c) => c.name)
+        .filter((n): n is string => typeof n === "string"),
+    ),
+  ].sort();
+  // Count = message-bearing events folded; session_meta bookkeeping is
+  // preserved through substitution, not folded (AGT-16/F-178).
+  const folded = chain.filter(
+    (e, i) => i > 0 && e.kind !== "session_meta",
+  ).length;
+  return [
+    `events: ${folded}`,
+    `task: ${excerpt(String(firstUser?.payload.text ?? ""))}`,
+    `last: ${excerpt(String(lastAssistant?.payload.text ?? ""))}`,
+    `tools: ${tools.join(", ")}`,
+  ].join("\n");
 };
 
 export const authKindOf = (

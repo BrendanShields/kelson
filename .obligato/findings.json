@@ -292,6 +292,38 @@
       "status": "fixed",
       "id": "F-176",
       "fix_commit": "ba16c4e0e51ad33fbf0b711bfab1225e2f5bcde0"
+    },
+    {
+      "id": "F-177",
+      "task": "C1-10",
+      "source": "verify",
+      "severity": "warning",
+      "clauses": [
+        "SES-8",
+        "AGT-15",
+        "PROV-8"
+      ],
+      "summary": "post-compaction reconstruction dropped the session_meta root (substitution began the chain with the synthetic summary), so assembleContext threw session-has-no-session_meta-root on ANY step after a compact — manual session compact + continue was a guaranteed crash; SES-8s own obligation test had pinned the broken shape (asserted chain[0].payload.compacted) and nothing ever assembled context after compacting",
+      "root_cause": "test_blindspot",
+      "fix": "reconstructFrom keeps chain[0] (root) in front of the summary; compactSession records from = first real event AFTER the root and refuses a root-only chain (nothing to compact); SES-8 clause + obligation amended with root-survival pin and an assembleContext regression arm. Note: id assigned explicitly — branch-parallel auto-numbering had allocated F-173, already taken on the open PR #1 branch (C1-21)",
+      "status": "fixed",
+      "fix_commit": null
+    },
+    {
+      "id": "F-178",
+      "task": "C1-10",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "AGT-7",
+        "AGT-12",
+        "AGT-16"
+      ],
+      "summary": "auto-compaction at the done-gate demotion tail folded the gates chain-derived state: obligation_check session_meta events (failingClauses evidence) and the AGT-12 routing_escalation tail marker were substituted away with the transcript, so a failing session could pass the done-gate with an empty VerificationReport and an escalated retry silently ran on the normal model; the general case blinded any later done-gate to pre-compaction failures",
+      "root_cause": "design_bug",
+      "fix": "substitution now folds message-bearing events only — covered session_meta bookkeeping survives in order (zero context cost: toMessages skips session_meta); the demotion tail and no-model-call resumed steps are exempt from the trigger (clause-pinned); digest counts folded message events and collapses newlines; obligation arms h/i added (discriminating override + demote-compact-done regression)",
+      "status": "fixed",
+      "fix_commit": null
     }
   ]
 }
