@@ -1,5 +1,6 @@
 export * from "./agent.ts";
 export * from "./artifacts.ts";
+export * from "./chat-widget.ts";
 export * from "./cli.ts";
 export * from "./eval.ts";
 export * from "./loop.ts";

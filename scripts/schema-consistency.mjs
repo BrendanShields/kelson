@@ -67,9 +67,21 @@ const splitValues = (s) =>
 for (const f of readdirSync(srcDir).filter((f) => f.endsWith(".ts"))) {
   const ts = readFileSync(`${srcDir}/${f}`, "utf8");
 
-  // invariant 1: value export <-> type export pairing
+  // invariant 1: value export <-> type export pairing.
+  // INFER_EXEMPT: schemas whose type cannot be z.infer'd — a hand-written
+  // `export type X = ...` is still REQUIRED, only the z.infer spelling is
+  // waived, and each entry records why (the CHECK-exemption pattern above).
+  const INFER_EXEMPT = {
+    ChatWidget:
+      "zod4 cannot z.infer a recursive discriminated union (TS2615) — hand-written type pinned by UX-28",
+  };
   for (const m of ts.matchAll(/^export const (\w+) = z[.(]/gm)) {
-    if (!ts.includes(`export type ${m[1]} = z.infer<typeof ${m[1]}>`))
+    if (INFER_EXEMPT[m[1]]) {
+      if (!new RegExp(`^export type ${m[1]} =`, "m").test(ts))
+        errors.push(
+          `${f}: INFER_EXEMPT ${m[1]} still requires a hand-written \`export type ${m[1]} = ...\``,
+        );
+    } else if (!ts.includes(`export type ${m[1]} = z.infer<typeof ${m[1]}>`))
       errors.push(
         `${f}: export const ${m[1]} has no paired \`export type ${m[1]} = z.infer<typeof ${m[1]}>\``,
       );

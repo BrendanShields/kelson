@@ -42,7 +42,73 @@ import {
   UiLoopView,
   UiTelemetryView,
   UiTraceView,
+  WidgetTree,
 } from "../src/index.ts";
+
+// UX-28: recursive widget tree — letrec bounds panel recursion naturally.
+const chatWidgetArb = fc.letrec((tie) => ({
+  widget: fc.oneof(
+    fc.record({
+      type: fc.constant("table" as const),
+      columns: fc.array(fc.string(), { maxLength: 4 }),
+      rows: fc.array(fc.array(fc.string(), { maxLength: 4 }), { maxLength: 4 }),
+    }),
+    fc.record({ type: fc.constant("diff" as const), unified: fc.string() }),
+    fc.record({ type: fc.constant("markdown" as const), content: fc.string() }),
+    fc.record({
+      type: fc.constant("code" as const),
+      language: fc.string(),
+      content: fc.string(),
+    }),
+    fc.record({
+      type: fc.constant("sparkline" as const),
+      label: fc.string(),
+      // -0 normalized: JSON has no -0 (same edge as the delta arb's z0 below;
+      // gate counterexample 2026-07-13: values:[-0] failed the round-trip).
+      values: fc.array(
+        fc
+          .double({ noNaN: true, noDefaultInfinity: true })
+          .map((v) => (v === 0 ? 0 : v)),
+        { maxLength: 6 },
+      ),
+    }),
+    fc.record({
+      type: fc.constant("tree" as const),
+      nodes: fc.array(
+        fc.record({
+          id: fc.string(),
+          label: fc.string(),
+          parent: fc.option(fc.string(), { nil: null }),
+        }),
+        { maxLength: 5 },
+      ),
+    }),
+    fc.record({
+      type: fc.constant("ticker" as const),
+      segments: fc.array(
+        fc.record(
+          {
+            label: fc.string(),
+            value: fc.string(),
+            emphasis: fc.boolean(),
+          },
+          { requiredKeys: ["label", "value"] },
+        ),
+        { maxLength: 4 },
+      ),
+    }),
+    fc.record({
+      type: fc.constant("badge" as const),
+      glyph_role: fc.string(),
+      text: fc.string(),
+    }),
+    fc.record({
+      type: fc.constant("panel" as const),
+      title: fc.string(),
+      children: fc.array(tie("widget"), { maxLength: 3 }),
+    }),
+  ),
+})).widget;
 
 const from = (alphabet: string, n: number) =>
   fc
@@ -904,6 +970,13 @@ const arbs: Record<string, [z.ZodType, fc.Arbitrary<unknown>]> = {
         }),
         { maxLength: 2 },
       ),
+    }),
+  ],
+  WidgetTree: [
+    WidgetTree,
+    fc.record({
+      schema_version: fc.constant(1 as const),
+      root: chatWidgetArb,
     }),
   ],
 };

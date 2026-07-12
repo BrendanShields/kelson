@@ -582,6 +582,89 @@
       "status": "fixed",
       "id": "F-196",
       "fix_commit": "ba01ae7779158f3c2dc66eb86c1ba19cb789985f"
+    },
+    {
+      "task": "chat-slice1-tokens-widgets",
+      "source": "implementation",
+      "severity": "warning",
+      "clauses": [
+        "UX-28"
+      ],
+      "summary": "WidgetTree roundtrip arbitrary drew -0: JSON.stringify(-0) is 0, toEqual distinguishes — seed-dependent gate failure (one run fail, rerun pass), the documented delta-arb z0 edge unapplied to the new sparkline arb",
+      "root_cause": "test_blindspot",
+      "fix": "normalize -0 in the sparkline values arbitrary, matching the file z0 precedent; counterexample values:[-0] recorded in comment",
+      "status": "fixed",
+      "id": "F-197",
+      "fix_commit": "de01635bc9ddf869ff2a788abb7d4b9b49004797"
+    },
+    {
+      "task": "chat-slice1-tokens-widgets",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "UX-29",
+        "UX-4"
+      ],
+      "summary": "chat NO_COLOR used truthiness while every sibling surface (components/theme.ts, sink.ts) uses presence — NO_COLOR=\"\" painted on chat only; partial-precedent import of the UX-4 mechanism",
+      "root_cause": "spec_gap",
+      "fix": "presence semantics pinned in UX-29 (any value incl. empty), resolveColor uses !== undefined, NO_COLOR=\"\" obligation arm added",
+      "status": "fixed",
+      "id": "F-198",
+      "fix_commit": "de01635bc9ddf869ff2a788abb7d4b9b49004797"
+    },
+    {
+      "task": "chat-slice1-tokens-widgets",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-29"
+      ],
+      "summary": "grep-gate scope mismatch: clause said recursive, obligation+test scanned flat — a future src/chat/ subdir would silently escape the gate",
+      "root_cause": "test_blindspot",
+      "fix": "clause pins recursive explicitly; test uses readdirSync recursive with a non-empty file-list assertion",
+      "status": "fixed",
+      "id": "F-199",
+      "fix_commit": "de01635bc9ddf869ff2a788abb7d4b9b49004797"
+    },
+    {
+      "task": "chat-slice1-tokens-widgets",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-29"
+      ],
+      "summary": "glyph scan list was a hardcoded 7-of-26 copy; sep/spin/bar omissions unrecorded and the list drifts silently on token change",
+      "root_cause": "test_blindspot",
+      "fix": "marker set derived from CHAT_THEME.glyphs minus recorded prose-safe exclusions (sep, spin, bar), pinned in clause + obligation",
+      "status": "fixed",
+      "id": "F-200",
+      "fix_commit": "de01635bc9ddf869ff2a788abb7d4b9b49004797"
+    },
+    {
+      "task": "chat-slice1-tokens-widgets",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-28"
+      ],
+      "summary": "obligation ≥2-deep round-trip arm was only probabilistic (generator draw) — deterministic panel³ fixture was parse-only",
+      "root_cause": "test_blindspot",
+      "fix": "panel³ fixture routed through JSON.parse(JSON.stringify) + deep-equal in the obligation test",
+      "status": "fixed",
+      "id": "F-201",
+      "fix_commit": "de01635bc9ddf869ff2a788abb7d4b9b49004797"
+    },
+    {
+      "task": "chat-slice1-tokens-widgets",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [],
+      "summary": "packages/ui tsconfigs never enabled strict/exactOptionalPropertyTypes — ui compiled schema source non-strict (ADR-0003 our-sources-strict out of compliance), surfaced by the ui-build failure on the hand-written recursive type",
+      "root_cause": "process_gap",
+      "fix": "strict + exactOptionalPropertyTypes added to tsconfig.app.json and tsconfig.node.json; zero source changes needed",
+      "status": "fixed",
+      "id": "F-202",
+      "fix_commit": "de01635bc9ddf869ff2a788abb7d4b9b49004797"
     }
   ]
 }
