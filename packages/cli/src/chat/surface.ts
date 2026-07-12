@@ -8,11 +8,14 @@ import {
   type CliRenderer,
   fg,
   InputRenderable,
+  MarkdownRenderable,
   ScrollBoxRenderable,
   type StyledText,
+  SyntaxStyle,
   TextRenderable,
   t,
 } from "@opentui/core";
+import { compose } from "./compose.js";
 import { type ChatModel } from "./model.js";
 import { CHAT_THEME, resolveColor } from "./theme.js";
 import {
@@ -20,7 +23,7 @@ import {
   emptyState,
   headerLine,
   tickerLine,
-  transcriptLines,
+  transcriptEntryLines,
   type ViewLine,
 } from "./view.js";
 
@@ -142,14 +145,26 @@ export const createSurface = (
   // tail-follow silently dies (empirically pinned 2026-07-13).
   const bodyNodes = new Map<
     string,
-    { node: TextRenderable | ASCIIFontRenderable; isText: boolean }
+    {
+      node: TextRenderable | ASCIIFontRenderable | MarkdownRenderable;
+      kind: "text" | "markdown" | "made";
+    }
   >();
   let following = true;
   let lastFollowClamp = 0;
+  // One SyntaxStyle per surface, lazily created (native handle).
+  let syntax: SyntaxStyle | null = null;
+  const markdownSyntax = (): SyntaxStyle => {
+    syntax ??= SyntaxStyle.create();
+    return syntax;
+  };
   const setBody = (
     parts: {
       id: string;
       text?: string | StyledText;
+      // UX-35: markdown widgets render via MarkdownRenderable, streaming —
+      // content updates in place through the same keyed path.
+      markdown?: string;
       make?: () => TextRenderable | ASCIIFontRenderable;
     }[],
   ): void => {
@@ -182,19 +197,32 @@ export const createSurface = (
     for (const p of parts) {
       const existing = bodyNodes.get(p.id);
       if (existing !== undefined) {
-        if (existing.isText && p.text !== undefined)
+        if (existing.kind === "text" && p.text !== undefined)
           (existing.node as TextRenderable).content = p.text;
+        else if (existing.kind === "markdown" && p.markdown !== undefined)
+          (existing.node as MarkdownRenderable).content = p.markdown;
         continue;
       }
       const node = p.make
         ? p.make()
-        : new TextRenderable(renderer, {
-            id: p.id,
-            content: p.text ?? "",
-            marginLeft: 1,
-          });
+        : p.markdown !== undefined
+          ? new MarkdownRenderable(renderer, {
+              id: p.id,
+              content: p.markdown,
+              streaming: true,
+              syntaxStyle: markdownSyntax(),
+              marginLeft: 1,
+            })
+          : new TextRenderable(renderer, {
+              id: p.id,
+              content: p.text ?? "",
+              marginLeft: 1,
+            });
       scroll.content.add(node);
-      bodyNodes.set(p.id, { node, isText: p.make === undefined });
+      bodyNodes.set(p.id, {
+        node,
+        kind: p.make ? "made" : p.markdown !== undefined ? "markdown" : "text",
+      });
       appended = true;
     }
     // Catch-up included: each clamp lands one layout behind, so a follow-up
@@ -248,11 +276,27 @@ export const createSurface = (
       );
       return;
     }
+    // UX-35: per-entry composition — markdown widgets for assistant entries,
+    // identity (UX-31 lines) for everything else. Ids are entry-namespaced so
+    // streaming deltas hit the same keyed node.
     setBody(
-      transcriptLines(model).map((line, i) => ({
-        id: `line-${i}`,
-        text: styledFrom(line, env),
-      })),
+      model.entries.flatMap(
+        (
+          entry,
+          i,
+        ): { id: string; text?: string | StyledText; markdown?: string }[] => {
+          const decision = compose(entry);
+          if (
+            decision.kind === "widget" &&
+            decision.tree.root.type === "markdown"
+          )
+            return [{ id: `e${i}-md`, markdown: decision.tree.root.content }];
+          return transcriptEntryLines(model, i).map((line, j) => ({
+            id: `e${i}-l${j}`,
+            text: styledFrom(line, env),
+          }));
+        },
+      ),
     );
   };
 

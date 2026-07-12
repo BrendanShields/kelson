@@ -750,6 +750,50 @@
       "status": "fixed",
       "id": "F-208",
       "fix_commit": "173069468cab65b4eae114774fb3247d00c42fa4"
+    },
+    {
+      "task": "chat-slice4-genui-rules",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-35"
+      ],
+      "summary": "three obligation-coverage gaps: user-entry identity never asserted, empty-assistant yields-nothing asserted as decision-kind only, keyed-node id-stability asserted by frame proxy that cannot distinguish remount",
+      "root_cause": "test_blindspot",
+      "fix": "explicit identity asserts for user/info/tool; transcriptEntryLines []-assert; node-reference toBe across streaming updates",
+      "status": "fixed",
+      "id": "F-209",
+      "fix_commit": "c6f8250bc84f15b9bd34169f0b968a0c81abb857"
+    },
+    {
+      "task": "chat-slice4-genui-rules",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-31",
+        "UX-35"
+      ],
+      "summary": "UX-31 deferral pointer went stale when slice 4 landed and re-deferred T2.2(b)/(c) onward",
+      "root_cause": "spec_gap",
+      "fix": "UX-31 repointed at UX-35 recorded deferrals",
+      "status": "fixed",
+      "id": "F-210",
+      "fix_commit": "c6f8250bc84f15b9bd34169f0b968a0c81abb857"
+    },
+    {
+      "task": "chat-slice4-genui-rules",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-35",
+        "UX-29"
+      ],
+      "summary": "unstyled SyntaxStyle decision unrecorded (marker concealment without styling; a future themed SyntaxStyle would bypass resolveColor NO_COLOR mechanism); streaming never finalized; native handle never destroyed",
+      "root_cause": "unrecorded_deferral",
+      "fix": "UX-35 pins the unstyled decision + resolveColor integration path + never-finalize; handle lifetime noted (process-scoped)",
+      "status": "fixed",
+      "id": "F-211",
+      "fix_commit": "c6f8250bc84f15b9bd34169f0b968a0c81abb857"
     }
   ]
 }

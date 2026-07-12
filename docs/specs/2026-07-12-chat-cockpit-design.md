@@ -105,12 +105,14 @@ it: hints are session events on the chain, validated against the same schema.
    model — no per-turn routing decision exists to display until AGT-10 feeds
    chat; `/route` keeps its transcript dispatch. Rail badges below 100 cols
    also trimmed (speculative); the rail simply hides.
-4. **chat-genui-rules** — composer + rule table; carries the T2.2(b) diff-typed
-   edit/write results and T2.2(c) reverse-search deferred out of slice 2
-   (recorded 2026-07-13), plus assistant markdown rendering. Slice 2 also
-   deferred the `@opentui/keymap` adoption — a focus-switched keypress handler
-   covers the shell's six bindings; adopt keymap when overlay layers multiply
-   modes (slice 3+).
+4. **chat-genui-rules** — composer + rule table (UX-35). Landed 2026-07-13
+   with rule 1 (assistant → markdown) only; the gates-panel/bench/budget-cap/
+   fork-auto-surface rules recorded deferred — no in-chat signal exists for
+   any of them yet (gates/evals/forks happen out-of-process, no session cap
+   exists). T2.2(b) diff-typed edit/write results deferred again: tool
+   outputs are one-line confirmations, so diff rendering needs tool-call-args
+   plumbing — its own future slice. T2.2(c) reverse-search deferred (input
+   feature). Slice 2's `@opentui/keymap` deferral stands.
 5. **chat-visualizer** — shader + degrade ladder.
 6. **chat-failure-ux** — error panels (429 retry countdown), permission/budget
    prompts as styled panels.

@@ -96,14 +96,39 @@ export const costText = (args: {
 };
 
 // UX-31: transcript as role-tagged lines. The selection accents only while
-// transcript-focused (divergence-pinned).
+// transcript-focused (divergence-pinned). Per-entry form exported for the
+// UX-35 composer's identity path (one fold implementation, F-085).
+export const transcriptEntryLines = (
+  model: ChatModel,
+  index: number,
+): ViewLine[] => {
+  const folds = foldableIndices(model.entries);
+  const selectedEntry =
+    model.focus === "transcript" && folds.length > 0
+      ? folds[Math.min(model.selected, folds.length - 1)]
+      : undefined;
+  const e = model.entries[index];
+  if (e === undefined) return [];
+  return entryLines(e, index, selectedEntry);
+};
+
 export const transcriptLines = (model: ChatModel): ViewLine[] => {
   const folds = foldableIndices(model.entries);
   const selectedEntry =
     model.focus === "transcript" && folds.length > 0
       ? folds[Math.min(model.selected, folds.length - 1)]
       : undefined;
-  return model.entries.flatMap((e, i): ViewLine[] => {
+  return model.entries.flatMap((e, i): ViewLine[] =>
+    entryLines(e, i, selectedEntry),
+  );
+};
+
+const entryLines = (
+  e: ChatModel["entries"][number],
+  i: number,
+  selectedEntry: number | undefined,
+): ViewLine[] => {
+  return ((): ViewLine[] => {
     if (e.kind === "user")
       return [
         [
@@ -154,7 +179,7 @@ export const transcriptLines = (model: ChatModel): ViewLine[] => {
             .map((line): ViewLine => [{ role: "dim", text: `  ${line}` }]),
         ]
       : [summary];
-  });
+  })();
 };
 
 // UX-30/31: ticker — spinner segment only while busy; state word otherwise.
