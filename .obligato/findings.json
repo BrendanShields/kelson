@@ -808,7 +808,7 @@
       "fix": "shared chatState derivation, ask checked before busy, feeding both viz pane and ticker; clause pins precedence; reducer-driven paused obligation arm",
       "status": "fixed",
       "id": "F-212",
-      "fix_commit": null
+      "fix_commit": "342aec5ddb5c75007efee0143193fbc4482665de"
     },
     {
       "task": "chat-slice5-visualizer",
@@ -823,7 +823,7 @@
       "fix": "pointer added to UX-32 obligation per the UX-30/31 precedent",
       "status": "fixed",
       "id": "F-213",
-      "fix_commit": null
+      "fix_commit": "342aec5ddb5c75007efee0143193fbc4482665de"
     }
   ]
 }
