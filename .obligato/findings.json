@@ -610,7 +610,7 @@
       "fix": "presence semantics pinned in UX-29 (any value incl. empty), resolveColor uses !== undefined, NO_COLOR=\"\" obligation arm added",
       "status": "fixed",
       "id": "F-198",
-      "fix_commit": "de01635bc9ddf869ff2a788abb7d4b9b49004797"
+      "fix_commit": "33949a562b1b3386c3944a19aadd6b979ebeb147"
     },
     {
       "task": "chat-slice1-tokens-widgets",
@@ -624,7 +624,7 @@
       "fix": "clause pins recursive explicitly; test uses readdirSync recursive with a non-empty file-list assertion",
       "status": "fixed",
       "id": "F-199",
-      "fix_commit": "de01635bc9ddf869ff2a788abb7d4b9b49004797"
+      "fix_commit": "33949a562b1b3386c3944a19aadd6b979ebeb147"
     },
     {
       "task": "chat-slice1-tokens-widgets",
@@ -638,7 +638,7 @@
       "fix": "marker set derived from CHAT_THEME.glyphs minus recorded prose-safe exclusions (sep, spin, bar), pinned in clause + obligation",
       "status": "fixed",
       "id": "F-200",
-      "fix_commit": "de01635bc9ddf869ff2a788abb7d4b9b49004797"
+      "fix_commit": "33949a562b1b3386c3944a19aadd6b979ebeb147"
     },
     {
       "task": "chat-slice1-tokens-widgets",
@@ -652,7 +652,7 @@
       "fix": "panel³ fixture routed through JSON.parse(JSON.stringify) + deep-equal in the obligation test",
       "status": "fixed",
       "id": "F-201",
-      "fix_commit": "de01635bc9ddf869ff2a788abb7d4b9b49004797"
+      "fix_commit": "33949a562b1b3386c3944a19aadd6b979ebeb147"
     },
     {
       "task": "chat-slice1-tokens-widgets",
@@ -664,7 +664,7 @@
       "fix": "strict + exactOptionalPropertyTypes added to tsconfig.app.json and tsconfig.node.json; zero source changes needed",
       "status": "fixed",
       "id": "F-202",
-      "fix_commit": "de01635bc9ddf869ff2a788abb7d4b9b49004797"
+      "fix_commit": "33949a562b1b3386c3944a19aadd6b979ebeb147"
     },
     {
       "task": "chat-slice2-cockpit-shell",
@@ -678,7 +678,7 @@
       "fix": "release only when scrollTop < min(lastFollowClamp, maxScrollTop); shrink fixture obligation arm (expand fold, collapse, append, newest still visible)",
       "status": "fixed",
       "id": "F-203",
-      "fix_commit": null
+      "fix_commit": "33949a562b1b3386c3944a19aadd6b979ebeb147"
     },
     {
       "task": "chat-slice2-cockpit-shell",
@@ -693,7 +693,7 @@
       "fix": "arm moved to UX-30 obligation line; test relocated to UX-30.test.ts with a cross-reference note left in UX-31",
       "status": "fixed",
       "id": "F-204",
-      "fix_commit": null
+      "fix_commit": "33949a562b1b3386c3944a19aadd6b979ebeb147"
     }
   ]
 }
