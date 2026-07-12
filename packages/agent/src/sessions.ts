@@ -1,6 +1,10 @@
 import type { Database } from "bun:sqlite";
 import { openTask, startSession, storeSnapshot, ulid } from "@obligato/kernel";
-import { SessionEvent, type SessionEventKind } from "@obligato/schemas";
+import {
+  SessionEvent,
+  type SessionEventKind,
+  type SessionTreeNode,
+} from "@obligato/schemas";
 
 export class SessionNotPausedError extends Error {
   constructor(actual: string) {
@@ -79,6 +83,47 @@ export const currentHead = (events: SessionEvent[]): string | null => {
       return (e.payload.head_event_id as string) ?? null;
   }
   return null;
+};
+
+// UX-34: session tree — flat nodes in input order, retained set = root +
+// fork points (≥2 children) + childless leaves; head_moved bookkeeping rows
+// excluded before derivation. Divergence-pinned 2026-07-13: input order (not
+// a DFS re-sort — F-060 rowid discipline); the head never forces retention.
+export const buildSessionTree = (
+  events: SessionEvent[],
+  headId: string | null,
+): SessionTreeNode[] => {
+  const chainEvents = events.filter((e) => e.kind !== "head_moved");
+  const childCount = new Map<string, number>();
+  for (const e of chainEvents)
+    if (e.parent_id !== null)
+      childCount.set(e.parent_id, (childCount.get(e.parent_id) ?? 0) + 1);
+  const retained = new Set(
+    chainEvents
+      .filter(
+        (e) =>
+          e.parent_id === null ||
+          (childCount.get(e.id) ?? 0) >= 2 ||
+          (childCount.get(e.id) ?? 0) === 0,
+      )
+      .map((e) => e.id),
+  );
+  const byId = new Map(chainEvents.map((e) => [e.id, e]));
+  const nearestRetained = (parentId: string | null): string | null => {
+    let cursor = parentId;
+    while (cursor !== null) {
+      if (retained.has(cursor)) return cursor;
+      cursor = byId.get(cursor)?.parent_id ?? null;
+    }
+    return null;
+  };
+  return chainEvents
+    .filter((e) => retained.has(e.id))
+    .map((e) => ({
+      id: e.id,
+      label: `${e.kind} ${e.id.slice(0, 8)}${e.id === headId ? " ← head" : ""}`,
+      parent: e.parent_id === null ? null : nearestRetained(e.parent_id),
+    }));
 };
 
 // SES-2/6: walk the parent chain from a GIVEN head -> root, reversed. Used for

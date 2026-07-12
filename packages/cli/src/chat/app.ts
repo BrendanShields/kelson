@@ -4,8 +4,10 @@ import {
   answerPermission,
   appendEvent,
   appendModelSwitch,
+  buildSessionTree,
   continueSession,
   createAgentSession,
+  currentHead,
   listEvents,
   reconstruct,
   runTurn,
@@ -31,6 +33,7 @@ import {
   update,
 } from "./model.js";
 import { createSurface } from "./surface.js";
+import { treePaneLines } from "./view.js";
 
 // UX-14: thin OpenTUI shell over the pure reducer in model.ts. The shell
 // only feeds ChatMsg events and executes ChatEffects; every state
@@ -84,7 +87,12 @@ export const chatCommand = async (
   });
   const slash = slashTargets(commands);
 
-  const surface = createSurface(renderer);
+  // UX-34: the rail tree pane reads the live chain through the same builder
+  // as `obligato session tree` (F-085).
+  const surface = createSurface(renderer, process.env, () => {
+    const events = listEvents(setup.deps.db, sessionId);
+    return treePaneLines(buildSessionTree(events, currentHead(events)));
+  });
   const { input } = surface;
   input.focus();
 
@@ -109,6 +117,11 @@ export const chatCommand = async (
   const tickTimer = setInterval(() => {
     if (model.busy) dispatch({ type: "tick" });
   }, 100);
+
+  // UX-32: the rail's width gate must re-evaluate on terminal resize — OpenTUI
+  // re-lays-out with zero dispatch, so without this an open rail survives a
+  // shrink below 100 columns (F-205, the F-088 non-user-event class again).
+  renderer.on("resize", redraw);
 
   const showAsk = (): void => {
     if (!model.ask || askMenu) return;

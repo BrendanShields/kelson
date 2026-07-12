@@ -145,6 +145,17 @@
         "UX-31"
       ],
       "completed_at": "2026-07-12T16:23:17Z"
+    },
+    {
+      "id": "chat-slice3-live-rail",
+      "title": "Slice 3: live rail — budget burn + session tree panes",
+      "state": "completed",
+      "clauses": [
+        "UX-32",
+        "UX-33",
+        "UX-34"
+      ],
+      "completed_at": "2026-07-12T16:54:10Z"
     }
   ]
 }

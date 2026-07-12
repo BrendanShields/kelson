@@ -31,6 +31,7 @@ import {
   Session,
   SessionEvent,
   SessionEventKind,
+  SessionTreeNode,
   SharedSessionEvent,
   SharedStepEvent,
   StepEvent,
@@ -977,6 +978,14 @@ const arbs: Record<string, [z.ZodType, fc.Arbitrary<unknown>]> = {
     fc.record({
       schema_version: fc.constant(1 as const),
       root: chatWidgetArb,
+    }),
+  ],
+  SessionTreeNode: [
+    SessionTreeNode,
+    fc.record({
+      id: ulid,
+      label: nonEmpty,
+      parent: fc.option(ulid, { nil: null }),
     }),
   ],
 };

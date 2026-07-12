@@ -822,7 +822,10 @@ const help = (): void => {
         ["auth", "login <anthropic|ollama> — configure the native runtime"],
         ["run", 'run -p "<task>" — headless native session (--json)'],
         ["chat", "interactive native-runtime chat (TTY)"],
-        ["session", "fork | compare | compact — tree-session ops"],
+        [
+          "session",
+          "tree | fork | compare | compact — tree-session ops (UX-34)",
+        ],
         ["promote", "<session> --suite <dir> — session → benchmark task"],
         ["bench", "--suite <dir> — native vs claude head-to-head (EVP-11)"],
         ["doctor", "self-check: each failing component and its fix"],

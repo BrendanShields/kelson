@@ -694,6 +694,62 @@
       "status": "fixed",
       "id": "F-204",
       "fix_commit": "33949a562b1b3386c3944a19aadd6b979ebeb147"
+    },
+    {
+      "task": "chat-slice3-live-rail",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "UX-32"
+      ],
+      "summary": "rail width gate evaluated only on reducer dispatch — OpenTUI re-lays-out on terminal resize with zero dispatch, so an open rail survived a shrink below 100 cols and a grow-back never restored it (F-088/F-203 non-user-event class, third recurrence)",
+      "root_cause": "design_bug",
+      "fix": "renderer.on(resize, redraw) in app.ts; clause pins resize re-evaluation; live-resize obligation arm via the harness resize API",
+      "status": "fixed",
+      "id": "F-205",
+      "fix_commit": "173069468cab65b4eae114774fb3247d00c42fa4"
+    },
+    {
+      "task": "chat-slice3-live-rail",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-33"
+      ],
+      "summary": "avg/max scope two-readable (all steps vs 14-step window) and the fixture used 3 steps — a window-scoped implementation passed every test",
+      "root_cause": "spec_gap",
+      "fix": "clause pins all-priced-steps-never-the-window; 16-step discriminating fixture whose window and all-steps avg differ",
+      "status": "fixed",
+      "id": "F-206",
+      "fix_commit": "173069468cab65b4eae114774fb3247d00c42fa4"
+    },
+    {
+      "task": "chat-slice3-live-rail",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-34"
+      ],
+      "summary": "--json obligation arm was discharged by the implementation own parse call — test shared the check with the code under test (F-031 class)",
+      "root_cause": "test_blindspot",
+      "fix": "test validates parsed stdout against z.array(SessionTreeNode) independently",
+      "status": "fixed",
+      "id": "F-207",
+      "fix_commit": "173069468cab65b4eae114774fb3247d00c42fa4"
+    },
+    {
+      "task": "chat-slice3-live-rail",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-34"
+      ],
+      "summary": "treeDepth duplicated in session.ts and treePaneLines inline walk (F-085-adjacent)",
+      "root_cause": "process_gap",
+      "fix": "one treeDepth exported from chat/view.ts, both consumers import it",
+      "status": "fixed",
+      "id": "F-208",
+      "fix_commit": "173069468cab65b4eae114774fb3247d00c42fa4"
     }
   ]
 }

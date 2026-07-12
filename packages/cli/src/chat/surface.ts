@@ -16,12 +16,17 @@ import {
 import { type ChatModel } from "./model.js";
 import { CHAT_THEME, resolveColor } from "./theme.js";
 import {
+  budgetPane,
   emptyState,
   headerLine,
   tickerLine,
   transcriptLines,
   type ViewLine,
 } from "./view.js";
+
+// UX-34: the tree pane's lines are injected by app.ts (the builder lives in
+// packages/agent and reads the session chain — the surface stays data-blind).
+export type RailPaneSource = () => ViewLine[];
 
 type Env = Record<string, string | undefined>;
 
@@ -53,6 +58,7 @@ export interface ChatSurface {
 export const createSurface = (
   renderer: CliRenderer,
   env: Env = process.env,
+  treeSource: RailPaneSource = () => [],
 ): ChatSurface => {
   const header = new TextRenderable(renderer, {
     id: "chat-header",
@@ -87,12 +93,47 @@ export const createSurface = (
     content: "",
     flexShrink: 0,
   });
+  // UX-32: middle row hosts transcript + the 30-column rail.
+  const middle = new BoxRenderable(renderer, {
+    id: "chat-middle",
+    flexGrow: 1,
+    flexDirection: "row",
+  });
+  const rail = new BoxRenderable(renderer, {
+    id: "chat-rail",
+    width: 30,
+    flexShrink: 0,
+    border: true,
+    title: "",
+  });
   inputRow.add(prompt);
   inputRow.add(input);
+  middle.add(scroll);
+  middle.add(rail);
   renderer.root.add(header);
-  renderer.root.add(scroll);
+  renderer.root.add(middle);
   renderer.root.add(inputRow);
   renderer.root.add(ticker);
+
+  let railIds: string[] = [];
+  const setRail = (model: ChatModel): void => {
+    const open = model.rail !== null && renderer.width >= 100;
+    rail.visible = open;
+    if (!open) return;
+    rail.title = ` ${model.rail} `;
+    const lines = model.rail === "budget" ? budgetPane(model) : treeSource();
+    for (const id of railIds) rail.remove(id);
+    railIds = lines.map((_, i) => `rail-${i}`);
+    lines.forEach((line, i) =>
+      rail.add(
+        new TextRenderable(renderer, {
+          id: `rail-${i}`,
+          content: styledFrom(line, env),
+          marginLeft: 1,
+        }),
+      ),
+    );
+  };
 
   // Children live on scroll.content — adding to the ScrollBox itself lands
   // them beside the scrollbar in the wrapper (caught by the UX-30 snapshot).
@@ -180,6 +221,7 @@ export const createSurface = (
       [{ role: "accent", text: ` ${CHAT_THEME.glyphs.user} ` }],
       env,
     );
+    setRail(model);
 
     if (model.entries.length === 0) {
       const meta = { modelId: model.modelId, ...model.meta };
