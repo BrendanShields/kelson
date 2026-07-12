@@ -83,7 +83,7 @@ export interface ChatModel {
   tickCount: number;
   // UX-32/33: rail tab state + per-step cost history (null = unpriced,
   // PROV-3 — never coerced to 0).
-  rail: null | "budget" | "tree";
+  rail: null | "budget" | "tree" | "viz";
   stepCosts: (number | null)[];
   meta: ChatMetaInfo;
 }
@@ -132,6 +132,7 @@ export const HELP_TEXT = [
   "/route <flags> — routing transparency (same as `obligato route explain`)",
   "/budget — toggle the burn rail pane (UX-33)",
   "/tree — toggle the session tree rail pane (UX-34)",
+  "/viz — toggle the agent visualizer rail pane (UX-36)",
   "/exit — leave the chat",
 ].join("\n");
 
@@ -212,8 +213,8 @@ export const update = (
       // UX-32: /budget and /tree toggle the rail — same tab closes, other
       // tab switches. Chat-local view state (recorded: no CLI twin exists
       // for /budget; /tree's CLI twin shares the UX-34 builder).
-      if (text === "/budget" || text === "/tree") {
-        const tab = text.slice(1) as "budget" | "tree";
+      if (text === "/budget" || text === "/tree" || text === "/viz") {
+        const tab = text.slice(1) as "budget" | "tree" | "viz";
         return {
           model: { ...model, rail: model.rail === tab ? null : tab },
           effects: [],

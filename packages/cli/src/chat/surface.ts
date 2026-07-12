@@ -25,6 +25,7 @@ import {
   tickerLine,
   transcriptEntryLines,
   type ViewLine,
+  vizPane,
 } from "./view.js";
 
 // UX-34: the tree pane's lines are injected by app.ts (the builder lives in
@@ -124,7 +125,12 @@ export const createSurface = (
     rail.visible = open;
     if (!open) return;
     rail.title = ` ${model.rail} `;
-    const lines = model.rail === "budget" ? budgetPane(model) : treeSource();
+    const lines =
+      model.rail === "budget"
+        ? budgetPane(model)
+        : model.rail === "viz"
+          ? vizPane(model, env)
+          : treeSource();
     for (const id of railIds) rail.remove(id);
     railIds = lines.map((_, i) => `rail-${i}`);
     lines.forEach((line, i) =>

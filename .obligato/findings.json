@@ -794,6 +794,36 @@
       "status": "fixed",
       "id": "F-211",
       "fix_commit": "c6f8250bc84f15b9bd34169f0b968a0c81abb857"
+    },
+    {
+      "task": "chat-slice5-visualizer",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "UX-36",
+        "UX-30"
+      ],
+      "summary": "busy-first state derivation made paused unreachable in production — asks arrive with busy still true (paused dispatch precedes turn_done), so both the viz pane and the ticker churned thinking through every permission ask (F-088/F-100 class: state decoration with zero discriminating coverage)",
+      "root_cause": "design_bug",
+      "fix": "shared chatState derivation, ask checked before busy, feeding both viz pane and ticker; clause pins precedence; reducer-driven paused obligation arm",
+      "status": "fixed",
+      "id": "F-212",
+      "fix_commit": "342aec5ddb5c75007efee0143193fbc4482665de"
+    },
+    {
+      "task": "chat-slice5-visualizer",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-32",
+        "UX-36"
+      ],
+      "summary": "viz truth-table arms lived in UX-36.test.ts with the pointer recorded only on the UX-36 side — UX-32 readers found a stale test file",
+      "root_cause": "process_gap",
+      "fix": "pointer added to UX-32 obligation per the UX-30/31 precedent",
+      "status": "fixed",
+      "id": "F-213",
+      "fix_commit": "342aec5ddb5c75007efee0143193fbc4482665de"
     }
   ]
 }

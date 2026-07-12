@@ -113,7 +113,14 @@ it: hints are session events on the chain, validated against the same schema.
    outputs are one-line confirmations, so diff rendering needs tool-call-args
    plumbing — its own future slice. T2.2(c) reverse-search deferred (input
    feature). Slice 2's `@opentui/keymap` deferral stands.
-5. **chat-visualizer** — shader + degrade ladder.
+5. **chat-visualizer** — landed 2026-07-13 as the ladder's tier-2: a
+   deterministic character-field visualizer (`/viz` rail tab; thinking
+   turbulence driven by tickCount, static idle/paused frames,
+   `OBLIGATO_NO_MOTION` presence pins static). Tier-1 (real `@opentui/three`
+   WebGPU shader) and the 1.5 s boot moment are **recorded deferred**: bun
+   ships no `navigator.gpu`, so the WebGPU tier cannot execute in this
+   runtime today; revisit when it lands. Idle animation deliberately absent —
+   UX-31 pins idle ticks as no-ops (calm-when-idle is the design).
 6. **chat-failure-ux** — error panels (429 retry countdown), permission/budget
    prompts as styled panels.
 7. *(gated, later)* **chat-genui-hints** — `ui_hint` events.

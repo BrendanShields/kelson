@@ -192,11 +192,13 @@ export const tickerLine = (
     costUnknown: model.costUnknown,
   });
   const spin = CHAT_THEME.glyphs.spin;
-  const state = model.busy
-    ? `${spin[model.tickCount % spin.length]} thinking ${g.sep} ${Math.floor(model.tickCount / 10)}s`
-    : model.ask !== null
-      ? "paused"
-      : "ready";
+  const derived = chatState(model);
+  const state =
+    derived === "thinking"
+      ? `${spin[model.tickCount % spin.length]} thinking ${g.sep} ${Math.floor(model.tickCount / 10)}s`
+      : derived === "paused"
+        ? "paused"
+        : "ready";
   return { left: `${cost} ${g.sep} ${state}`, right: `/help ${g.sep} esc` };
 };
 
@@ -299,3 +301,49 @@ export const headerLine = (
   left: "obligato chat",
   right: `${model.modelId} ${g.sep} ${model.meta.authKind}`,
 });
+
+// UX-36: the agent visualizer — a deterministic 26×8 character field from
+// CHAT_THEME material only. Same (state, tickCount) → byte-identical rows
+// (F-126); idle/paused static; OBLIGATO_NO_MOTION presence pins thinking to
+// the tickCount=0 frame (UX-29 presence discipline).
+export type VizState = "idle" | "thinking" | "paused";
+
+// F-212 (audit pin): a production ask arrives with busy STILL TRUE (paused
+// dispatch precedes turn_done), so paused must win over thinking — one shared
+// derivation for the viz pane and the ticker state word.
+export const chatState = (model: ChatModel): VizState =>
+  model.ask !== null ? "paused" : model.busy ? "thinking" : "idle";
+
+export const VIZ_COLS = 26;
+export const VIZ_ROWS = 8;
+
+export const vizFrame = (state: VizState, tickCount: number): string[] => {
+  const bar = CHAT_THEME.glyphs.bar;
+  if (state === "idle")
+    return [
+      ...Array.from({ length: VIZ_ROWS - 1 }, () => " ".repeat(VIZ_COLS)),
+      (bar[0] as string).repeat(VIZ_COLS),
+    ];
+  if (state === "paused")
+    return Array.from({ length: VIZ_ROWS }, () =>
+      `${g.sep} `.repeat(VIZ_COLS / 2),
+    );
+  return Array.from({ length: VIZ_ROWS }, (_, r) =>
+    Array.from({ length: VIZ_COLS }, (_, c) =>
+      (r * 31 + c * 17 + tickCount) % 5 < 2
+        ? (bar[(tickCount + r * 3 + c * 7) % bar.length] as string)
+        : " ",
+    ).join(""),
+  );
+};
+
+export const vizPane = (
+  model: ChatModel,
+  env: Record<string, string | undefined> = process.env,
+): ViewLine[] => {
+  const state = chatState(model);
+  const tick = env.OBLIGATO_NO_MOTION !== undefined ? 0 : model.tickCount;
+  const role =
+    state === "thinking" ? "accent" : state === "paused" ? "warn" : "dim";
+  return vizFrame(state, tick).map((row) => [{ role, text: row }]);
+};

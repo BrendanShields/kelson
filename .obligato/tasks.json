@@ -165,6 +165,15 @@
         "UX-35"
       ],
       "completed_at": "2026-07-12T17:17:53Z"
+    },
+    {
+      "id": "chat-slice5-visualizer",
+      "title": "Slice 5: agent visualizer + degrade ladder",
+      "state": "completed",
+      "clauses": [
+        "UX-36"
+      ],
+      "completed_at": "2026-07-12T17:35:29Z"
     }
   ]
 }
