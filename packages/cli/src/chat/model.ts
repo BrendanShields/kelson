@@ -81,6 +81,10 @@ export interface ChatModel {
   focus: "input" | "transcript";
   selected: number;
   tickCount: number;
+  // UX-32/33: rail tab state + per-step cost history (null = unpriced,
+  // PROV-3 — never coerced to 0).
+  rail: null | "budget" | "tree";
+  stepCosts: (number | null)[];
   meta: ChatMetaInfo;
 }
 
@@ -126,6 +130,8 @@ export const HELP_TEXT = [
   "/help — this help",
   "/model [id] — list registry models or switch the session model (UX-17)",
   "/route <flags> — routing transparency (same as `obligato route explain`)",
+  "/budget — toggle the burn rail pane (UX-33)",
+  "/tree — toggle the session tree rail pane (UX-34)",
   "/exit — leave the chat",
 ].join("\n");
 
@@ -143,6 +149,8 @@ export const createChat = (
   focus: "input",
   selected: 0,
   tickCount: 0,
+  rail: null,
+  stepCosts: [],
   meta: {
     authKind: "none",
     contextWindow: 0,
@@ -201,6 +209,16 @@ export const update = (
           },
           effects: [],
         };
+      // UX-32: /budget and /tree toggle the rail — same tab closes, other
+      // tab switches. Chat-local view state (recorded: no CLI twin exists
+      // for /budget; /tree's CLI twin shares the UX-34 builder).
+      if (text === "/budget" || text === "/tree") {
+        const tab = text.slice(1) as "budget" | "tree";
+        return {
+          model: { ...model, rail: model.rail === tab ? null : tab },
+          effects: [],
+        };
+      }
       if (text === "/model")
         return { model, effects: [{ type: "list_models" }] };
       if (text.startsWith("/model ")) {
@@ -313,6 +331,8 @@ export const update = (
           ...model,
           costMicroUsd: model.costMicroUsd + (msg.costMicroUsd ?? 0),
           costUnknown: model.costUnknown || msg.costMicroUsd === null,
+          // UX-33: per-step history for the burn sparkline, null preserved.
+          stepCosts: [...model.stepCosts, msg.costMicroUsd],
         },
         effects: [],
       };

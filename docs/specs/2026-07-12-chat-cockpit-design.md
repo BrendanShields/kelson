@@ -100,7 +100,11 @@ it: hints are session events on the chain, validated against the same schema.
 1. **chat-tokens+widgets** — theme token file (Quiet Pro) + `ChatWidget` schema.
 2. **chat-cockpit-shell** — panes, keymap layers, typed renderables, empty state
    (T2.2, T2.4 visuals, discoverability).
-3. **chat-live-rail** — budget/route/tree panes + honest ticker (T2.3, T2.5).
+3. **chat-live-rail** — budget + tree panes (T2.3 partial, T2.4). The `/route`
+   *overlay* is deferred (recorded 2026-07-13): chat sessions run a fixed
+   model — no per-turn routing decision exists to display until AGT-10 feeds
+   chat; `/route` keeps its transcript dispatch. Rail badges below 100 cols
+   also trimmed (speculative); the rail simply hides.
 4. **chat-genui-rules** — composer + rule table; carries the T2.2(b) diff-typed
    edit/write results and T2.2(c) reverse-search deferred out of slice 2
    (recorded 2026-07-13), plus assistant markdown rendering. Slice 2 also

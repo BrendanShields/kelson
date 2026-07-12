@@ -33,6 +33,14 @@ export const SessionEvent = z.object({
   schema_version: SchemaVersion,
 });
 
+// UX-34: session tree node — the ChatWidget `tree` variant's node shape.
+export const SessionTreeNode = z.strictObject({
+  id: Ulid,
+  label: z.string(),
+  parent: Ulid.nullable(),
+});
+export type SessionTreeNode = z.infer<typeof SessionTreeNode>;
+
 // Micro-USD per million tokens, one price per StepEvent token class.
 export const ModelPrices = z.object({
   in: MicroUsd,

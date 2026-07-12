@@ -1,12 +1,19 @@
 import {
+  buildSessionTree,
   compactSession,
   compareBranches,
+  currentHead,
   forkSession,
+  listEvents,
   promoteSession,
 } from "@obligato/agent";
 import { DEFAULT_DB_PATH, openDb } from "@obligato/kernel";
+import { SessionTreeNode } from "@obligato/schemas";
+import { z } from "zod";
 import { parseArgs } from "../args.js";
+import { treeDepth } from "../chat/view.js";
 import { write } from "../components/sink.js";
+import { emitJson } from "../output/json.js";
 import { fail } from "./common.js";
 
 const openStore = (dbPath?: string) =>
@@ -17,6 +24,21 @@ export const sessionCommand = (argv: string[]): void => {
   const [sub, ...rest] = argv;
   const { positional, named } = parseArgs(rest);
   const db = openStore(named.db as string | undefined);
+
+  if (sub === "tree") {
+    const sid =
+      positional[0] ?? fail("usage: obligato session tree <session> [--json]");
+    // UX-34: same builder as the chat rail pane (F-085 — one function).
+    const events = listEvents(db, sid as string);
+    const nodes = buildSessionTree(events, currentHead(events));
+    if (named.json === true) {
+      emitJson(z.array(SessionTreeNode).parse(nodes));
+      return;
+    }
+    for (const n of nodes)
+      write(`${"  ".repeat(treeDepth(nodes, n))}${n.label}`);
+    return;
+  }
 
   if (sub === "fork") {
     const sid =
@@ -71,7 +93,7 @@ export const sessionCommand = (argv: string[]): void => {
   }
 
   fail(
-    `unknown session subcommand: ${sub ?? "(none)"} (have: fork, compare, compact)`,
+    `unknown session subcommand: ${sub ?? "(none)"} (have: tree, fork, compare, compact)`,
   );
 };
 

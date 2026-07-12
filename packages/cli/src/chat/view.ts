@@ -175,6 +175,99 @@ export const tickerLine = (
   return { left: `${cost} ${g.sep} ${state}`, right: `/help ${g.sep} esc` };
 };
 
+// UX-33: linear min–max scaling over the window's priced values;
+// max === min maps every priced step to index 0; null renders the sep glyph.
+export const sparkline = (costs: (number | null)[]): string => {
+  const bar = CHAT_THEME.glyphs.bar;
+  const priced = costs.filter((c): c is number => c !== null);
+  const min = Math.min(...priced);
+  const max = Math.max(...priced);
+  return costs
+    .map((c) => {
+      if (c === null) return g.sep;
+      const idx =
+        max === min
+          ? 0
+          : Math.round(((c - min) / (max - min)) * (bar.length - 1));
+      return bar[idx] as string;
+    })
+    .join("");
+};
+
+// UX-33: the budget pane's data lines — spent via the SAME costText the
+// ticker uses (F-085), burn over the last 14 steps, avg/max over priced only.
+export const budgetPane = (model: ChatModel): ViewLine[] => {
+  if (model.stepCosts.length === 0)
+    return [[{ role: "dim", text: "no steps yet" }]];
+  const window = model.stepCosts.slice(-14);
+  const priced = model.stepCosts.filter((c): c is number => c !== null);
+  const unpriced = model.stepCosts.length - priced.length;
+  const usd = (v: number): string => `$${(v / 1_000_000).toFixed(4)}`;
+  const stepStats =
+    priced.length === 0
+      ? "all unpriced"
+      : `avg ${usd(priced.reduce((a, b) => a + b, 0) / priced.length)} ${g.sep} max ${usd(Math.max(...priced))}`;
+  return [
+    [
+      { role: "fg", text: "spent  " },
+      {
+        role: "accent",
+        text: costText({
+          authKind: model.meta.authKind,
+          costMicroUsd: model.costMicroUsd,
+          costUnknown: model.costUnknown,
+        }),
+      },
+    ],
+    [
+      { role: "fg", text: "burn   " },
+      { role: "accent", text: sparkline(window) },
+      { role: "dim", text: `  last ${window.length}` },
+    ],
+    [
+      { role: "fg", text: "step   " },
+      { role: "fg", text: stepStats },
+      ...(unpriced > 0
+        ? [{ role: "dim" as const, text: ` ${g.sep} ${unpriced} unpriced` }]
+        : []),
+    ],
+  ];
+};
+
+// UX-34: one depth computation for pane and CLI (audit hoist 2026-07-13 —
+// two inline walks were F-085-adjacent duplication).
+export interface TreeNodeLike {
+  id: string;
+  label: string;
+  parent: string | null;
+}
+
+export const treeDepth = (
+  nodes: TreeNodeLike[],
+  node: TreeNodeLike,
+): number => {
+  const byId = new Map(nodes.map((n) => [n.id, n]));
+  let depth = 0;
+  let cursor = node.parent;
+  while (cursor !== null) {
+    depth++;
+    cursor = byId.get(cursor)?.parent ?? null;
+  }
+  return depth;
+};
+
+// UX-34: rail tree pane — same builder output as the CLI (F-085); indent two
+// spaces per depth; the head-suffixed node carries the accent role.
+export const treePaneLines = (nodes: TreeNodeLike[]): ViewLine[] => {
+  if (nodes.length === 0) return [[{ role: "dim", text: "no events yet" }]];
+  return nodes.map((n) => [
+    {
+      role: n.label.endsWith("← head") ? ("accent" as const) : ("fg" as const),
+      text: `${"  ".repeat(treeDepth(nodes, n))}${n.label}`,
+    },
+  ]);
+};
+
 export const headerLine = (
   model: ChatModel,
 ): { left: string; right: string } => ({
