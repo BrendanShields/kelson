@@ -16,7 +16,47 @@ export type ChatEntry =
       output: string;
       expanded: boolean;
     }
-  | { kind: "info"; text: string };
+  | { kind: "info"; text: string }
+  | { kind: "error"; headline: string; hint: string | null; detail: string[] };
+
+// UX-37: ordered classification table over the raw failure message — first
+// matching row wins (the UX-35 rule-table pattern). Stack spew beyond the
+// headline + 3 detail lines is dropped from the transcript (recorded).
+const ERROR_ROWS: {
+  match: RegExp;
+  headline: (first: string) => string;
+  hint: string | null;
+}[] = [
+  {
+    match: /rate.?limit|429/i,
+    headline: () => "rate-limited — the endpoint refused the request",
+    hint: "retries exhausted; wait for the usage window to reset, then resend",
+  },
+  {
+    match: /setup-token|401|authentication/i,
+    headline: (first) => first,
+    hint: "re-mint: claude setup-token, then obligato auth login anthropic --token <new>",
+  },
+];
+
+export const classifyError = (
+  message: string,
+): { headline: string; hint: string | null; detail: string[] } => {
+  const lines = message.split("\n");
+  const first = lines[0] ?? "";
+  const detail = lines
+    .slice(1)
+    .filter((l) => l.trim() !== "")
+    .slice(0, 3);
+  for (const row of ERROR_ROWS)
+    if (row.match.test(message))
+      return { headline: row.headline(first), hint: row.hint, detail };
+  return {
+    headline: first.length > 120 ? `${first.slice(0, 120)}…` : first,
+    hint: null,
+    detail,
+  };
+};
 
 // UX-31: raw split length — a trailing newline's empty tail segment counts
 // (divergence-pinned 2026-07-13).
@@ -399,7 +439,7 @@ export const update = (
           tickCount: 0,
           entries: [
             ...model.entries,
-            { kind: "info", text: `error: ${msg.message}` },
+            { kind: "error", ...classifyError(msg.message) },
           ],
         },
         effects: [],
@@ -430,6 +470,12 @@ export const renderChat = (model: ChatModel): string => {
         : [`  ${g.fold} ${e.name} ${status} ${n} lines (enter expands)`];
     }
     if (e.kind === "info") return [e.text];
+    if (e.kind === "error")
+      return [
+        `${g.err} ${e.headline}`,
+        ...(e.hint !== null ? [`  ${e.hint}`] : []),
+        ...e.detail.map((d) => `  ${d}`),
+      ];
     return e.text === "" ? [] : [e.text];
   });
   const cost = model.costUnknown

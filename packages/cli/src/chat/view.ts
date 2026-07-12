@@ -152,6 +152,18 @@ const entryLines = (
         : e.text
             .split("\n")
             .map((line): ViewLine => [{ role: "fg", text: line }]);
+    // UX-37: error panel — err glyph headline, dim hint/detail; not foldable.
+    if (e.kind === "error")
+      return [
+        [
+          { role: "err", text: `${g.err} ` },
+          { role: "err", text: e.headline },
+        ],
+        ...(e.hint !== null
+          ? [[{ role: "dim" as const, text: `  ${e.hint}` }]]
+          : []),
+        ...e.detail.map((d): ViewLine => [{ role: "dim", text: `  ${d}` }]),
+      ];
     // tool
     const status: Seg = e.ok
       ? { role: "ok", text: g.ok }

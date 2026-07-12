@@ -121,8 +121,13 @@ it: hints are session events on the chain, validated against the same schema.
    ships no `navigator.gpu`, so the WebGPU tier cannot execute in this
    runtime today; revisit when it lands. Idle animation deliberately absent —
    UX-31 pins idle ticks as no-ops (calm-when-idle is the design).
-6. **chat-failure-ux** — error panels (429 retry countdown), permission/budget
-   prompts as styled panels.
+6. **chat-failure-ux** — landed 2026-07-13 (UX-37): classified error panels
+   (429/401/default rows, pinned strings). The retry **countdown** was
+   dropped — no retry-after plumbing exists chat-side; a static pinned hint
+   ships instead (recorded). Permission-ask and budget-pause styling recorded
+   adequate today (PERM-4's menu carries provenance per UX-P3). The viz
+   "error shockwave" state has no tier-2 counterpart — folded into UX-36's
+   tier-1 deferral (recorded).
 7. *(gated, later)* **chat-genui-hints** — `ui_hint` events.
 
 ## Verification

@@ -824,6 +824,46 @@
       "status": "fixed",
       "id": "F-213",
       "fix_commit": "342aec5ddb5c75007efee0143193fbc4482665de"
+    },
+    {
+      "task": "chat-slice6-failure-ux",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-37"
+      ],
+      "summary": "slice-6 design-doc line still promised a retry countdown + styled panels; landing annotation missing (countdown dropped — no retry-after plumbing; viz error-shockwave state half-recorded)",
+      "root_cause": "unrecorded_deferral",
+      "fix": "design doc slice-6 landing annotation records the drop + folds the shockwave state into UX-36 deferral",
+      "status": "fixed",
+      "id": "F-214",
+      "fix_commit": "db5b27f56639e174f663ab424b88fac0a84eb66a"
+    },
+    {
+      "task": "chat-slice6-failure-ux",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [],
+      "summary": "slice-6 board row staged in_progress in its landing commit (board hygiene)",
+      "root_cause": "process_gap",
+      "fix": "marked completed pre-commit",
+      "status": "fixed",
+      "id": "F-215",
+      "fix_commit": "db5b27f56639e174f663ab424b88fac0a84eb66a"
+    },
+    {
+      "task": "chat-slice6-failure-ux",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-37"
+      ],
+      "summary": "whole-message regex rows can misclassify reducer-internal errors echoing user text (unknown model x429 → rate-limited headline)",
+      "root_cause": "spec_gap",
+      "fix": "hazard recorded accepted in UX-37 (cosmetic; internal messages are one-liners)",
+      "status": "fixed",
+      "id": "F-216",
+      "fix_commit": "db5b27f56639e174f663ab424b88fac0a84eb66a"
     }
   ]
 }
