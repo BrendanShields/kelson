@@ -17,7 +17,7 @@ import {
 } from "@opentui/core";
 import { compose } from "./compose.js";
 import { type ChatModel } from "./model.js";
-import { CHAT_THEME, resolveColor } from "./theme.js";
+import { CHAT_THEME, markdownStyles, resolveColor } from "./theme.js";
 import {
   budgetPane,
   emptyState,
@@ -37,7 +37,7 @@ type Env = Record<string, string | undefined>;
 // One t-template invocation built programmatically: each segment becomes a
 // colored chunk via fg(), or a plain string when the role resolves to the
 // no-op style (NO_COLOR, UX-29).
-const styledFrom = (line: ViewLine, env: Env): string | StyledText => {
+export const styledFrom = (line: ViewLine, env: Env): string | StyledText => {
   const values = line.map((s) => {
     const color = s.role === null ? null : resolveColor(s.role, env);
     return color === null ? s.text : fg(color)(s.text);
@@ -158,10 +158,13 @@ export const createSurface = (
   >();
   let following = true;
   let lastFollowClamp = 0;
-  // One SyntaxStyle per surface, lazily created (native handle).
+  // One SyntaxStyle per surface, lazily created (native handle). UX-35
+  // (themed 2026-07-20): token styles from the theme's markdownStyles — colors
+  // resolved through resolveColor at build time, so NO_COLOR drops fg/bg while
+  // bold/italic/underline attributes stay.
   let syntax: SyntaxStyle | null = null;
   const markdownSyntax = (): SyntaxStyle => {
-    syntax ??= SyntaxStyle.create();
+    syntax ??= SyntaxStyle.fromStyles(markdownStyles(env));
     return syntax;
   };
   const setBody = (

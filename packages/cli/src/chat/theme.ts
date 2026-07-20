@@ -10,7 +10,8 @@ export type ColorRole =
   | "err"
   | "ok"
   | "dim"
-  | "fg";
+  | "fg"
+  | "surface";
 
 export type GlyphRole =
   | "user"
@@ -38,6 +39,7 @@ export const CHAT_THEME: ChatTheme = {
     ok: "#7fc98a",
     dim: "#5c6480",
     fg: "#c3c9dd",
+    surface: "#1a2233",
   },
   glyphs: {
     user: "❯",
@@ -63,3 +65,35 @@ export const resolveColor = (
   env: Record<string, string | undefined> = process.env,
 ): string | null =>
   env.NO_COLOR !== undefined ? null : CHAT_THEME.colors[role];
+
+// UX-35 (themed 2026-07-20): the markdown token style map, colors resolved at
+// build time through resolveColor so NO_COLOR yields the same map minus
+// fg/bg — attributes (bold/italic/underline) are structure, never stripped.
+export interface MarkdownTokenStyle {
+  fg?: string;
+  bg?: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+}
+
+export const markdownStyles = (
+  env: Record<string, string | undefined> = process.env,
+): Record<string, MarkdownTokenStyle> => {
+  const c = (role: ColorRole): { fg?: string } => {
+    const v = resolveColor(role, env);
+    return v === null ? {} : { fg: v };
+  };
+  const b = (role: ColorRole): { bg?: string } => {
+    const v = resolveColor(role, env);
+    return v === null ? {} : { bg: v };
+  };
+  return {
+    "markup.heading": { bold: true, underline: true },
+    "markup.strong": { bold: true },
+    "markup.italic": { italic: true },
+    "markup.raw": { ...c("tool"), ...b("surface") },
+    "markup.raw.block": { ...c("tool"), ...b("surface") },
+    "markup.link.url": { ...c("accent"), underline: true },
+  };
+};

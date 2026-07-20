@@ -360,4 +360,33 @@ export const CORE_TOOLS: AgentTool[] = [
       );
     },
   },
+  {
+    // AGT-19: advisory session task list — each call replaces the whole list.
+    // The output serialization is a contract: UX-36's chat reducer parses it.
+    name: "todo",
+    description:
+      "Maintain your task list for the operator. Send the FULL list every call (it replaces the previous one): items with text and state pending|active|done. Update it when you start or finish a task.",
+    params: z.object({
+      items: z.array(
+        z.object({
+          // Newline-free: the serialization is line-delimited — an embedded
+          // \n would forge extra lines in the UX-36 parser (audit 2026-07-20).
+          text: z
+            .string()
+            .min(1)
+            .refine((t) => !t.includes("\n"), "text must be a single line"),
+          state: z.enum(["pending", "active", "done"]),
+        }),
+      ),
+    }),
+    primaryArg: (i) => `${(i.items as unknown[]).length} items`,
+    run: (i) => {
+      const items = i.items as { text: string; state: string }[];
+      if (items.length === 0) return "(no tasks)";
+      const marker = { pending: "[ ]", active: "[>]", done: "[x]" } as const;
+      return items
+        .map((t) => `${marker[t.state as keyof typeof marker]} ${t.text}`)
+        .join("\n");
+    },
+  },
 ];

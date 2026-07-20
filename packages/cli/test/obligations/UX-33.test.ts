@@ -22,7 +22,7 @@ const paneText = (m: ChatModel): string =>
 
 describe("UX-33: per-step cost retention + budget pane", () => {
   it("stepCosts retains values in order with null preserved", () => {
-    const m = costs(createChat("mock-m"), [100, null, 250]);
+    const m = costs(createChat("mock-m", {}, []), [100, null, 250]);
     // revert-check: coerce null to 0 in the reducer (PROV-3 violation) →
     // the null equality fails.
     expect(m.stepCosts).toEqual([100, null, 250]);
@@ -40,7 +40,7 @@ describe("UX-33: per-step cost retention + budget pane", () => {
 
   it("a 20-step history windows to the last 14", () => {
     const values = Array.from({ length: 20 }, (_, i) => i * 10);
-    const m = costs(createChat("mock-m"), values);
+    const m = costs(createChat("mock-m", {}, []), values);
     const burn =
       budgetPane(m)[1]
         ?.map((s) => s.text)
@@ -51,7 +51,7 @@ describe("UX-33: per-step cost retention + budget pane", () => {
   });
 
   it("avg/max over priced steps only, unpriced count appended", () => {
-    const m = costs(createChat("mock-m"), [100_000, null, 300_000]);
+    const m = costs(createChat("mock-m", {}, []), [100_000, null, 300_000]);
     const text = paneText(m);
     // avg over priced = 200000µ = $0.2000; max = $0.3000; 1 unpriced.
     expect(text).toContain("avg $0.2000");
@@ -65,7 +65,7 @@ describe("UX-33: per-step cost retention + budget pane", () => {
     // all-steps avg = (2×1_000_000 + 14×100_000)/16 = $0.2125;
     // window-scoped avg would be $0.1000 — the fixture discriminates (F-100).
     const values = [1_000_000, 1_000_000, ...Array(14).fill(100_000)];
-    const m = costs(createChat("mock-m"), values);
+    const m = costs(createChat("mock-m", {}, []), values);
     const text = paneText(m);
     expect(text).toContain("avg $0.2125");
     // revert-check: scope stats to the window → avg $0.1000 and max $0.1000.
@@ -74,13 +74,13 @@ describe("UX-33: per-step cost retention + budget pane", () => {
 
   it("spent line uses the shared costText (subscription ~ prefix flows through)", () => {
     const m = costs(
-      createChat("mock-m", { authKind: "subscription" }),
+      createChat("mock-m", { authKind: "subscription" }, []),
       [123_400],
     );
     expect(paneText(m)).toContain("~$0.1234");
   });
 
   it("zero steps renders 'no steps yet'", () => {
-    expect(paneText(createChat("mock-m"))).toBe("no steps yet");
+    expect(paneText(createChat("mock-m", {}, []))).toBe("no steps yet");
   });
 });

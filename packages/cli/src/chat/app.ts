@@ -21,12 +21,14 @@ import {
 } from "@opentui/core";
 import { setupAgent, systemPromptFor } from "../agent/common.js";
 import type { DispatchTable } from "../wizards.js";
+import { type CommandMenu, createCommandMenu, handleEscape } from "./menu.js";
 import {
   askProvenanceLabel,
   askRuleOf,
   type ChatEffect,
   type ChatModel,
   type ChatMsg,
+  classifyError,
   createChat,
   listModels,
   slashTargets,
@@ -34,6 +36,34 @@ import {
 } from "./model.js";
 import { createSurface } from "./surface.js";
 import { treePaneLines } from "./view.js";
+
+// UX-39: fatal errors restore the terminal before exiting — an upstream crash
+// mid-render (createOptimizedBuffer, 2026-07-20) left mouse-tracking escapes
+// spewing into the shell. Once-latched; destroy failing never blocks the exit.
+export const fatalGuard = (
+  renderer: { destroy: () => void },
+  write: (line: string) => void,
+  exit: (code: number) => void,
+): ((err: unknown) => void) => {
+  let ran = false;
+  return (err) => {
+    if (!ran) {
+      ran = true;
+      try {
+        renderer.destroy();
+      } catch {
+        // KERN-1 applied to the crash path: the exit below must still run.
+      }
+      try {
+        const message = err instanceof Error ? err.message : String(err);
+        write(`fatal: ${classifyError(message).headline}\n`);
+      } catch {
+        // Never crash the crash handler.
+      }
+    }
+    exit(1);
+  };
+};
 
 // UX-14: thin OpenTUI shell over the pure reducer in model.ts. The shell
 // only feeds ChatMsg events and executes ChatEffects; every state
@@ -62,6 +92,14 @@ export const chatCommand = async (
   let head: string | null = startHead;
 
   const renderer = await createCliRenderer({ exitOnCtrlC: false });
+  // UX-39: recorded wiring-untested — the guard function carries all behavior.
+  const onFatal = fatalGuard(
+    renderer,
+    (line) => void process.stderr.write(line),
+    (code) => process.exit(code),
+  );
+  process.on("uncaughtException", onFatal);
+  process.on("unhandledRejection", onFatal);
   // UX-17: a continued session's active model derives from the chain.
   const startingModel =
     sessionModelOf(reconstruct(listEvents(setup.deps.db, sessionId))) ??
@@ -79,13 +117,17 @@ export const chatCommand = async (
   } catch {
     branch = null;
   }
-  let model = createChat(startingModel, {
-    authKind: setup.authKind,
-    contextWindow: setup.entry.context_window,
-    repoName: basename(setup.root),
-    branch,
-  });
   const slash = slashTargets(commands);
+  let model = createChat(
+    startingModel,
+    {
+      authKind: setup.authKind,
+      contextWindow: setup.entry.context_window,
+      repoName: basename(setup.root),
+      branch,
+    },
+    Object.keys(slash),
+  );
 
   // UX-34: the rail tree pane reads the live chain through the same builder
   // as `obligato session tree` (F-085).
@@ -97,12 +139,34 @@ export const chatCommand = async (
   input.focus();
 
   let askMenu: SelectRenderable | null = null;
+  let cmdMenu: CommandMenu | null = null;
   const redraw = (): void => {
     surface.update(model);
     // UX-31: focus follows the reducer — transcript focus blurs the input so
     // j/k/enter act on the transcript instead of typing.
-    if (model.focus === "input" && !askMenu) input.focus();
+    if (model.focus === "input" && !askMenu && !cmdMenu?.mounted())
+      input.focus();
     else input.blur();
+  };
+
+  // UX-38: at most one command menu mounts at a time — a second open request
+  // while mounted is a no-op.
+  const openMenu = (): void => {
+    if (cmdMenu?.mounted() || askMenu) return;
+    input.blur();
+    cmdMenu = createCommandMenu(
+      renderer,
+      process.env,
+      (command) => {
+        cmdMenu = null;
+        input.focus();
+        dispatch({ type: "submit", text: command });
+      },
+      () => {
+        cmdMenu = null;
+        input.focus();
+      },
+    );
   };
 
   const dispatch = (msg: ChatMsg): void => {
@@ -175,6 +239,7 @@ export const chatCommand = async (
       ...setup.deps,
       sessionId,
       onDelta: (text) => dispatch({ type: "delta", text }),
+      onToolStart: (name, arg) => dispatch({ type: "tool_start", name, arg }),
       onToolResult: (name, ok, output) =>
         dispatch({ type: "tool_result", name, ok, output: output ?? "" }),
       onStepCost: (costMicroUsd) =>
@@ -208,7 +273,9 @@ export const chatCommand = async (
   };
 
   const runEffect = async (effect: ChatEffect): Promise<void> => {
-    if (effect.type === "exit") {
+    if (effect.type === "menu") {
+      openMenu();
+    } else if (effect.type === "exit") {
       clearInterval(tickTimer);
       renderer.destroy();
       process.exit(0);
@@ -236,6 +303,8 @@ export const chatCommand = async (
     } else if (effect.type === "dispatch") {
       const target = slash[`/${effect.command}`];
       if (!target) {
+        // UX-38: unreachable — the reducer gates on knownDispatch (same key
+        // set) and opens the menu itself; this stays as a defensive error.
         dispatch({
           type: "error",
           message: `unknown command /${effect.command}`,
@@ -299,12 +368,22 @@ export const chatCommand = async (
     dispatch({ type: "submit", text });
   });
   renderer.keyInput.on("keypress", (key: { name?: string; ctrl?: boolean }) => {
-    if (key.name === "escape" || (key.ctrl === true && key.name === "c")) {
+    if (key.ctrl === true && key.name === "c") {
       clearInterval(tickTimer);
       renderer.destroy();
       process.exit(0);
     }
-    if (askMenu) return; // ask menu owns the keys while mounted
+    // UX-38: a mounted menu owns escape (closes it); a mounted ask-menu
+    // suppresses esc-exit (answer explicitly); only bare esc exits the chat.
+    if (key.name === "escape") {
+      handleEscape(cmdMenu, askMenu !== null, () => {
+        clearInterval(tickTimer);
+        renderer.destroy();
+        process.exit(0);
+      });
+      return;
+    }
+    if (askMenu || cmdMenu?.mounted() === true) return; // menus own the keys
     // UX-31: tab always toggles focus; j/k/enter go to the reducer only while
     // transcript-focused (otherwise they type into the input normally).
     if (key.name === "tab") dispatch({ type: "key", key: "tab" });

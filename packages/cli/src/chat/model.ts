@@ -125,12 +125,50 @@ export interface ChatModel {
   // PROV-3 — never coerced to 0).
   rail: null | "budget" | "tree" | "viz";
   stepCosts: (number | null)[];
+  // UX-38: dispatch targets seeded at session start (slashTargets keys) so
+  // the unknown-command arm is reducer-owned and headlessly testable.
+  knownDispatch: string[];
+  // UX-36: the cockpit's data — tool activity (start/end in tick units) and
+  // the AGT-19 advisory task list parsed from todo tool results.
+  activity: ActivityItem[];
+  todos: TodoItem[];
   meta: ChatMetaInfo;
 }
+
+export interface ActivityItem {
+  name: string;
+  arg: string;
+  startTick: number;
+  endTick: number | null;
+  ok: boolean | null;
+}
+
+export interface TodoItem {
+  text: string;
+  state: "pending" | "active" | "done";
+}
+
+// UX-36: consumer of the AGT-19 canonical serialization — `[ ] / [>] / [x]`
+// lines; "(no tasks)" (or empty) is the empty list; unrecognized lines are
+// skipped (KERN-1 never-crash). Format changes are paired AGT-19/UX-36 edits.
+export const parseTodos = (output: string): TodoItem[] => {
+  const states: Record<string, TodoItem["state"]> = {
+    "[ ]": "pending",
+    "[>]": "active",
+    "[x]": "done",
+  };
+  return output.split("\n").flatMap((line) => {
+    const state = states[line.slice(0, 3)];
+    return state !== undefined && line.length > 4
+      ? [{ text: line.slice(4), state }]
+      : [];
+  });
+};
 
 export type ChatMsg =
   | { type: "submit"; text: string }
   | { type: "delta"; text: string }
+  | { type: "tool_start"; name: string; arg: string }
   | { type: "tool_result"; name: string; ok: boolean; output: string }
   | { type: "toggle_fold"; index: number }
   | { type: "key"; key: "tab" | "j" | "k" | "enter" }
@@ -144,6 +182,7 @@ export type ChatMsg =
   | { type: "error"; message: string };
 
 export type ChatEffect =
+  | { type: "menu" }
   | { type: "send_user"; text: string }
   | {
       type: "answer_permission";
@@ -166,19 +205,36 @@ export const slashTargets = (
   return targets;
 };
 
-export const HELP_TEXT = [
-  "/help — this help",
-  "/model [id] — list registry models or switch the session model (UX-17)",
-  "/route <flags> — routing transparency (same as `obligato route explain`)",
-  "/budget — toggle the burn rail pane (UX-33)",
-  "/tree — toggle the session tree rail pane (UX-34)",
-  "/viz — toggle the agent visualizer rail pane (UX-36)",
-  "/exit — leave the chat",
-].join("\n");
+// UX-38: the single source of command help (F-085) — the menu renders these
+// rows; any future help text derives from this table.
+export const MENU_ITEMS: { command: string; description: string }[] = [
+  { command: "/help", description: "this menu" },
+  {
+    command: "/model",
+    description: "list registry models or switch the session model (UX-17)",
+  },
+  {
+    command: "/route",
+    description: "routing transparency (same as `obligato route explain`)",
+  },
+  { command: "/budget", description: "toggle the burn rail pane (UX-33)" },
+  {
+    command: "/tree",
+    description: "toggle the session tree rail pane (UX-34)",
+  },
+  {
+    command: "/viz",
+    description: "toggle the agent visualizer rail pane (UX-36)",
+  },
+  { command: "/exit", description: "leave the chat" },
+];
 
+// UX-38 (audit W3): knownDispatch is REQUIRED — an optional-with-default on a
+// meaning-changing parameter hides callers from the typechecker (F-076→F-085).
 export const createChat = (
   modelId: string,
-  meta?: Partial<ChatMetaInfo>,
+  meta: Partial<ChatMetaInfo>,
+  knownDispatch: string[],
 ): ChatModel => ({
   entries: [],
   busy: false,
@@ -192,6 +248,9 @@ export const createChat = (
   tickCount: 0,
   rail: null,
   stepCosts: [],
+  knownDispatch,
+  activity: [],
+  todos: [],
   meta: {
     authKind: "none",
     contextWindow: 0,
@@ -200,6 +259,16 @@ export const createChat = (
     ...meta,
   },
 });
+
+// UX-36: turn boundaries close every open activity item at the given tick
+// with ok: false — a spinner must never survive turn_done/error (the tick
+// reset would render negative elapsed).
+const closeOpen = (activity: ActivityItem[], tick: number): ActivityItem[] =>
+  activity.some((a) => a.endTick === null)
+    ? activity.map((a) =>
+        a.endTick === null ? { ...a, endTick: tick, ok: false } : a,
+      )
+    : activity;
 
 // UX-31: flip one entry's expanded flag; untoggleable/out-of-range targets
 // return the unchanged model (divergence-pinned no-op).
@@ -242,14 +311,9 @@ export const update = (
           model: { ...model, exited: true },
           effects: [{ type: "exit" }],
         };
-      if (text === "/help")
-        return {
-          model: {
-            ...model,
-            entries: [...model.entries, { kind: "info", text: HELP_TEXT }],
-          },
-          effects: [],
-        };
+      // UX-38: /help opens the ephemeral command menu — nothing appends, so
+      // repeated invocations leave the transcript unchanged by construction.
+      if (text === "/help") return { model, effects: [{ type: "menu" }] };
       // UX-32: /budget and /tree toggle the rail — same tab closes, other
       // tab switches. Chat-local view state (recorded: no CLI twin exists
       // for /budget; /tree's CLI twin shares the UX-34 builder).
@@ -280,6 +344,22 @@ export const update = (
       }
       if (text.startsWith("/")) {
         const [command = "", ...args] = text.slice(1).split(/\s+/);
+        // UX-38: an unknown slash appends the UX-37-classified error AND
+        // opens the menu — the operator sees what exists instead of guessing.
+        if (!model.knownDispatch.includes(`/${command}`))
+          return {
+            model: {
+              ...model,
+              entries: [
+                ...model.entries,
+                {
+                  kind: "error",
+                  ...classifyError(`unknown command /${command}`),
+                },
+              ],
+            },
+            effects: [{ type: "menu" }],
+          };
         return {
           model,
           effects: [{ type: "dispatch", command, argv: args }],
@@ -307,10 +387,51 @@ export const update = (
       else entries.push({ kind: "assistant", text: msg.text });
       return { model: { ...model, entries }, effects: [] };
     }
-    case "tool_result":
+    case "tool_start":
+      // UX-36: requested-time entry — completed by the matching tool_result.
       return {
         model: {
           ...model,
+          activity: [
+            ...model.activity,
+            {
+              name: msg.name,
+              arg: msg.arg,
+              startTick: model.tickCount,
+              endTick: null,
+              ok: null,
+            },
+          ],
+        },
+        effects: [],
+      };
+    case "tool_result": {
+      // UX-36: complete the open activity item (execution is sequential,
+      // AGT-4 order); with none open, append an already-completed item —
+      // never dropped (older loop callers lack onToolStart).
+      const activity = [...model.activity];
+      const openIdx = activity.findLastIndex((a) => a.endTick === null);
+      if (openIdx >= 0) {
+        const open = activity[openIdx] as ActivityItem;
+        activity[openIdx] = { ...open, endTick: model.tickCount, ok: msg.ok };
+      } else {
+        activity.push({
+          name: msg.name,
+          arg: "",
+          startTick: model.tickCount,
+          endTick: model.tickCount,
+          ok: msg.ok,
+        });
+      }
+      return {
+        model: {
+          ...model,
+          activity,
+          // UX-36: a successful todo result replaces the advisory task list.
+          todos:
+            msg.name === "todo" && msg.ok
+              ? parseTodos(msg.output)
+              : model.todos,
           entries: [
             ...model.entries,
             {
@@ -325,6 +446,7 @@ export const update = (
         },
         effects: [],
       };
+    }
     case "toggle_fold":
       return { model: toggleFold(model, msg.index), effects: [] };
     case "key": {
@@ -401,6 +523,9 @@ export const update = (
           busy: false,
           // UX-31: busy ending resets the tick count.
           tickCount: 0,
+          // UX-36: a turn boundary never leaves a spinner running — close at
+          // the pre-reset tick (audit 2026-07-20: reset made elapsed negative).
+          activity: closeOpen(model.activity, model.tickCount),
           entries:
             msg.status === "paused" && msg.reason !== undefined
               ? [
@@ -437,6 +562,8 @@ export const update = (
           ...model,
           busy: false,
           tickCount: 0,
+          // UX-36: same turn-boundary close as turn_done.
+          activity: closeOpen(model.activity, model.tickCount),
           entries: [
             ...model.entries,
             { kind: "error", ...classifyError(msg.message) },

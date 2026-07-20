@@ -10,7 +10,7 @@ import { makeTestRepo, runCli } from "../agent-helpers.ts";
 
 describe("UX-14: chat is a pure reducer behind a thin shell; slash = typed dispatch; TTY only", () => {
   it("the reducer drives a full exchange headlessly", () => {
-    let m = createChat("mock-m");
+    let m = createChat("mock-m", {}, []);
     let r = update(m, { type: "submit", text: "fix the bug" });
     m = r.model;
     expect(r.effects).toEqual([{ type: "send_user", text: "fix the bug" }]);

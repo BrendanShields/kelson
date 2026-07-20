@@ -29,7 +29,7 @@ describe("UX-17: /model lists via the registry function and switches at the next
   });
 
   it("reducer: /model lists; same-model select appends nothing; /model <id> emits the switch effect", () => {
-    const m = createChat("model-a");
+    const m = createChat("model-a", {}, []);
     expect(update(m, { type: "submit", text: "/model" }).effects).toEqual([
       { type: "list_models" },
     ]);
@@ -45,7 +45,7 @@ describe("UX-17: /model lists via the registry function and switches at the next
   });
 
   it("a /model submitted while busy is rejected with a message and appends no switch effect", () => {
-    const busy = { ...createChat("model-a"), busy: true };
+    const busy = { ...createChat("model-a", {}, []), busy: true };
     const r = update(busy, { type: "submit", text: "/model model-b" });
     expect(r.effects).toEqual([]);
     expect(r.model.entries.at(-1)?.kind).toBe("info");

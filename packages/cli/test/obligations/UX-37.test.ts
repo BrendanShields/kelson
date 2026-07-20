@@ -12,7 +12,7 @@ const SDK_429 = [
 ].join("\n");
 
 const err = (message: string) =>
-  update(createChat("mock-m"), { type: "error", message }).model;
+  update(createChat("mock-m", {}, []), { type: "error", message }).model;
 
 describe("UX-37: classified error panels", () => {
   it("429/rate-limit spew yields row-1 headline and hint verbatim", () => {

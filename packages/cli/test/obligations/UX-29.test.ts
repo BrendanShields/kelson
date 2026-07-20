@@ -16,6 +16,7 @@ const PINNED_COLORS: Record<ColorRole, string> = {
   ok: "#7fc98a",
   dim: "#5c6480",
   fg: "#c3c9dd",
+  surface: "#1a2233",
 };
 
 describe("UX-29: chat theme tokens — single module, pinned Quiet Pro, NO_COLOR no-op", () => {

@@ -864,6 +864,119 @@
       "status": "fixed",
       "id": "F-216",
       "fix_commit": "db5b27f56639e174f663ab424b88fac0a84eb66a"
+    },
+    {
+      "task": "chat-cmd-menu",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-38"
+      ],
+      "summary": "esc-suppressed-while-ask-menu-mounted pinned in clause text but unenforced — the suppression lived in the exit-thunk closure outside the exported guard; deleting it left the suite green",
+      "root_cause": "test_blindspot",
+      "fix": "askMounted folded into handleEscape as a REQUIRED parameter; suppression arm added to UX-38.test.ts",
+      "status": "fixed",
+      "id": "F-217",
+      "fix_commit": null
+    },
+    {
+      "task": "chat-md-theme",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-35"
+      ],
+      "summary": "themed SyntaxStyle wiring unasserted — reverting surface.ts to SyntaxStyle.create() passed every arm (renderer arm checked marker concealment, not styling)",
+      "root_cause": "test_blindspot",
+      "fix": "wiring arm added: mounted MarkdownRenderable syntaxStyle.getStyle(markup.strong).bold asserted; obligation names it",
+      "status": "fixed",
+      "id": "F-218",
+      "fix_commit": null
+    },
+    {
+      "task": "chat-cmd-menu",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-38"
+      ],
+      "summary": "knownDispatch optional-with-default on a meaning-changing parameter — future 2-arg createChat callers would silently treat every dispatch command as unknown",
+      "root_cause": "design_bug",
+      "fix": "parameter made required (F-076/F-085 pattern); typechecker-enumerated 33-site sweep via mechanical agent",
+      "status": "fixed",
+      "id": "F-219",
+      "fix_commit": null
+    },
+    {
+      "task": "chat-viz-cockpit",
+      "source": "clause-auditor",
+      "severity": "violation",
+      "clauses": [
+        "UX-36"
+      ],
+      "summary": "ask-resume double-fired onToolStart for the same call — pre-permission fire re-ran on resume, orphaning a phantom running row whose elapsed went negative after the tick reset; hit every permission-asked tool",
+      "root_cause": "silent_divergence",
+      "fix": "onToolStart moved to fire on execution-or-denial resolution (ask-pause fires nothing); semantics + single-fire loop fixture pinned in UX-36",
+      "status": "fixed",
+      "id": "F-220",
+      "fix_commit": null
+    },
+    {
+      "task": "chat-viz-cockpit",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-36"
+      ],
+      "summary": "open activity items survived turn_done/error with no closing rule — tick reset rendered negative elapsed and a frozen spinner",
+      "root_cause": "spec_gap",
+      "fix": "turn boundaries close open items at the pre-reset tick with ok:false; clause + discriminating arm added",
+      "status": "fixed",
+      "id": "F-221",
+      "fix_commit": null
+    },
+    {
+      "task": "chat-viz-cockpit",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "AGT-19",
+        "UX-36"
+      ],
+      "summary": "todo text schema admitted embedded newlines — serialization is line-delimited, so one item could forge phantom parsed items",
+      "root_cause": "spec_gap",
+      "fix": "schema refined newline-free; pinned on AGT-19 with the line-forgery test arm",
+      "status": "fixed",
+      "id": "F-222",
+      "fix_commit": null
+    },
+    {
+      "task": "chat-viz-cockpit",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-36"
+      ],
+      "summary": "clipLine mangled at the exact-fit segment boundary — room went negative and slice(0,-1) overflowed the 26-cell pane",
+      "root_cause": "test_blindspot",
+      "fix": "reserved-cell fit check; multi-segment exact-boundary arm added",
+      "status": "fixed",
+      "id": "F-223",
+      "fix_commit": null
+    },
+    {
+      "task": "chat-viz-cockpit",
+      "source": "clause-auditor",
+      "severity": "warning",
+      "clauses": [
+        "UX-36"
+      ],
+      "summary": "completed-activity role drift: clause pinned name dim, code rendered tool role; rendering role untested",
+      "root_cause": "spec_contradiction",
+      "fix": "clause wording fixed to the tool-role rendering; role-level assertion added",
+      "status": "fixed",
+      "id": "F-224",
+      "fix_commit": null
     }
   ]
 }

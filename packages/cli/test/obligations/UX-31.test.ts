@@ -21,7 +21,7 @@ const feed = (m: ChatModel, msgs: ChatMsg[]): ChatModel =>
   msgs.reduce((acc, msg) => update(acc, msg).model, m);
 
 const withTools = (): ChatModel =>
-  feed(createChat("mock-m"), [
+  feed(createChat("mock-m", {}, []), [
     { type: "info", text: "start" },
     { type: "tool_result", name: "read", ok: true, output: FIVE },
     {
@@ -42,7 +42,7 @@ describe("UX-31: transcript folds, focus nav, tick liveness", () => {
   });
 
   it("a 4-line output renders full with the header line; toggle_fold on it is a no-op", () => {
-    const m = feed(createChat("mock-m"), [
+    const m = feed(createChat("mock-m", {}, []), [
       { type: "tool_result", name: "fmt", ok: true, output: FOUR },
     ]);
     const view = renderChat(m);
@@ -95,7 +95,7 @@ describe("UX-31: transcript folds, focus nav, tick liveness", () => {
   });
 
   it("with zero foldables, enter emits nothing and changes nothing", () => {
-    const m = feed(createChat("mock-m"), [
+    const m = feed(createChat("mock-m", {}, []), [
       { type: "info", text: "x" },
       { type: "key", key: "tab" },
     ]);
@@ -105,7 +105,9 @@ describe("UX-31: transcript folds, focus nav, tick liveness", () => {
   });
 
   it("ticks: 25 busy ticks → spin[5] and 2s; idle tick is a same-reference no-op; busy end resets", () => {
-    let m = feed(createChat("mock-m"), [{ type: "submit", text: "go" }]);
+    let m = feed(createChat("mock-m", {}, []), [
+      { type: "submit", text: "go" },
+    ]);
     for (let i = 0; i < 25; i++) m = update(m, { type: "tick" }).model;
     expect(m.tickCount).toBe(25);
     const ticker = tickerLine(m);

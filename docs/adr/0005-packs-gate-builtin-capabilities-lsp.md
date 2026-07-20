@@ -9,7 +9,7 @@
 opencode and Claude Code both ship LSP / code-intelligence: real compiler
 diagnostics fed back after each edit, plus symbol lookup (definition, references,
 type) that replaces broad file reads. Obligato's native loop has neither — the
-seven core tools (AGT-4) are pure text. Of every base-agent capability the two
+eight core tools (AGT-4) are pure text. Of every base-agent capability the two
 comparators have and we lack, this is the one whose thesis maps exactly onto both
 north-stars: diagnostics-after-edit lift **FPAR** (fewer type-broken edits settle
 as done), symbol lookup cuts **TPAC** (a definition jump replaces reading whole

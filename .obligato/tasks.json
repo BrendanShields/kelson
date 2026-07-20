@@ -183,6 +183,46 @@
         "UX-37"
       ],
       "completed_at": "2026-07-12T17:45:56Z"
+    },
+    {
+      "id": "chat-md-theme",
+      "title": "UX-35/29: themed markdown SyntaxStyle in chat transcript",
+      "state": "completed",
+      "clauses": [
+        "UX-35",
+        "UX-29"
+      ],
+      "completed_at": "2026-07-20T05:58:49Z"
+    },
+    {
+      "id": "chat-cmd-menu",
+      "title": "UX-38: interactive command menu (SelectRenderable)",
+      "state": "completed",
+      "clauses": [
+        "UX-38"
+      ],
+      "completed_at": "2026-07-20T05:58:49Z"
+    },
+    {
+      "id": "chat-viz-cockpit",
+      "title": "UX-36 rewrite: tasks/activity/tools viz rail + todo tool (AGT-19)",
+      "state": "completed",
+      "clauses": [
+        "UX-36",
+        "AGT-19",
+        "AGT-4",
+        "PERM-1"
+      ],
+      "completed_at": "2026-07-20T05:58:49Z"
+    },
+    {
+      "id": "chat-crash-restore",
+      "title": "UX-39: terminal restore on fatal chat error",
+      "state": "completed",
+      "clauses": [
+        "UX-39"
+      ],
+      "completed_at": "2026-07-20T05:58:49Z"
     }
   ]
 }

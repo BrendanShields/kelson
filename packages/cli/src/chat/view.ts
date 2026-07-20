@@ -314,10 +314,9 @@ export const headerLine = (
   right: `${model.modelId} ${g.sep} ${model.meta.authKind}`,
 });
 
-// UX-36: the agent visualizer — a deterministic 26×8 character field from
-// CHAT_THEME material only. Same (state, tickCount) → byte-identical rows
-// (F-126); idle/paused static; OBLIGATO_NO_MOTION presence pins thinking to
-// the tickCount=0 frame (UX-29 presence discipline).
+// UX-36 (rewritten 2026-07-20): the agent cockpit — tasks / activity / tools
+// sections derived purely from reducer state. Same model projection + tick →
+// byte-identical lines (F-126).
 export type VizState = "idle" | "thinking" | "paused";
 
 // F-212 (audit pin): a production ask arrives with busy STILL TRUE (paused
@@ -326,36 +325,102 @@ export type VizState = "idle" | "thinking" | "paused";
 export const chatState = (model: ChatModel): VizState =>
   model.ask !== null ? "paused" : model.busy ? "thinking" : "idle";
 
-export const VIZ_COLS = 26;
-export const VIZ_ROWS = 8;
+// UX-36: rail interior width — lines truncate with `…` as the 26th cell.
+export const VIZ_WIDTH = 26;
 
-export const vizFrame = (state: VizState, tickCount: number): string[] => {
-  const bar = CHAT_THEME.glyphs.bar;
-  if (state === "idle")
-    return [
-      ...Array.from({ length: VIZ_ROWS - 1 }, () => " ".repeat(VIZ_COLS)),
-      (bar[0] as string).repeat(VIZ_COLS),
-    ];
-  if (state === "paused")
-    return Array.from({ length: VIZ_ROWS }, () =>
-      `${g.sep} `.repeat(VIZ_COLS / 2),
-    );
-  return Array.from({ length: VIZ_ROWS }, (_, r) =>
-    Array.from({ length: VIZ_COLS }, (_, c) =>
-      (r * 31 + c * 17 + tickCount) % 5 < 2
-        ? (bar[(tickCount + r * 3 + c * 7) % bar.length] as string)
-        : " ",
-    ).join(""),
-  );
+const clipLine = (line: ViewLine): ViewLine => {
+  const total = line.reduce((n, s) => n + s.text.length, 0);
+  if (total <= VIZ_WIDTH) return line;
+  // Truncating: every kept segment is measured against the width minus the
+  // reserved … cell, so an exact-fit segment followed by more text can never
+  // overflow (audit 2026-07-20 boundary).
+  const out: ViewLine = [];
+  let used = 0;
+  for (const seg of line) {
+    const room = VIZ_WIDTH - 1 - used;
+    if (seg.text.length <= room) {
+      out.push(seg);
+      used += seg.text.length;
+      continue;
+    }
+    out.push({ role: seg.role, text: `${seg.text.slice(0, room)}…` });
+    return out;
+  }
+  return out;
 };
 
 export const vizPane = (
   model: ChatModel,
   env: Record<string, string | undefined> = process.env,
 ): ViewLine[] => {
-  const state = chatState(model);
-  const tick = env.OBLIGATO_NO_MOTION !== undefined ? 0 : model.tickCount;
-  const role =
-    state === "thinking" ? "accent" : state === "paused" ? "warn" : "dim";
-  return vizFrame(state, tick).map((row) => [{ role, text: row }]);
+  const lines: ViewLine[] = [];
+  // Paused prepends one warn line above any sections (F-212 derivation).
+  if (chatState(model) === "paused")
+    lines.push([{ role: "warn", text: "paused" }]);
+
+  if (model.todos.length > 0) {
+    const done = model.todos.filter((t) => t.state === "done").length;
+    lines.push([{ role: "dim", text: `tasks ${done}/${model.todos.length}` }]);
+    for (const t of model.todos)
+      lines.push(
+        t.state === "done"
+          ? [
+              { role: "ok", text: `${g.ok} ` },
+              { role: "dim", text: t.text },
+            ]
+          : t.state === "active"
+            ? [{ role: "accent", text: `${g.fold} ${t.text}` }]
+            : [{ role: "dim", text: `${g.sep} ${t.text}` }],
+      );
+  }
+
+  if (model.activity.length > 0) {
+    const spin = CHAT_THEME.glyphs.spin;
+    lines.push([{ role: "dim", text: "activity" }]);
+    for (const a of model.activity.slice(-8)) {
+      if (a.endTick === null) {
+        // Running: spinner frame from the live tick (frozen at 0 under
+        // OBLIGATO_NO_MOTION — presence semantics, UX-29) + elapsed seconds.
+        const tick = env.OBLIGATO_NO_MOTION !== undefined ? 0 : model.tickCount;
+        const elapsed = Math.floor((model.tickCount - a.startTick) / 10);
+        lines.push([
+          {
+            role: "accent",
+            text: `${spin[tick % spin.length] as string} ${a.name} ${elapsed}s`,
+          },
+        ]);
+      } else {
+        lines.push([
+          a.ok === false
+            ? { role: "err", text: `${g.err} ` }
+            : { role: "ok", text: `${g.ok} ` },
+          { role: "tool", text: a.name },
+          ...(a.arg === ""
+            ? []
+            : [{ role: "dim" as const, text: ` ${a.arg}` }]),
+        ]);
+      }
+    }
+
+    // Tools: top 3 by count, ties by first appearance; meter of bar-top cells.
+    const counts = new Map<string, number>();
+    for (const a of model.activity)
+      counts.set(a.name, (counts.get(a.name) ?? 0) + 1);
+    const barTop = CHAT_THEME.glyphs.bar[
+      CHAT_THEME.glyphs.bar.length - 1
+    ] as string;
+    lines.push([{ role: "dim", text: "tools" }]);
+    for (const [name, count] of [...counts.entries()]
+      .sort((x, y) => y[1] - x[1])
+      .slice(0, 3))
+      lines.push([
+        { role: "dim", text: `${name} ` },
+        { role: "accent", text: barTop.repeat(Math.min(count, 10)) },
+        { role: "dim", text: ` ${count}` },
+      ]);
+  }
+
+  if (model.todos.length === 0 && model.activity.length === 0)
+    lines.push([{ role: "dim", text: "no activity yet" }]);
+  return lines.map(clipLine);
 };

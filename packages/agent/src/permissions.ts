@@ -3,7 +3,9 @@ import { join } from "node:path";
 import { type PermissionAction, PermissionRule } from "@obligato/schemas";
 import { z } from "zod";
 
-const READ_ONLY = new Set(["read", "grep", "find", "ls"]);
+// PERM-1: read-only tools plus `todo` (amendment 2026-07-20 — mutates only
+// the session's own advisory list, AGT-19; nothing external to guard).
+const DEFAULT_ALLOW = new Set(["read", "grep", "find", "ls", "todo"]);
 
 // ponytail: JSON, not YAML — no YAML dependency for a rules list.
 export const loadRules = (repoRoot: string): PermissionRule[] => {
@@ -63,7 +65,7 @@ export const evaluate = (
       best = r;
   }
   if (best) return { action: best.action, rule: best };
-  return { action: READ_ONLY.has(tool) ? "allow" : "ask", rule: null };
+  return { action: DEFAULT_ALLOW.has(tool) ? "allow" : "ask", rule: null };
 };
 
 export const decide = (

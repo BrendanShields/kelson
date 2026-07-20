@@ -6,8 +6,9 @@ import { runTurn } from "../../src/loop.ts";
 import { type AgentTool, CORE_TOOLS, localExec } from "../../src/tools.ts";
 import { fixture, textResponse, toolCallResponse } from "../helpers.ts";
 
-describe("AGT-4: exactly the seven core tools, confined to the caller-supplied ToolContext", () => {
-  it("ships read/write/edit/bash/grep/find/ls and nothing else", () => {
+describe("AGT-4: exactly the eight core tools, confined to the caller-supplied ToolContext", () => {
+  it("ships read/write/edit/bash/grep/find/ls/todo and nothing else", () => {
+    // AGT-19 amendment 2026-07-20: todo joins the registry.
     expect(CORE_TOOLS.map((t) => t.name).sort()).toEqual([
       "bash",
       "edit",
@@ -15,6 +16,7 @@ describe("AGT-4: exactly the seven core tools, confined to the caller-supplied T
       "grep",
       "ls",
       "read",
+      "todo",
       "write",
     ]);
   });

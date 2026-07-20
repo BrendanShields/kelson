@@ -9,7 +9,7 @@ import {
 
 describe("PERM-4: the rendered ask names the tool, primary arg, and provenance", () => {
   it("a matched rule's globs and action render with the ask", () => {
-    const m = update(createChat("mock-m"), {
+    const m = update(createChat("mock-m", {}, []), {
       type: "paused",
       ask: {
         requestId: "r1",
@@ -25,7 +25,7 @@ describe("PERM-4: the rendered ask names the tool, primary arg, and provenance",
   });
 
   it("an unmatched-default ask renders the default provenance", () => {
-    const m = update(createChat("mock-m"), {
+    const m = update(createChat("mock-m", {}, []), {
       type: "paused",
       ask: { requestId: "r2", tool: "bash", arg: "rm -rf x", rule: "default" },
     }).model;

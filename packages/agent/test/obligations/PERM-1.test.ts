@@ -100,6 +100,15 @@ const CASES: {
     expected: "ask",
   },
   {
+    // AGT-19/PERM-1 amendment 2026-07-20: todo default-allows — it mutates
+    // only the session's own advisory list, nothing external to guard.
+    name: "default: todo with no match allows",
+    rules: [],
+    tool: "todo",
+    arg: "3 items",
+    expected: "allow",
+  },
+  {
     name: "non-matching rule falls through to the default",
     rules: [{ tool: "read", arg: "/secret/*", action: "deny" }],
     tool: "ls",

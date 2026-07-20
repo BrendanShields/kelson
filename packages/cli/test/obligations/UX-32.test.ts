@@ -8,7 +8,7 @@ const submit = (m: ChatModel, text: string): ChatModel =>
 
 describe("UX-32: rail — toggle truth-table, 30-col pane, width gate", () => {
   it("toggle truth-table: closed+/budget→budget; budget+/tree→tree; tree+/tree→closed", () => {
-    let m = createChat("mock-m");
+    let m = createChat("mock-m", {}, []);
     expect(m.rail).toBeNull();
     m = submit(m, "/budget");
     expect(m.rail).toBe("budget");
@@ -23,7 +23,7 @@ describe("UX-32: rail — toggle truth-table, 30-col pane, width gate", () => {
   });
 
   it("120 cols: open rail renders the titled pane beside the transcript; 80 cols hides it; reopening at width restores it", async () => {
-    let m = update(createChat("mock-m"), {
+    let m = update(createChat("mock-m", {}, []), {
       type: "info",
       text: "transcript-line",
     }).model;
@@ -61,7 +61,7 @@ describe("UX-32: rail — toggle truth-table, 30-col pane, width gate", () => {
   });
 
   it("live resize re-evaluates the gate with no dispatch between (F-205)", async () => {
-    let m = update(createChat("mock-m"), {
+    let m = update(createChat("mock-m", {}, []), {
       type: "info",
       text: "transcript-line",
     }).model;

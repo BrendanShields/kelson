@@ -61,7 +61,7 @@ describe("UX-30: cockpit shell — four regions, empty state, honest ticker", ()
   });
 
   it("renders all four regions at 80 and 120 columns with no overflow", async () => {
-    const model = withEntry(createChat("mock-m", META));
+    const model = withEntry(createChat("mock-m", META, []));
     for (const width of [80, 120]) {
       const out = await frame(model, width, {});
       expect(out).toContain("obligato chat");
@@ -78,9 +78,13 @@ describe("UX-30: cockpit shell — four regions, empty state, honest ticker", ()
   });
 
   it("empty state renders the wordmark; the first entry replaces it", async () => {
-    const empty = await frame(createChat("mock-m", META), 80, {});
+    const empty = await frame(createChat("mock-m", META, []), 80, {});
     expect(empty).toContain("spec-first agent harness");
-    const after = await frame(withEntry(createChat("mock-m", META)), 80, {});
+    const after = await frame(
+      withEntry(createChat("mock-m", META, [])),
+      80,
+      {},
+    );
     expect(after).not.toContain("spec-first agent harness");
     expect(after).toContain("hello");
   });
@@ -88,7 +92,7 @@ describe("UX-30: cockpit shell — four regions, empty state, honest ticker", ()
   it("tail-follow: an incrementally grown transcript shows the newest entry, not the oldest", async () => {
     const setup = await createTestRenderer({ width: 80, height: 10 });
     const surface = createSurface(setup.renderer, {});
-    let m = update(createChat("mock-m", META), {
+    let m = update(createChat("mock-m", META, []), {
       type: "info",
       text: "first-entry",
     }).model;
@@ -114,7 +118,7 @@ describe("UX-30: cockpit shell — four regions, empty state, honest ticker", ()
   it("shrink (expand a fold, collapse it) never releases tail-follow (F-203)", async () => {
     const setup = await createTestRenderer({ width: 80, height: 10 });
     const surface = createSurface(setup.renderer, {});
-    let m = update(createChat("mock-m", META), {
+    let m = update(createChat("mock-m", META, []), {
       type: "tool_result",
       name: "read",
       ok: true,
@@ -145,7 +149,7 @@ describe("UX-30: cockpit shell — four regions, empty state, honest ticker", ()
   });
 
   it("NO_COLOR changes colors only — char frame identical", async () => {
-    const model = withEntry(createChat("mock-m", META));
+    const model = withEntry(createChat("mock-m", META, []));
     // captureCharFrame is characters-only; identical frames prove structure
     // carries the meaning without color (UX-4).
     // revert-check: gate glyphs or layout behind color state → frames differ.

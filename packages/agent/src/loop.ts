@@ -101,6 +101,10 @@ export interface StepDeps {
     contextWindow: number;
   };
   onDelta?: (text: string) => void;
+  // UX-36: fires when a call resolves to execution-or-denial (never on an
+  // ask-pause — the answered re-request fires exactly once); arg is the
+  // tool's primaryArg (the PERM-2 prompt string). Additive.
+  onToolStart?: (name: string, arg: string) => void;
   // UX-31: output is additive — the chat transcript folds long tool results.
   onToolResult?: (name: string, ok: boolean, output?: string) => void;
   onStepCost?: (costMicroUsd: number | null) => void;
@@ -275,6 +279,13 @@ const resolveTools = (deps: StepDeps, chain: SessionEvent[]): StepResult => {
       }
       action = decision.payload.decision === "allow" ? "allow" : "deny";
     }
+
+    // UX-36: fires once the call resolves to execution-or-denial — an
+    // ask-pause fires nothing (the answered re-request fires exactly once),
+    // so every fired start is completed by exactly one tool_result in this
+    // pass (audit 2026-07-20: firing pre-ask double-fired across resume and
+    // orphaned a phantom running row).
+    deps.onToolStart?.(call.name, arg);
 
     // AGT-8: gate a write/edit to a governed file before it runs (spec-first
     // ART-4). A block is a denied tool result (PERM-3 shape), never a crash.
